@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskWork — Propuesta de Mejora v2.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafaf7;
+      --bg-elev: #ffffff;
+      --ink: #14171e;
+      --ink-2: #3a4256;
+      --muted: #7c7a72;
+      --line: #e9e3d6;
+      --line-soft: #f0ebde;
+      --primary: #0d4f4a;
+      --primary-dark: #0a3d39;
+      --primary-soft: #d9eae7;
+      --primary-fade: #f0f7f5;
+      --accent: #6ee7df;
+      --critical: #b3331f;
+      --high: #c2410c;
+      --normal: #a16207;
+      --low: #047857;
+      --info: #1d4ed8;
+      --warning: #d97706;
+      --success: #059669;
+      --error: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 60px 48px 80px;
+    }
+
+    header {
+      background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: white;
+      margin: -60px -48px 56px;
+      padding: 80px 48px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+    }
+
+    header > * { position: relative; }
+
+    header h1 {
+      font-size: 40px; font-weight: 700; line-height: 1.1;
+      color: white; max-width: 640px; margin-bottom: 16px;
+    }
+
+    header h1 .accent { color: var(--accent); }
+
+    header p {
+      color: rgba(255,255,255,0.8); font-size: 16px;
+      line-height: 1.5; max-width: 600px; font-weight: 300;
+    }
+
+    h2 { 
+      font-size: 28px; font-weight: 600; letter-spacing: -0.015em;
+      margin: 56px 0 24px; 
+    }
+
+    h2:first-of-type { margin-top: 0; }
+
+    h3 {
+      font-size: 18px; font-weight: 600;
+      margin: 32px 0 12px;
+      color: var(--primary);
+    }
+
+    h4 {
+      font-size: 14px; font-weight: 600;
+      margin: 24px 0 8px;
+      color: var(--ink);
+    }
+
+    p, li { color: var(--ink-2); font-size: 15px; line-height: 1.65; }
+
+    .lead { font-size: 17px; line-height: 1.6; max-width: 680px; margin-bottom: 20px; }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    .eyebrow::before { content: ""; width: 20px; height: 1px; background: var(--primary); }
+
+    ul, ol { padding-left: 24px; margin: 12px 0 20px; }
+    li { margin-bottom: 8px; }
+
+    .section {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 36px;
+      margin: 24px 0;
+    }
+
+    .section.highlight {
+      background: linear-gradient(135deg, var(--primary-fade) 0%, var(--bg-elev) 100%);
+      border-color: var(--primary-soft);
+    }
+
+    .card {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 12px 0;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      margin: 20px 0;
+    }
+
+    .note {
+      background: var(--primary-fade);
+      border-left: 3px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: var(--ink-2);
+    }
+
+    .note strong { color: var(--ink); }
+
+    .feature {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 12px 0;
+    }
+
+    .feature-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: var(--ink-2);
+      line-height: 1.6;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .status-new { background: #e0f2fe; color: var(--info); }
+    .status-improve { background: #fef3c7; color: var(--normal); }
+    .status-optional { background: #f0ebde; color: var(--muted); }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+
+    .comparison-item.before {
+      background: #fff5f5;
+      border-color: #fecaca;
+    }
+
+    .comparison-item.after {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .comparison-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      color: var(--ink-2);
+    }
+
+    .comparison-item.before .comparison-label { color: #dc2626; }
+    .comparison-item.after .comparison-label { color: #059669; }
+
+    .code-block {
+      background: var(--ink);
+      color: #d4e0e0;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-x: auto;
+      border: 1px solid #2a2f3a;
+    }
+
+    .doc-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--primary-fade);
+      border: 1px solid var(--primary-soft);
+      border-radius: 8px;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      margin: 8px 4px 8px 0;
+      transition: all 0.2s;
+    }
+
+    .doc-link:hover {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+    }
+
+    .doc-group {
+      margin: 20px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      background: var(--bg);
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    tr:hover { background: var(--primary-fade); }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .roadmap-item {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .roadmap-phase {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .roadmap-item h4 {
+      margin: 0 0 12px;
+      color: var(--ink);
+    }
+
+    .roadmap-item p {
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .roadmap-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      background: var(--line-soft);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .tag.priority { background: #fecaca; color: var(--critical); }
+    .tag.feature { background: var(--primary-soft); color: var(--primary); }
+    .tag.doc { background: #dbeafe; color: var(--info); }
+
+    hr { border: 0; border-top: 1px solid var(--line); margin: 48px 0; }
+
+    .footer {
+      text-align: center;
+      padding: 32px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      margin-top: 60px;
+    }
+
+    @media (max-width: 768px) {
+      .page { padding: 40px 24px 60px; }
+      header { margin: -40px -24px 40px; padding: 60px 24px 40px; }
+      h2 { font-size: 24px; }
+      h3 { font-size: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      .comparison { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <h1>DeskWork Design System <span class="accent">v2.0</span></h1>
+    <p>Propuesta de mejora manteniendo simplicidad, facilidad de uso e integración</p>
+  </header>
+
+  <!-- ============================================
+       EXECUTIVE SUMMARY
+       ============================================ -->
+
+  <section class="section highlight">
+    <h2>Resumen Ejecutivo</h2>
+    <p class="lead">Este documento propone 8 mejoras estratégicas al sistema DeskWork que amplían su capacidad sin sacrificar la elegancia y facilidad de uso que lo define. Cada mejora está pensada para ser <strong>incremental, documentada y retrocompatible</strong>.</p>
+    
+    <div style="margin-top: 24px;">
+      <h4>Áreas de mejora:</h4>
+      <ol>
+        <li><strong>Tokens CSS + Documentación del Sistema</strong> — Estandarización de variables</li>
+        <li><strong>Componentes Interactivos Completos</strong> — Formularios, validación, loading</li>
+        <li><strong>Sistema de Iconografía Nativo</strong> — Conjunto de iconos minimalista</li>
+        <li><strong>Guías de Accesibilidad (WCAG 2.1 AA)</strong> — Sin complejidad visual</li>
+        <li><strong>Responsive Design Sistemático</strong> — Breakpoints documentados</li>
+        <li><strong>Estados Interactivos Completos</strong> — Hover, focus, disabled, error</li>
+        <li><strong>Paleta Extendida Semántica</strong> — Neutral, Info, Success sin redundancia</li>
+        <li><strong>Guía de Implementación Frontend</strong> — HTML, CSS, JS patterns</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================
+       MEJORA 1: TOKENS CSS
+       ============================================ -->
+
+  <h2 id="mejora-1">① Tokens CSS + Sistema de Variables Documentado</h2>
+
+  <span class="status-badge status-improve">MEJORA CLAVE</span>
+
+  <p>El sistema actual es visual. Esta mejora lo hace <strong>portable, escalable y consistente</strong> sin cambiar un solo píxel.</p>
+
+  <div class="section">
+    <h3>Problema actual</h3>
+    <ul>
+      <li>Colores, espacios y radios están definidos en archivos HTML individuales</li>
+      <li>No hay un "source of truth" único para los tokens</li>
+      <li>Duplicación de valores entre mockups, manual, y dossier</li>
+      <li>Integración con herramientas (Figma, Tailwind, StyledComponents) es manual</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h3>Solución propuesta</h3>
+    
+    <h4>Paso 1: JSON de tokens centralizado</h4>
+    <div class="code-block">
+{
+  "color": {
+    "primary": {
+      "50": "#f0f7f5",
+      "100": "#d9eae7",
+      "500": "#0d4f4a",
+      "600": "#0a3d39",
+      "900": "#051f1c"
+    },
+    "functional": {
+      "critical": "#b3331f",
+      "high": "#c2410c",
+      "normal": "#a16207",
+      "low": "#047857"
+    }
+  },
+  "space": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px",
+    "2xl": "48px",
+    "3xl": "80px"
+  },
+  "radius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "12px",
+    "xl": "16px"
+  },
+  "typography": {
+    "fontFamily": {
+      "sans": "'Outfit', system-ui, sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "fontSize": {
+      "xs": "11px",
+      "sm": "13px",
+      "base": "15px",
+      "lg": "17px",
+      "xl": "20px",
+      "2xl": "28px",
+      "3xl": "36px",
+      "4xl": "40px"
+    },
+    "lineHeight": {
+      "tight": "1.2",
+      "normal": "1.55",
+      "relaxed": "1.65"
+    }
+  }
+}
+    </div>
+
+    <h4>Paso 2: CSS Custom Properties listos para usar</h4>
+    <div class="code-block">
+:root {
+  /* Colors */
+  --color-primary-50: #f0f7f5;
+  --color-primary-500: #0d4f4a;
+  --color-functional-critical: #b3331f;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-md: 16px;
+  
+  /* Typography */
+  --text-base: 15px;
+  --leading-normal: 1.55;
+  
+  /* Derived tokens (composite) */
+  --btn-primary-padding: var(--space-sm) var(--space-md);
+  --heading-1: 700 40px / 1.1 "Outfit";
+}
+    </div>
+
+    <h4>Paso 3: Integración automática</h4>
+    <ul>
+      <li><strong>Figma:</strong> Sync tokens automático vía Figma Tokens plugin</li>
+      <li><strong>Tailwind:</strong> Generar config desde JSON</li>
+      <li><strong>Storybook:</strong> Doc automática de valores</li>
+      <li><strong>Código:</strong> Usar tokens en lugar de hardcoding colores</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <strong>Impacto:</strong> Cambiar un color en un lugar = se actualiza en Figma, Tailwind, CSS y documentación automáticamente.
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MEJORA 2: COMPONENTES INTERACTIVOS
+       ============================================ -->
+
+  <h2 id="mejora-2">② Componentes Interactivos Completos</h2>
+
+  <span class="status-badge status-improve">MEJORA FUNCIONAL</span>
+
+  <p>Agregar documentación de componentes que faltan (formularios, validación, loading) sin complejidad visual.</p>
+
+  <div class="grid">
+    <div class="feature">
+      <div class="feature-title">📝 Formularios & Inputs</div>
+      <div class="feature-desc">Documentar estados (idle, focus, filled, disabled, error) con ejemplos visuales y HTML.</div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title">⚠️ Validación & Mensajes</div>
+      <div class="feature-desc">Estados error, warning, success con iconografía mínima y paleta consistente.</div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title">⏳ Loading & Skeleton</div>
+      <div class="feature-desc">Indicadores de progreso, spinners y estado de carga sin animaciones complejas.</div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title">📋 Modales & Overlays</div>
+      <div class="feature-desc">Atajos para diálogos, confirmaciones y paneles laterales con comportamiento accesible.</div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title">🗂️ Tabs & Navegación</div>
+      <div class="feature-desc">Componentes de contenido compartimentado con indicadores claros de estado activo.</div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title">📊 Data States</div>
+      <div class="feature-desc">Estados vacíos (empty), no resultados, estados de error, sin ilustraciones complicadas.</div>
+    </div>
+  </grid>
+
+  <div class="section">
+    <h4>Ejemplo: Documentación de Input (antes vs después)</h4>
+    
+    <div class="comparison">
+      <div class="comparison-item before">
+        <div class="comparison-label">❌ Actualmente</div>
+        <p>No existe doc de inputs. Diseñadores improvisan. Resultado: inconsistencia en el padding, focus states diferentes, etc.</p>
+      </div>
+
+      <div class="comparison-item after">
+        <div class="comparison-label">✅ Con mejora</div>
+        <div class="code-block" style="background: transparent; border: 1px solid var(--primary-soft); padding: 12px; color: var(--ink); margin: 0;">
+&lt;input 
+  class="input input-primary"
+  type="text"
+  placeholder="Tu nombre"
+  aria-label="Nombre completo"
+/&gt;
+        </div>
+        <p style="margin-top: 12px; font-size: 13px;">Incluye: tamaños, estados, validación, label, hint, error message.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MEJORA 3: ICONOGRAFÍA
+       ============================================ -->
+
+  <h2 id="mejora-3">③ Sistema de Iconografía Minimalista</h2>
+
+  <span class="status-badge status-new">NUEVA</span>
+
+  <p>DeskWork carece de iconografía nativa. Propongo un set mínimo (30-50 iconos) diseñado para Help Desk.</p>
+
+  <div class="section">
+    <h3>Principios</h3>
+    <ul>
+      <li>Stroke-based (no solid fills) — simplicidad visual</li>
+      <li>Grid de 24x24 — escalable a cualquier tamaño</li>
+      <li>Peso de línea 2px — consistente con teal, no decorativo</li>
+      <li>Sin rellenos de color (usan herencia de `currentColor`)</li>
+    </ul>
+
+    <h3>Conjunto inicial propuesto</h3>
+    <table>
+      <tr>
+        <th>Categoría</th>
+        <th>Iconos</th>
+        <th>Uso en Help Desk</th>
+      </tr>
+      <tr>
+        <td><strong>Estado de tickets</strong></td>
+        <td>circle-open, circle-process, circle-closed, circle-escalated</td>
+        <td>Status badges en tablas, timeline</td>
+      </tr>
+      <tr>
+        <td><strong>Acciones</strong></td>
+        <td>plus, minus, edit, trash, share, comment</td>
+        <td>Botones de lista y cards</td>
+      </tr>
+      <tr>
+        <td><strong>Navegación</strong></td>
+        <td>arrow-left, arrow-right, chevron-up, chevron-down, home, search</td>
+        <td>Topbar y sidebar</td>
+      </tr>
+      <tr>
+        <td><strong>Alertas</strong></td>
+        <td>alert-circle, info-circle, check-circle, x-circle</td>
+        <td>Validación y mensajes</td>
+      </tr>
+      <tr>
+        <td><strong>Help Desk específico</strong></td>
+        <td>headset, phone, clock, user, team, ticket</td>
+        <td>Iconografía de dominio</td>
+      </tr>
+    </table>
+
+    <h3>Implementación</h3>
+    <ul>
+      <li>SVG inline o web font (IcoMoon)</li>
+      <li>Figma component para cada icono</li>
+      <li>Sizes: 16px, 20px, 24px (predefinidas)</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MEJORA 4: ACCESIBILIDAD
+       ============================================ -->
+
+  <h2 id="mejora-4">④ Accesibilidad Documentada (WCAG 2.1 AA)</h2>
+
+  <span class="status-badge status-improve">MEJORA CLAVE</span>
+
+  <p>Agregar una sección al manual de marca sobre accesibilidad sin cambiar el diseño.</p>
+
+  <div class="section">
+    <h3>Checklist de conformidad</h3>
+    
+    <h4>Contraste de color (1.4.3 Contrast Minimum)</h4>
+    <ul>
+      <li><strong>Texto normal:</strong> mín 4.5:1 ✓ (ink #14171e sobre bg #fafaf7 = 10.8:1)</li>
+      <li><strong>Texto grande:</strong> mín 3:1 ✓</li>
+      <li><strong>Componentes UI:</strong> mín 3:1 ✓ (botones, inputs, borders)</li>
+    </ul>
+
+    <h4>Tamaño de target (2.5.5 Target Size)</h4>
+    <ul>
+      <li>Mínimo 44x44px para elementos interactivos</li>
+      <li>Espaciado suficiente entre elementos táctiles (gap >= 8px)</li>
+      <li>Actualmente: botones 12px padding = ~40-44px, cumple</li>
+    </ul>
+
+    <h4>Estados focales (2.4.7 Focus Visible)</h4>
+    <ul>
+      <li>Outline en teal (--primary) de 2px</li>
+      <li>Offset 2px desde borde del elemento</li>
+      <li>Mantener en keyboard nav, visible en todos los states</li>
+    </ul>
+
+    <h4>Semántica HTML</h4>
+    <ul>
+      <li>Usar &lt;button&gt;, &lt;input&gt;, &lt;label&gt;, &lt;select&gt; apropiadamente</li>
+      <li>aria-label en iconos puros</li>
+      <li>aria-describedby para hints y errores</li>
+      <li>Roles landmarks: nav, main, aside, complementary</li>
+    </ul>
+
+    <h4>Tipografía</h4>
+    <ul>
+      <li>Tamaño mín 14px en body (actual cumple)</li>
+      <li>Line-height mín 1.5 para párrafos largos ✓</li>
+      <li>No usar text-align: justified (dificulta lectura)</li>
+      <li>Evitar mayúsculas sostenidas (ya está en anti-patrones)</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <strong>Documentar en una página del manual:</strong> Lista completa de criterios WCAG que DeskWork ya cumple, + checklist para implementadores.
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MEJORA 5: RESPONSIVE DESIGN
+       ============================================ -->
+
+  <h2 id="mejora-5">⑤ Sistema Responsive Documentado</h2>
+
+  <span class="status-badge status-improve">MEJORA FUNCIONAL</span>
+
+  <p>Actualmente el responsive es ad-hoc. Propongo breakpoints estándar y ejemplos claros.</p>
+
+  <div class="section">
+    <h3>Breakpoints propuestos</h3>
+    <table>
+      <tr>
+        <th>Nombre</th>
+        <th>Ancho</th>
+        <th>Uso</th>
+      </tr>
+      <tr>
+        <td><strong>mobile</strong></td>
+        <td>0px — 480px</td>
+        <td>Teléfono, portrait</td>
+      </tr>
+      <tr>
+        <td><strong>tablet</strong></td>
+        <td>481px — 768px</td>
+        <td>Tablet, landscape móvil</td>
+      </tr>
+      <tr>
+        <td><strong>desktop</strong></td>
+        <td>769px — 1024px</td>
+        <td>Laptop pequeño</td>
+      </tr>
+      <tr>
+        <td><strong>wide</strong></td>
+        <td>1025px+</td>
+        <td>Pantallas grandes (4K, dual-monitor)</td>
+      </tr>
+    </table>
+
+    <h4>Estrategia mobile-first</h4>
+    <div class="code-block">
+/* Default: mobile 480px */
+.grid { grid-template-columns: 1fr; }
+
+/* Tablet 768px */
+@media (min-width: 769px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Desktop 1025px */
+@media (min-width: 1025px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+    </div>
+
+    <h3>Ajustes por breakpoint</h3>
+    <ul>
+      <li><strong>Padding:</strong> 24px (mobile) → 36px (tablet) → 48px (desktop)</li>
+      <li><strong>Tipografía:</strong> Sin cambios (legibilidad mín 14px en todos)</li>
+      <li><strong>Componentes:</strong> Botones y inputs escalan con rem</li>
+      <li><strong>Layout:</strong> Grid responsive + flexbox flexible</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MEJORA 6: ESTADOS INTERACTIVOS
+       ============================================ -->
+
+  <h2 id="mejora-6">⑥ Estados Interactivos Completos</h2>
+
+  <span class="status-badge status-improve">MEJORA VISUAL</span>
+
+  <p>Documentar todos los estados visuales de componentes (hover, active, focus, disabled, error).</p>
+
+  <div class="section">
+    <h3>Estados de botón (ejemplo)</h3>
+    
+    <table>
+      <tr>
+        <th>Estado</th>
+        <th>Visual</th>
+        <th>Cambio</th>
+      </tr>
+      <tr>
+        <td><strong>Default</strong></td>
+        <td>bg: primary, text: white</td>
+        <td>Ninguno</td>
+      </tr>
+      <tr>
+        <td><strong>Hover</strong></td>
+        <td>bg: primary-dark (#0a3d39), shadow: md</td>
+        <td>Oscurecer, sombra sutil</td>
+      </tr>
+      <tr>
+        <td><strong>Active/Pressed</strong></td>
+        <td>bg: primary-dark, transform: scale(0.98)</td>
+        <td>Más oscuro, escala 98%</td>
+      </tr>
+      <tr>
+        <td><strong>Focus</strong></td>
+        <td>outline: 2px primary, offset: 2px</td>
+        <td>Outline teal visible</td>
+      </tr>
+      <tr>
+        <td><strong>Disabled</strong></td>
+        <td>opacity: 0.5, cursor: not-allowed</td>
+        <td>Atenuado, sin interacción</td>
+      </tr>
+    </table>
+
+    <div class="code-block">
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  transition: all 200ms ease;
+}
+
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:focus { outline: 2px solid var(--primary); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Crear una página del manual</strong> que muestre todos los estados (button, input, card, badge, tab) con ejemplos interactivos.
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MEJORA 7: PALETA EXTENDIDA
+       ============================================ -->
+
+  <h2 id="mejora-7">⑦ Paleta Extendida Semántica</h2>
+
+  <span class="status-badge status-new">NUEVA</span>
+
+  <p>Agregar variantes de color sin redundancia ni complejidad visual.</p>
+
+  <div class="section">
+    <h3>Estructura actual (mantener)</h3>
+    <ul>
+      <li><strong>Primary:</strong> #0d4f4a (teal, CTA principal)</li>
+      <li><strong>Funcional:</strong> Critical, High, Normal, Low (prioridades)</li>
+    </ul>
+
+    <h3>Agregar (NEW)</h3>
+    <table>
+      <tr>
+        <th>Color</th>
+        <th>Hex</th>
+        <th>Uso</th>
+        <th>Escala</th>
+      </tr>
+      <tr>
+        <td><strong>Success</strong></td>
+        <td>#059669</td>
+        <td>Acciones exitosas, confirmación</td>
+        <td>50, 100, 500, 600</td>
+      </tr>
+      <tr>
+        <td><strong>Warning</strong></td>
+        <td>#d97706</td>
+        <td>Alertas no críticas</td>
+        <td>50, 100, 500, 600</td>
+      </tr>
+      <tr>
+        <td><strong>Info</strong></td>
+        <td>#1d4ed8</td>
+        <td>Información, help, hints</td>
+        <td>50, 100, 500, 600</td>
+      </tr>
+      <tr>
+        <td><strong>Neutral</strong></td>
+        <td>#6b7280</td>
+        <td>Texto secundario, disabled</td>
+        <td>50, 100, 300, 500, 700</td>
+      </tr>
+    </table>
+
+    <h4>Regla de oro</h4>
+    <ul>
+      <li>Cada color tiene <strong>solo 4-5 variantes</strong> (50, 100, 500, 600, 900)</li>
+      <li>No hay variantes intermedias (200, 300, 400) que confundan</li>
+      <li>Cada nueva variable entra en tokens.json</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MEJORA 8: FRONTEND IMPLEMENTATION GUIDE
+       ============================================ -->
+
+  <h2 id="mejora-8">⑧ Guía de Implementación Frontend</h2>
+
+  <span class="status-badge status-improve">MEJORA FUNCIONAL</span>
+
+  <p>Documento práctico para desarrolladores: "Cómo hacer HTML DeskWork sin romper la marca".</p>
+
+  <div class="section">
+    <h3>Contenido propuesto</h3>
+
+    <h4>1. Setup inicial</h4>
+    <ul>
+      <li>Copiar tokens.json y CSS custom properties</li>
+      <li>Importar tipografías (Outfit, JetBrains Mono)</li>
+      <li>Estructura HTML semántica base</li>
+    </ul>
+
+    <h4>2. Patrones comunes</h4>
+    <ul>
+      <li>Page layout (header, nav, main, footer)</li>
+      <li>Grid responsive (cómo usar grid-template-columns)</li>
+      <li>Flexbox utilities (gap, align, justify)</li>
+      <li>Composición de cards</li>
+    </ul>
+
+    <h4>3. Componentes reutilizables</h4>
+    <ul>
+      <li>Button (all variants + states)</li>
+      <li>Input (text, select, checkbox, radio)</li>
+      <li>Badge (status, priority, tag)</li>
+      <li>Card (content wrapper)</li>
+      <li>Modal (dialog pattern)</li>
+      <li>Toast (notification)</li>
+    </ul>
+
+    <h4>4. CSS Do's and Don'ts</h4>
+    <ul>
+      <li>✓ Usar CSS variables (--primary, --space-md)</li>
+      <li>✗ Hardcodear colores (#0d4f4a)</li>
+      <li>✓ Usar gaps en lugar de margins</li>
+      <li>✗ Margin mágico sin intención</li>
+      <li>✓ Clases semánticas (.btn-primary)</li>
+      <li>✗ Clases por apariencia (.blue-bold)</li>
+    </ul>
+
+    <div class="code-block">
+/* ✓ BIEN: Usar variables */
+.btn-primary {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  color: var(--primary);
+}
+
+/* ✗ MAL: Hardcodear */
+.btn-primary {
+  padding: 8px 16px;
+  border-radius: 10px;
+  color: #0d4f4a;
+}
+    </div>
+
+    <h4>5. Testing checklist</h4>
+    <ul>
+      <li>Keyboard navigation (Tab, Enter, Esc)</li>
+      <li>Screen reader (NVDA, JAWS, VoiceOver)</li>
+      <li>Mobile responsive (480px, 768px, 1025px)</li>
+      <li>Contrast verificado (WCAG AA)</li>
+      <li>Performance (sin animaciones pesadas)</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       ROADMAP
+       ============================================ -->
+
+  <h2>Roadmap de Implementación</h2>
+
+  <p class="lead">Cada mejora está pensada para ser incremental y no requiere rehacer el sistema actual.</p>
+
+  <div class="roadmap">
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Fase 1 (Mes 1)</div>
+      <h4>Foundation</h4>
+      <p>Tokens JSON, CSS variables, documentación accesibilidad.</p>
+      <div class="roadmap-tags">
+        <span class="tag priority">Crítico</span>
+        <span class="tag feature">Tokens</span>
+        <span class="tag doc">A11y</span>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Fase 2 (Mes 1-2)</div>
+      <h4>Components</h4>
+      <p>Formularios, validación, loading, estados interactivos.</p>
+      <div class="roadmap-tags">
+        <span class="tag feature">Forms</span>
+        <span class="tag feature">States</span>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Fase 3 (Mes 2)</div>
+      <h4>Extensiones</h4>
+      <p>Iconografía, paleta semántica, responsive guide.</p>
+      <div class="roadmap-tags">
+        <span class="tag feature">Icons</span>
+        <span class="tag feature">Colors</span>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Fase 4 (Mes 2-3)</div>
+      <h4>Dev Guide</h4>
+      <p>Implementación frontend, patrones, testing checklist.</p>
+      <div class="roadmap-tags">
+        <span class="tag doc">Dev</span>
+        <span class="tag doc">Testing</span>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Ongoing</div>
+      <h4>Feedback Loop</h4>
+      <p>Iteración basada en uso real en producto.</p>
+      <div class="roadmap-tags">
+        <span class="tag feature">Iteration</span>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       PRINCIPIOS CLAVE
+       ============================================ -->
+
+  <h2>Principios de la Propuesta</h2>
+
+  <div class="grid">
+    <div class="card">
+      <h4>🎯 Mantener la simplicidad</h4>
+      <p>Cada mejora suma <strong>capacidad sin complejidad visual</strong>. El sistema sigue siendo teal, minimalista, elegante.</p>
+    </div>
+
+    <div class="card">
+      <h4>📚 Documentación sobre código</h4>
+      <p>No propongo componentes React. Propongo <strong>documentación clara y ejemplos HTML</strong> que cualquiera pueda seguir.</p>
+    </div>
+
+    <div class="card">
+      <h4>🔄 Retrocompatible</h4>
+      <p>Las mejoras no rompen nada existente. El manual actual sigue válido. Los cambios son <strong>aditivos</strong>.</p>
+    </div>
+
+    <div class="card">
+      <h4>🛠️ Portátil</h4>
+      <p>Tokens JSON = exportable a Figma, Tailwind, CSS, StyledComponents. <strong>No vendor lock-in</strong>.</p>
+    </div>
+
+    <div class="card">
+      <h4>♿ Accesible desde el inicio</h4>
+      <p>WCAG 2.1 AA es parte de la especificación, no un agregado. <strong>Sin sacrificio visual</strong>.</p>
+    </div>
+
+    <div class="card">
+      <h4>🚀 Escalable</h4>
+      <p>De 5 páginas del manual → 20 páginas de referencia. Del MVP Help Desk → SaaS completo.</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       CONCLUSION
+       ============================================ -->
+
+  <h2>Conclusión</h2>
+
+  <p class="lead">DeskWork es un sistema elegante y minimalista. Estas 8 mejoras amplían su capacidad sin sacrificar lo que lo hace especial: <strong>simplicidad, coherencia visual y facilidad de uso</strong>.</p>
+
+  <div class="section highlight">
+    <h3>Próximos pasos recomendados</h3>
+    <ol>
+      <li><strong>Validar con el equipo</strong> — ¿Cuáles mejoras son prioritarias?</li>
+      <li><strong>Crear tokens.json</strong> — Extraer datos del HTML actual</li>
+      <li><strong>Documentar accesibilidad</strong> — Página nueva en el manual</li>
+      <li><strong>Agregar componentes faltantes</strong> — Formularios, validación, loading</li>
+      <li><strong>Crear guía de implementación frontend</strong> — Para desarrolladores que usen DeskWork</li>
+      <li><strong>Iterar basado en feedback real</strong> — Probar con Help Desk MVP</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    <p><strong>DeskWork Design System v2.0</strong> — Propuesta de Mejora</p>
+    <p style="margin-top: 8px; font-size: 11px;">Mantenemos la marca simple. La simplicidad es la mejor expresión de la sofisticación.</p>
+  </div>
+
+</div>
+
+</body>
+</html>

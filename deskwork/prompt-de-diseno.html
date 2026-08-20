@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeskWork — Prompt de diseño (design brief)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-elev: #ffffff;
+    --ink: #14171e;
+    --ink-2: #3a4256;
+    --muted: #7c7a72;
+    --line: #e9e3d6;
+    --line-soft: #f0ebde;
+    --primary: #0d4f4a;
+    --primary-soft: #d9eae7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 60px 48px 80px;
+  }
+  header {
+    background: linear-gradient(180deg, #0a3d39 0%, #0d4f4a 100%);
+    color: white;
+    margin: -60px -48px 56px;
+    padding: 80px 48px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+  }
+  header > * { position: relative; }
+  header h1 {
+    font-size: 40px; font-weight: 700; line-height: 1.1; letter-spacing: -0.025em;
+    color: white; max-width: 640px;
+  }
+  header h1 .accent { color: #6ee7df; }
+  header p {
+    color: rgba(255,255,255,0.75); font-size: 17px;
+    line-height: 1.5; max-width: 600px; margin-top: 14px; font-weight: 300;
+  }
+  header .meta {
+    margin-top: 32px; padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    display: flex; gap: 32px; flex-wrap: wrap; font-size: 12px;
+  }
+  header .meta-block { display: flex; flex-direction: column; gap: 2px; }
+  header .meta-label { color: rgba(255,255,255,0.5); letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+  header .meta-value { color: white; font-weight: 500; }
+
+  h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.015em; margin-bottom: 8px; margin-top: 48px; }
+  h2:first-of-type { margin-top: 0; }
+  h3 { font-size: 16px; font-weight: 600; margin-top: 24px; margin-bottom: 6px; color: var(--ink); }
+  p, li { color: var(--ink-2); font-size: 14px; }
+  .lead { font-size: 16px; line-height: 1.55; max-width: 680px; margin-bottom: 20px; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 10px;
+  }
+  .eyebrow::before { content: ""; width: 20px; height: 1px; background: var(--primary); }
+
+  ul, ol { padding-left: 20px; margin: 6px 0 14px; }
+  ul li, ol li { margin-bottom: 4px; }
+
+  .prompt-block {
+    background: var(--ink);
+    color: #d4e0e0;
+    border-radius: 14px;
+    padding: 28px;
+    margin: 20px 0 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #2a2f3a;
+    box-shadow: 0 12px 32px -4px rgba(0,0,0,0.15);
+    position: relative;
+  }
+  .prompt-block::before {
+    content: "PROMPT · copiar desde aquí";
+    position: absolute;
+    top: -10px; left: 20px;
+    background: var(--primary);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.85);
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.12); }
+  .copy-btn.copied { background: var(--low); border-color: var(--low); }
+
+  .note {
+    background: var(--primary-soft);
+    border-left: 3px solid var(--primary);
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 14px 0;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .note strong { color: var(--ink); }
+
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 14px 0;
+  }
+  .card h3 { margin-top: 0; }
+
+  .swatch-row {
+    display: flex; flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 14px;
+  }
+  .swatch-mini {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 10px 6px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .swatch-mini .dot {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .swatch-mini .name { color: var(--ink); font-family: 'Outfit'; font-size: 12px; font-weight: 500; }
+
+  .var-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin: 10px 0;
+  }
+  .var { background: var(--bg-elev); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: 12px; }
+  .var-label { color: var(--muted); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; font-weight: 500; }
+  .var-value { color: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
+
+  .toc {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 24px 0 40px;
+  }
+  .toc ol { margin: 0; padding-left: 22px; }
+  .toc li { font-size: 13px; margin-bottom: 4px; }
+  .toc li strong { color: var(--ink); font-weight: 500; }
+  .toc li a { color: var(--ink-2); text-decoration: none; }
+  .toc li a:hover { color: var(--primary); }
+
+  @media (max-width: 800px) {
+    .page { padding: 40px 24px 60px; }
+    header { margin: -40px -24px 40px; padding: 60px 24px 40px; }
+    header h1 { font-size: 28px; }
+    .var-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<header>
+  <div class="eyebrow" style="color: #6ee7df;">Design brief</div>
+  <h1>Prompt de diseño <span class="accent">DeskWork</span></h1>
+  <p>El brief reproducible. Copia y pega este prompt en cualquier herramienta de IA con capacidad de generar HTML, mockups, presentaciones o interfaces, y obtén resultados coherentes con la identidad de marca de DeskWork.</p>
+  <div class="meta">
+    <div class="meta-block">
+      <span class="meta-label">Producto</span>
+      <span class="meta-value">DeskWork · SaaS B2B</span>
+    </div>
+    <div class="meta-block">
+      <span class="meta-label">Versión</span>
+      <span class="meta-value">Brief 1.0 · 2026</span>
+    </div>
+    <div class="meta-block">
+      <span class="meta-label">Caso piloto</span>
+      <span class="meta-value">Fundación TECHO-Chile</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <strong style="font-size: 13px; color: var(--ink); display: block; margin-bottom: 10px;">Contenido</strong>
+  <ol>
+    <li><a href="#prompt-principal"><strong>Prompt principal</strong> — el bloque copy-paste</a></li>
+    <li><a href="#parametros">Parámetros extraídos del sistema</a></li>
+    <li><a href="#variantes"><strong>Variantes</strong> del prompt según entregable</a></li>
+    <li><a href="#anti-patrones">Anti-patrones · lo que el prompt prohíbe</a></li>
+  </ol>
+</nav>
+
+<!-- 1 · PROMPT PRINCIPAL -->
+<section id="prompt-principal">
+  <div class="eyebrow">01</div>
+  <h2>El prompt · listo para copiar</h2>
+  <p class="lead">Usa este bloque tal cual en una herramienta de IA que genere HTML, presentaciones o interfaces. Está diseñado para producir una página coherente con la marca DeskWork sin instrucciones adicionales.</p>
+
+  <div class="prompt-block" id="promptContent">Diseña una página web en HTML + CSS (un solo archivo, self-contained, sin frameworks externos salvo Google Fonts) para <strong>DeskWork</strong>, una plataforma SaaS B2B de gestión inteligente de soporte interno.
+
+<strong>Contexto del producto</strong>
+- DeskWork centraliza solicitudes, las prioriza automáticamente, mide tiempos y ayuda a las áreas internas a mejorar continuamente.
+- Caso piloto: Fundación TECHO-Chile (185 trabajadores, 11 regiones, una sola persona gestionando TI).
+- 5 niveles de usuario: 0=Soporte TI, 1=Director, 2=Jefatura, 3=Administrativo, 4=Voluntario.
+- Estados de ticket: ABIERTO, EN PROCESO, ESPERANDO USUARIO, ESCALADO, RESUELTO, CERRADO.
+- Prioridad calculada por el sistema (no por el usuario): P1/P2/P3/P4.
+
+<strong>Identidad visual</strong>
+- Color principal: #0d4f4a (DeskWork teal). Versión oscura: #0a3d39. Acento suave: #d9eae7. Acento vivo: #6ee7df.
+- Fondo principal: #fafaf7 (off-white cálido). Superficies: #ffffff. Bordes: #e9e3d6. Texto principal: #14171e. Texto secundario: #3a4256. Muted: #7c7a72.
+- Colores funcionales: crítico #b3331f, alto #c2410c, normal #a16207, bajo/resuelto #047857, info #1d4ed8. Cada uno con fondo pastel (mezcla 90% blanco + 10% color).
+- Tipografía: Outfit (sans, pesos 300-700) para todo el texto. JetBrains Mono para IDs, timers, datos numéricos y código.
+- Carga las fuentes desde Google Fonts.
+
+<strong>Reglas de diseño</strong>
+- Estética sobria, institucional, moderna. Nada futurista ni "AI-looking". Cero gradientes azul-morado.
+- Mucho espacio en blanco. max-width: 1200px para el contenido principal, padding generoso.
+- Cards con borde 1px sólido (var --line), radio 12-16px, sin sombras pesadas.
+- Sombras solo si elevan un componente: sm 0 1px 2px, md 0 4px 16px -2px, lg 0 12px 32px -4px.
+- Iconografía: Lucide (SVG inline, stroke 2, viewBox 24x24, currentColor). NUNCA emojis como iconos.
+- Diagramas con SVG inline o CSS grid. NUNCA ASCII art con caracteres de caja.
+- Estados con pills (chip pequeño con dot de color y texto), nunca con banners.
+- Botones primarios: fondo #0d4f4a, texto blanco, radio 10px, padding 12px 20px.
+- Botones secundarios: fondo blanco, borde #e9e3d6, texto #3a4256.
+- KPIs: número grande en JetBrains Mono, label pequeño en uppercase tracked (0.08em), sub en muted.
+- Gráficos de barras: barras horizontales con track #f0ebde, fill #0d4f4a, valor a la derecha en mono.
+- Tablas: header con fondo tenue, filas con borde inferior #e9e3d6, fuente sans 12-13px.
+- Mockups: topbar con tres dots estilo browser, URL en mono, opcional sidebar oscuro.
+- Animaciones: solo fade-in al entrar viewport, nunca parallax ni efectos llamativos.
+
+<strong>Jerarquía tipográfica</strong>
+- H1: 40-56px, peso 700, line-height 1.05, letter-spacing -0.025em.
+- H2: 28-36px, peso 600, line-height 1.1, letter-spacing -0.02em.
+- H3: 18-22px, peso 600.
+- Body: 14-16px, peso 400, line-height 1.55-1.6.
+- Eyebrow / microtexto: 11px, peso 500, letter-spacing 0.12em, uppercase, color #7c7a72.
+
+<strong>Lo que NUNCA debes hacer</strong>
+- Gradientes azul-morado, neón, sombras de glow.
+- Emojis como iconos.
+- ASCII art (┌─┐ │ ├─) para diagramas.
+- Tres tarjetas idénticas lado a lado.
+- border-l-4 (la barra lateral de color) como estilo principal.
+- h-screen en cada sección (rompe el scroll natural).
+- Arial, Roboto, Inter, Fraunces, fuentes del sistema.
+- Texto marketing: "seamless", "elevate", "transform", "empower", "next-gen".
+- Fotografías de personas genéricas con notebooks.
+
+<strong>Estructura esperada</strong>
+- Header sticky con logo + breadcrumb.
+- Barra de progreso superior (1-2px) que avanza con el scroll.
+- Secciones a pantalla completa (min-height: 100vh, no height).
+- Navegación interna o numerada.
+- Cierre con CTA y créditos.
+- Responsive: mobile < 768px, tablet 768-1024, desktop > 1024.</div>
+  <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+    <span id="copyLabel">Copiar prompt</span>
+  </button>
+</div>
+
+  <div class="note">
+    <strong>Cómo usar este prompt.</strong> Pégalo íntegro en una herramienta como Mavis, Claude, ChatGPT, v0, o cualquier generador de UI. Si necesitas algo más específico (por ejemplo "una página solo de pricing" o "un mockup de móvil"), añádelo como instrucción extra al final. El prompt base ya contiene todas las reglas de marca.
+  </div>
+</section>
+
+<hr>
+
+<!-- 2 · PARÁMETROS EXTRAÍDOS -->
+<section id="parametros">
+  <div class="eyebrow">02</div>
+  <h2>Parámetros extraídos del sistema</h2>
+  <p class="lead">Estos son los valores exactos que usa DeskWork. Compártelos con cualquier diseñador o desarrollador y obtendrá un resultado coherente sin necesidad del prompt completo.</p>
+
+  <h3>Colorimetría</h3>
+  <div class="swatch-row">
+    <div class="swatch-mini"><div class="dot" style="background: #0d4f4a;"></div><span class="name">Primary</span><span>#0d4f4a</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #0a3d39;"></div><span class="name">Primary 800</span><span>#0a3d39</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #d9eae7;"></div><span class="name">Soft teal</span><span>#d9eae7</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #6ee7df;"></div><span class="name">Accent</span><span>#6ee7df</span></div>
+  </div>
+  <div class="swatch-row">
+    <div class="swatch-mini"><div class="dot" style="background: #fafaf7; border-color: #e9e3d6;"></div><span class="name">Canvas</span><span>#fafaf7</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #ffffff; border-color: #e9e3d6;"></div><span class="name">Surface</span><span>#ffffff</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #e9e3d6;"></div><span class="name">Line</span><span>#e9e3d6</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #14171e;"></div><span class="name">Ink</span><span>#14171e</span></div>
+  </div>
+  <div class="swatch-row">
+    <div class="swatch-mini"><div class="dot" style="background: #b3331f;"></div><span class="name">Critical</span><span>#b3331f</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #c2410c;"></div><span class="name">High</span><span>#c2410c</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #a16207;"></div><span class="name">Normal</span><span>#a16207</span></div>
+    <div class="swatch-mini"><div class="dot" style="background: #047857;"></div><span class="name">Low / OK</span><span>#047857</span></div>
+  </div>
+
+  <h3>Tipografía</h3>
+  <div class="var-grid">
+    <div class="var">
+      <div class="var-label">Sans principal</div>
+      <div class="var-value">Outfit · 300, 400, 500, 600, 700</div>
+    </div>
+    <div class="var">
+      <div class="var-label">Mono · datos</div>
+      <div class="var-value">JetBrains Mono · 400, 500, 600</div>
+    </div>
+    <div class="var">
+      <div class="var-label">H1</div>
+      <div class="var-value">40-56px · 700 · -0.025em</div>
+    </div>
+    <div class="var">
+      <div class="var-label">H2</div>
+      <div class="var-value">28-36px · 600 · -0.02em</div>
+    </div>
+    <div class="var">
+      <div class="var-label">H3</div>
+      <div class="var-value">18-22px · 600</div>
+    </div>
+    <div class="var">
+      <div class="var-label">Body</div>
+      <div class="var-value">14-16px · 400 · 1.55-1.6</div>
+    </div>
+    <div class="var">
+      <div class="var-label">Eyebrow</div>
+      <div class="var-value">11px · 500 · 0.12em · uppercase · muted</div>
+    </div>
+    <div class="var">
+      <div class="var-label">Mono · datos numéricos</div>
+      <div class="var-value">JetBrains Mono · 500 · 14-18px</div>
+    </div>
+  </div>
+
+  <h3>Espaciado, radios y sombras</h3>
+  <div class="var-grid">
+    <div class="var"><div class="var-label">Escala</div><div class="var-value">4 · 8 · 16 · 24 · 32 · 48 · 80 px</div></div>
+    <div class="var"><div class="var-label">Radio botones</div><div class="var-value">10 px</div></div>
+    <div class="var"><div class="var-label">Radio cards</div><div class="var-value">12-16 px</div></div>
+    <div class="var"><div class="var-label">Radio pills</div><div class="var-value">999 px (full)</div></div>
+    <div class="var"><div class="var-label">Sombra sm</div><div class="var-value">0 1px 2px rgba(20,23,30,.04)</div></div>
+    <div class="var"><div class="var-label">Sombra md</div><div class="var-value">0 4px 16px -2px rgba(20,23,30,.06)</div></div>
+    <div class="var"><div class="var-label">Sombra lg</div><div class="var-value">0 12px 32px -4px rgba(20,23,30,.08)</div></div>
+  </div>
+</section>
+
+<hr>
+
+<!-- 3 · VARIANTES -->
+<section id="variantes">
+  <div class="eyebrow">03</div>
+  <h2>Variantes del prompt según entregable</h2>
+  <p>El prompt principal es genérico. Estas son instrucciones extra para casos específicos.</p>
+
+  <h3>Para una página web / dossier</h3>
+  <div class="card">
+    <p style="font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--ink-2);">"Genera una página de presentación scrolleable, con secciones numeradas. Cada sección ocupa al menos una pantalla (min-height: 100vh). Usa sticky nav superior y barra de progreso de scroll. Cierra con un CTA y un bloque de créditos."</p>
+  </div>
+
+  <h3>Para un mockup de interfaz</h3>
+  <div class="card">
+    <p style="font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--ink-2);">"Genera el mockup visual de un producto SaaS dentro de un marco tipo navegador: topbar con 3 dots + URL monoespaciada + avatar de usuario. El mockup debe distinguir entre vista técnica (sidebar oscuro, fondo #14171e) y vista de usuario (sidebar claro o ausente, fondo blanco)."</p>
+  </div>
+
+  <h3>Para una presentación para imprimir / PDF</h3>
+  <div class="card">
+    <p style="font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--ink-2);">"Genera una página optimizada para impresión: max-width 980px, sin animaciones de scroll, sin sticky nav, sin position fixed. Cada sección debe caber limpia en una página A4 vertical. El contraste debe ser alto para lectura en papel."</p>
+  </div>
+
+  <h3>Para un dashboard de datos</h3>
+  <div class="card">
+    <p style="font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--ink-2);">"Genera un dashboard con: header de KPIs (4-5 métricas grandes con label y delta), gráfico principal (Chart.js con gridlines tenues rgba(0,0,0,0.04) y tipografía Outfit), tabla de detalle, y sección lateral con listas o breakdowns. No usar más de 2 colores de acento en todo el dashboard."</p>
+  </div>
+
+  <h3>Para una ficha de marketing one-pager</h3>
+  <div class="card">
+    <p style="font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--ink-2);">"Genera una página de una sola pantalla (sin scroll) que comunique la propuesta de valor en menos de 10 segundos de lectura: titular grande, sub-beneficio, 3 bloques con icono + título + descripción, y un CTA final. Densidad alta pero no saturada."</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- 4 · ANTI-PATRONES -->
+<section id="anti-patrones">
+  <div class="eyebrow">04</div>
+  <h2>Anti-patrones · lo que DeskWork prohíbe</h2>
+  <p>Si una IA o un diseñador te entrega algo con estas características, no es DeskWork. Hay que rehacerlo.</p>
+
+  <div class="card">
+    <h3>Visuales prohibidos</h3>
+    <ul>
+      <li>Gradientes de azul a púrpura estilo "AI startup genérica".</li>
+      <li>Sombras de glow neón o efectos de blur exagerados.</li>
+      <li>Emojis (📊 ✅ 🚀 ⚡) usados como iconografía principal.</li>
+      <li>ASCII art con caracteres de caja (┌─┐ │ ├─) para diagramas.</li>
+      <li>Tres tarjetas idénticas lado a lado (3-equal-cards).</li>
+      <li>Barra lateral de color (border-l-4) como estilo principal de tarjetas.</li>
+      <li>Cada sección a pantalla completa forzada con h-screen.</li>
+      <li>Fotografías de personas genéricas con notebooks en la cabeza.</li>
+      <li>Fondos blancos puros #ffffff en áreas grandes (usar #fafaf7).</li>
+      <li>Exceso de iconos decorativos sin función.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Tipográficas prohibidas</h3>
+    <ul>
+      <li>Inter, Roboto, Arial, Fraunces, fuentes del sistema, sans-serif genérico.</li>
+      <li>Centrar todo el texto en hero (mejor left-aligned con max-width).</li>
+      <li>Encabezados en mayúscula sostenida (UPPERCASE largo en H1/H2).</li>
+      <li>Tracking abierto en cuerpo (solo en eyebrow / microtexto).</li>
+      <li>Justificar texto en párrafos.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>De copywriting prohibidas</h3>
+    <ul>
+      <li>"Seamless", "elevate", "transform", "empower", "next-gen", "cutting-edge".</li>
+      <li>"Potenciado por IA" como claim principal (la IA llega después).</li>
+      <li>Adjetivos sin dato: "increíble", "revolucionario", "único".</li>
+      <li>Estadísticas de relleno ("+500% de crecimiento" sin contexto).</li>
+      <li>Promesas que DeskWork no puede cumplir como MVP.</li>
+    </ul>
+  </div>
+</section>
+
+<hr>
+
+<div style="text-align: center; padding: 32px 0 0; color: var(--muted); font-size: 12px;">
+  <p>DeskWork · Design brief v1.0 · 2026</p>
+  <p style="margin-top: 6px;">Mantén la marca simple. La simplicidad es la mejor expresión de la sofisticación.</p>
+</div>
+
+</div>
+
+<script>
+function copyPrompt() {
+  const content = document.getElementById('promptContent').textContent;
+  const btn = document.getElementById('copyBtn');
+  const label = document.getElementById('copyLabel');
+  navigator.clipboard.writeText(content).then(() => {
+    btn.classList.add('copied');
+    label.textContent = 'Copiado';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      label.textContent = 'Copiar prompt';
+    }, 2000);
+  }).catch(() => {
+    // Fallback for non-secure contexts
+    const ta = document.createElement('textarea');
+    ta.value = content;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.classList.add('copied');
+    label.textContent = 'Copiado';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      label.textContent = 'Copiar prompt';
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskWork v2.0 — Especificaciones Técnicas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafaf7;
+      --bg-elev: #ffffff;
+      --ink: #14171e;
+      --ink-2: #3a4256;
+      --muted: #7c7a72;
+      --line: #e9e3d6;
+      --primary: #0d4f4a;
+      --accent: #6ee7df;
+      --success: #059669;
+      --error: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 60px 48px;
+    }
+
+    header {
+      background: linear-gradient(180deg, #0a3d39 0%, var(--primary) 100%);
+      color: white;
+      margin: -60px -48px 56px;
+      padding: 80px 48px 56px;
+    }
+
+    header h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+    header p { opacity: 0.9; font-size: 14px; }
+
+    h2 { font-size: 28px; font-weight: 600; margin: 48px 0 20px; }
+    h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; color: var(--primary); }
+    h4 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
+
+    .section {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 24px 0;
+    }
+
+    .code-block {
+      background: var(--ink);
+      color: #d4e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 12px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    pre { margin: 0; }
+
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    .spec-table th, .spec-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .spec-table th {
+      background: var(--bg);
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .spec-table code {
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-2);
+    }
+
+    .preview {
+      background: var(--bg);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 12px 0;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .note {
+      background: #f0fdf4;
+      border-left: 3px solid var(--success);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin: 12px 0;
+    }
+
+    .note code {
+      background: white;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .warning {
+      background: #fef3c7;
+      border-left: 3px solid #d97706;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin: 12px 0;
+    }
+
+    ul, ol { padding-left: 20px; margin: 12px 0; }
+    li { margin-bottom: 6px; }
+
+    table + h4 { margin-top: 24px; }
+
+    .file-tree {
+      background: var(--ink);
+      color: #d4e0e0;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 12px 0;
+    }
+
+    .indent { padding-left: 20px; }
+    .file-tree code { color: var(--accent); }
+
+    hr { border: none; border-top: 1px solid var(--line); margin: 40px 0; }
+
+    @media (max-width: 768px) {
+      .page { padding: 40px 24px; }
+      header { margin: -40px -24px 40px; padding: 60px 24px; }
+      h2 { font-size: 24px; }
+      .spec-table { font-size: 12px; }
+      .spec-table th, .spec-table td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <h1>DeskWork v2.0 — Especificaciones Técnicas</h1>
+    <p>Detalles de implementación para cada mejora del sistema</p>
+  </header>
+
+  <!-- ============================================
+       TOKENS.JSON ESTRUCTURA
+       ============================================ -->
+
+  <h2>Estructura Completa de Tokens</h2>
+
+  <div class="section">
+    <h3>Archivo: design-tokens.json</h3>
+    <p>Archivo único que es la fuente de verdad para todos los valores de diseño.</p>
+
+    <h4>Ubicación recomendada</h4>
+    <div class="file-tree">
+project/<br>
+<span class="indent">├── tokens/</span><br>
+<span class="indent">│   ├── <code>design-tokens.json</code>  ← Fuente única<br>
+<span class="indent">│   └── <code>tokens.config.js</code>  ← Script de transformación<br>
+<span class="indent">├── docs/</span><br>
+<span class="indent">│   └── <code>tokens-generated.md</code>  ← Docs auto-generadas<br>
+<span class="indent">├── figma/</span><br>
+<span class="indent">│   └── <code>.figmatokens</code>  ← Sync con plugin Figma<br>
+<span class="indent">└── src/</span><br>
+<span class="indent">    ├── <code>variables.css</code>  ← Generado desde tokens<br>
+<span class="indent">    └── <code>tailwind.config.js</code>  ← Generado desde tokens
+    </div>
+
+    <h4>Estructura JSON completa</h4>
+    <div class="code-block"><pre>{
+  "$schema": "https://schemas.designtokens.org/draft/config.schema.json",
+  "version": "2.0",
+  "name": "DeskWork",
+  
+  "color": {
+    "palette": {
+      "primary": {
+        "50": {"$value": "#f0f7f5", "$type": "color", "$description": "Lightest teal"},
+        "100": {"$value": "#d9eae7", "$type": "color"},
+        "500": {"$value": "#0d4f4a", "$type": "color", "$description": "Brand primary"},
+        "600": {"$value": "#0a3d39", "$type": "color", "$description": "Darker teal"},
+        "900": {"$value": "#051f1c", "$type": "color"}
+      },
+      "accent": {
+        "500": {"$value": "#6ee7df", "$type": "color", "$description": "Bright accent"}
+      },
+      "functional": {
+        "critical": {"$value": "#b3331f", "$type": "color"},
+        "high": {"$value": "#c2410c", "$type": "color"},
+        "normal": {"$value": "#a16207", "$type": "color"},
+        "low": {"$value": "#047857", "$type": "color"}
+      },
+      "semantic": {
+        "success": {"$value": "#059669", "$type": "color"},
+        "warning": {"$value": "#d97706", "$type": "color"},
+        "info": {"$value": "#1d4ed8", "$type": "color"},
+        "error": {"$value": "#dc2626", "$type": "color"}
+      }
+    },
+    "neutral": {
+      "bg": {"$value": "#fafaf7", "$type": "color", "$description": "Canvas"},
+      "surface": {"$value": "#ffffff", "$type": "color"},
+      "line": {"$value": "#e9e3d6", "$type": "color"},
+      "ink": {"$value": "#14171e", "$type": "color"},
+      "ink-2": {"$value": "#3a4256", "$type": "color"},
+      "muted": {"$value": "#7c7a72", "$type": "color"}
+    }
+  },
+
+  "space": {
+    "xs": {"$value": "4px", "$type": "spacing"},
+    "sm": {"$value": "8px", "$type": "spacing"},
+    "md": {"$value": "16px", "$type": "spacing"},
+    "lg": {"$value": "24px", "$type": "spacing"},
+    "xl": {"$value": "32px", "$type": "spacing"},
+    "2xl": {"$value": "48px", "$type": "spacing"},
+    "3xl": {"$value": "80px", "$type": "spacing"}
+  },
+
+  "radius": {
+    "sm": {"$value": "6px", "$type": "borderRadius"},
+    "md": {"$value": "10px", "$type": "borderRadius"},
+    "lg": {"$value": "12px", "$type": "borderRadius"},
+    "xl": {"$value": "16px", "$type": "borderRadius"},
+    "full": {"$value": "999px", "$type": "borderRadius"}
+  },
+
+  "typography": {
+    "fontFamily": {
+      "sans": {"$value": "'Outfit', system-ui, sans-serif", "$type": "fontFamily"},
+      "mono": {"$value": "'JetBrains Mono', monospace", "$type": "fontFamily"}
+    },
+    "fontSize": {
+      "xs": {"$value": "11px", "$type": "fontSize"},
+      "sm": {"$value": "13px", "$type": "fontSize"},
+      "base": {"$value": "15px", "$type": "fontSize"},
+      "lg": {"$value": "17px", "$type": "fontSize"},
+      "xl": {"$value": "20px", "$type": "fontSize"},
+      "2xl": {"$value": "28px", "$type": "fontSize"},
+      "3xl": {"$value": "36px", "$type": "fontSize"},
+      "4xl": {"$value": "40px", "$type": "fontSize"}
+    },
+    "fontWeight": {
+      "light": {"$value": "300", "$type": "fontWeight"},
+      "normal": {"$value": "400", "$type": "fontWeight"},
+      "medium": {"$value": "500", "$type": "fontWeight"},
+      "semibold": {"$value": "600", "$type": "fontWeight"},
+      "bold": {"$value": "700", "$type": "fontWeight"}
+    },
+    "lineHeight": {
+      "tight": {"$value": "1.2", "$type": "lineHeight"},
+      "normal": {"$value": "1.55", "$type": "lineHeight"},
+      "relaxed": {"$value": "1.65", "$type": "lineHeight"}
+    }
+  },
+
+  "shadow": {
+    "sm": {"$value": "0 1px 2px rgba(20, 23, 30, 0.04)", "$type": "shadow"},
+    "md": {"$value": "0 4px 16px -2px rgba(20, 23, 30, 0.06)", "$type": "shadow"},
+    "lg": {"$value": "0 12px 32px -4px rgba(20, 23, 30, 0.08)", "$type": "shadow"}
+  }
+}
+</pre></div>
+
+    <h4>Cómo usar</h4>
+    <ol>
+      <li>Guardar como <code>design-tokens.json</code></li>
+      <li>Crear script NodeJS que transforma a CSS variables, Tailwind config, etc.</li>
+      <li>Sincronizar con Figma usando plugin "Tokens Studio"</li>
+      <li>Versionear en Git para auditoría de cambios</li>
+    </ol>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       CSS VARIABLES OUTPUT
+       ============================================ -->
+
+  <h2>Salida CSS: Variables Documentadas</h2>
+
+  <div class="section">
+    <p>Este archivo se <strong>genera automáticamente</strong> desde tokens.json usando un script.</p>
+
+    <h4>Archivo: variables.css (auto-generado)</h4>
+    <div class="code-block"><pre>/* Auto-generated from design-tokens.json */
+
+:root {
+  /* Colors - Palette Primary */
+  --color-primary-50: #f0f7f5;
+  --color-primary-100: #d9eae7;
+  --color-primary-500: #0d4f4a;
+  --color-primary-600: #0a3d39;
+  --color-primary-900: #051f1c;
+  
+  /* Colors - Semantic */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-info: #1d4ed8;
+  --color-error: #dc2626;
+  
+  /* Colors - Neutral */
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-line: #e9e3d6;
+  --color-ink: #14171e;
+  --color-ink-2: #3a4256;
+  --color-muted: #7c7a72;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 80px;
+  
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+  
+  /* Typography */
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --size-xs: 11px;
+  --size-sm: 13px;
+  --size-base: 15px;
+  --size-lg: 17px;
+  --size-xl: 20px;
+  --size-2xl: 28px;
+  --size-3xl: 36px;
+  --size-4xl: 40px;
+  
+  --leading-tight: 1.2;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.65;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(20, 23, 30, 0.04);
+  --shadow-md: 0 4px 16px -2px rgba(20, 23, 30, 0.06);
+  --shadow-lg: 0 12px 32px -4px rgba(20, 23, 30, 0.08);
+  
+  /* Composite Tokens (derived) */
+  --btn-padding: var(--space-sm) var(--space-md);
+  --card-padding: var(--space-lg);
+  --heading-1: 700 var(--size-4xl) / var(--leading-tight) var(--font-sans);
+  --heading-2: 600 var(--size-3xl) / var(--leading-tight) var(--font-sans);
+  --body: 400 var(--size-base) / var(--leading-normal) var(--font-sans);
+}
+
+/* Dark Mode (if needed) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1a1d24;
+    --color-surface: #232730;
+    --color-ink: #ffffff;
+    --color-ink-2: #d4e0e0;
+  }
+}
+</pre></div>
+
+    <div class="note">
+      <strong>Ventaja:</strong> Un cambio en design-tokens.json se propaga a CSS, Tailwind y Figma automáticamente. Sin duplicación de valores.
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       COMPONENTES ESPECIFICADOS
+       ============================================ -->
+
+  <h2>Especificación de Componentes Nuevos</h2>
+
+  <div class="section">
+    <h3>Componente: Input Text</h3>
+
+    <table class="spec-table">
+      <tr>
+        <th>Propiedad</th>
+        <th>Valor</th>
+        <th>Token</th>
+      </tr>
+      <tr>
+        <td>Font size</td>
+        <td>15px</td>
+        <td><code>--size-base</code></td>
+      </tr>
+      <tr>
+        <td>Padding</td>
+        <td>10px 12px</td>
+        <td><code>--space-sm --space-md</code></td>
+      </tr>
+      <tr>
+        <td>Border radius</td>
+        <td>10px</td>
+        <td><code>--radius-md</code></td>
+      </tr>
+      <tr>
+        <td>Background (default)</td>
+        <td>#ffffff</td>
+        <td><code>--color-surface</code></td>
+      </tr>
+      <tr>
+        <td>Border (default)</td>
+        <td>1px solid #e9e3d6</td>
+        <td><code>--color-line</code></td>
+      </tr>
+      <tr>
+        <td>Focus outline</td>
+        <td>2px solid #0d4f4a</td>
+        <td><code>--color-primary-500</code></td>
+      </tr>
+      <tr>
+        <td>Error border</td>
+        <td>1px solid #dc2626</td>
+        <td><code>--color-error</code></td>
+      </tr>
+    </table>
+
+    <h4>HTML & CSS</h4>
+    <div class="code-block"><pre>/* HTML */
+&lt;div class="form-group"&gt;
+  &lt;label for="email"&gt;Email&lt;/label&gt;
+  &lt;input 
+    type="email"
+    id="email"
+    class="input"
+    placeholder="tu@email.com"
+    aria-describedby="email-hint"
+  /&gt;
+  &lt;small id="email-hint"&gt;Usaremos esto para contactarte&lt;/small&gt;
+&lt;/div&gt;
+
+/* CSS */
+.input {
+  font: var(--body);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  width: 100%;
+  transition: all 200ms ease;
+}
+
+.input:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--color-error);
+  background: #fff5f5;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.form-group label {
+  font: var(--size-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+}</pre></div>
+  </div>
+
+  <div class="section">
+    <h3>Componente: Button (todos los states)</h3>
+
+    <table class="spec-table">
+      <tr>
+        <th>Estado</th>
+        <th>Background</th>
+        <th>Color texto</th>
+        <th>Otros</th>
+      </tr>
+      <tr>
+        <td><strong>Default</strong></td>
+        <td><code>--primary-500</code></td>
+        <td>white</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Hover</strong></td>
+        <td><code>--primary-600</code></td>
+        <td>white</td>
+        <td><code>shadow-md</code></td>
+      </tr>
+      <tr>
+        <td><strong>Active</strong></td>
+        <td><code>--primary-600</code></td>
+        <td>white</td>
+        <td>transform: scale(0.98)</td>
+      </tr>
+      <tr>
+        <td><strong>Focus</strong></td>
+        <td>—</td>
+        <td>—</td>
+        <td>outline: 2px #primary offset: 2px</td>
+      </tr>
+      <tr>
+        <td><strong>Disabled</strong></td>
+        <td><code>--primary-500</code></td>
+        <td>white</td>
+        <td>opacity: 0.5, cursor: not-allowed</td>
+      </tr>
+    </table>
+
+    <h4>HTML & CSS</h4>
+    <div class="code-block"><pre>/* HTML */
+&lt;button class="btn btn-primary"&gt;
+  Crear ticket
+&lt;/button&gt;
+
+&lt;button class="btn btn-primary" disabled&gt;
+  Procesando...
+&lt;/button&gt;
+
+/* CSS */
+.btn {
+  padding: var(--btn-padding);
+  border: none;
+  border-radius: var(--radius-md);
+  font: var(--size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.btn-primary {
+  background: var(--color-primary-500);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-600);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ghost variant */
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink-2);
+  border: 1px solid var(--color-line);
+}
+
+.btn-ghost:hover {
+  background: var(--color-bg);
+  border-color: var(--color-primary-500);
+}</pre></div>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       SYSTEM ICONS
+       ============================================ -->
+
+  <h2>Sistema de Iconografía</h2>
+
+  <div class="section">
+    <h3>Especificación de iconos</h3>
+    <ul>
+      <li><strong>Tamaño base:</strong> 24x24px</li>
+      <li><strong>Stroke weight:</strong> 2px</li>
+      <li><strong>Line cap:</strong> round</li>
+      <li><strong>Color:</strong> <code>currentColor</code> (hereda del texto)</li>
+    </ul>
+
+    <table class="spec-table">
+      <tr>
+        <th>Icono</th>
+        <th>SVG ID</th>
+        <th>Clase</th>
+        <th>Uso</th>
+      </tr>
+      <tr>
+        <td>Check Circle</td>
+        <td><code>icon-check-circle</code></td>
+        <td><code>.icon-sm</code></td>
+        <td>Validación exitosa</td>
+      </tr>
+      <tr>
+        <td>Alert Circle</td>
+        <td><code>icon-alert-circle</code></td>
+        <td><code>.icon-sm</code></td>
+        <td>Validación error</td>
+      </tr>
+      <tr>
+        <td>Clock</td>
+        <td><code>icon-clock</code></td>
+        <td><code>.icon-sm</code></td>
+        <td>Tiempo, procesando</td>
+      </tr>
+      <tr>
+        <td>Ticket</td>
+        <td><code>icon-ticket</code></td>
+        <td><code>.icon-sm</code></td>
+        <td>Help Desk tickets</td>
+      </tr>
+    </table>
+
+    <h4>Implementación: Sprite SVG inline</h4>
+    <div class="code-block"><pre>&lt;svg style="display: none;"&gt;
+  &lt;defs&gt;
+    &lt;symbol id="icon-check-circle" viewBox="0 0 24 24"&gt;
+      &lt;circle cx="12" cy="12" r="10" 
+        fill="none" stroke="currentColor" 
+        stroke-width="2" stroke-linecap="round"/&gt;
+      &lt;path d="M 8 12 L 11 15 L 16 9" 
+        fill="none" stroke="currentColor" 
+        stroke-width="2" stroke-linecap="round"/&gt;
+    &lt;/symbol&gt;
+    &lt;!-- más iconos... --&gt;
+  &lt;/defs&gt;
+&lt;/svg&gt;
+
+&lt;!-- Uso --&gt;
+&lt;span class="icon icon-sm" style="color: var(--color-success);"&gt;
+  &lt;svg&gt;&lt;use href="#icon-check-circle"&gt;&lt;/use&gt;&lt;/svg&gt;
+&lt;/span&gt;
+
+/* CSS para tamaños */
+.icon { display: inline-flex; align-items: center; }
+.icon svg { width: 1em; height: 1em; }
+.icon-sm { font-size: var(--size-base); }
+.icon-md { font-size: var(--size-lg); }
+.icon-lg { font-size: 28px; }</pre></div>
+
+    <div class="note">
+      SVG inline = sin HTTP requests adicionales, hereda color y escala con tamaño de fuente.
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       RESPONSIVE GRID SYSTEM
+       ============================================ -->
+
+  <h2>Sistema de Responsive Grid</h2>
+
+  <div class="section">
+    <h3>Breakpoints + Media Queries</h3>
+
+    <table class="spec-table">
+      <tr>
+        <th>Nombre</th>
+        <th>Min-width</th>
+        <th>Cambios principales</th>
+      </tr>
+      <tr>
+        <td>mobile</td>
+        <td>320px</td>
+        <td>1 columna, padding 16px</td>
+      </tr>
+      <tr>
+        <td>tablet</td>
+        <td>768px</td>
+        <td>2 columnas, padding 24px</td>
+      </tr>
+      <tr>
+        <td>desktop</td>
+        <td>1024px</td>
+        <td>3 columnas, padding 32px</td>
+      </tr>
+      <tr>
+        <td>wide</td>
+        <td>1400px</td>
+        <td>4 columnas, max-width container</td>
+      </tr>
+    </table>
+
+    <h4>Implementación CSS</h4>
+    <div class="code-block"><pre>/* Mobile first approach */
+
+.page {
+  max-width: 100%;
+  padding: var(--space-md); /* 16px */
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+
+.grid-2 { grid-template-columns: 1fr; }
+.grid-3 { grid-template-columns: 1fr; }
+
+/* Tablet */
+@media (min-width: 768px) {
+  .page {
+    padding: var(--space-lg); /* 24px */
+  }
+  
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-xl); /* 32px */
+  }
+  
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Wide */
+@media (min-width: 1400px) {
+  .page {
+    max-width: 1200px;
+  }
+  
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+}</pre></div>
+
+    <div class="note">
+      Mobile-first: código base es mobile, media queries agregan características en screens más grandes. Resulta en CSS más eficiente.
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       ACCESSIBILITY CHECKLIST
+       ============================================ -->
+
+  <h2>Checklist de Accesibilidad WCAG 2.1 AA</h2>
+
+  <div class="section">
+    <h3>Criterios implementados en DeskWork</h3>
+
+    <table class="spec-table">
+      <tr>
+        <th>Criterio WCAG</th>
+        <th>Nivel</th>
+        <th>Verificación en DeskWork</th>
+        <th>Estado</th>
+      </tr>
+      <tr>
+        <td>1.4.3 Contrast (Minimum)</td>
+        <td>AA</td>
+        <td>Text: 4.5:1 mín | UI: 3:1 mín</td>
+        <td>✓ Cumple</td>
+      </tr>
+      <tr>
+        <td>1.4.11 Non-text Contrast</td>
+        <td>AA</td>
+        <td>Botones, bordes, iconos 3:1</td>
+        <td>✓ Cumple</td>
+      </tr>
+      <tr>
+        <td>2.4.7 Focus Visible</td>
+        <td>AA</td>
+        <td>outline 2px en teal, offset 2px</td>
+        <td>✓ Cumple</td>
+      </tr>
+      <tr>
+        <td>2.5.5 Target Size</td>
+        <td>AAA</td>
+        <td>Mín 44x44px, gap 8px</td>
+        <td>✓ Cumple</td>
+      </tr>
+      <tr>
+        <td>2.4.3 Focus Order</td>
+        <td>A</td>
+        <td>Tab order lógico, sin tabindex positivo</td>
+        <td>Requiere testing</td>
+      </tr>
+      <tr>
+        <td>1.3.1 Info and Relationships</td>
+        <td>A</td>
+        <td>Labels &lt;label for&gt;, ARIA describedby</td>
+        <td>Requiere markup</td>
+      </tr>
+    </table>
+
+    <h3>Testing recomendado</h3>
+    <ul>
+      <li><strong>Automated:</strong> axe DevTools, Lighthouse, WebAIM WAVE</li>
+      <li><strong>Keyboard:</strong> Tab, Shift+Tab, Enter, Esc, Arrow keys</li>
+      <li><strong>Screen reader:</strong> NVDA (Windows), VoiceOver (Mac/iOS), TalkBack (Android)</li>
+      <li><strong>Visual:</strong> Color contrast checker (WebAIM)</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       IMPLEMENTATION CHECKLIST
+       ============================================ -->
+
+  <h2>Checklist de Implementación</h2>
+
+  <div class="section">
+    <h3>Fase 1: Setup (1 semana)</h3>
+    <ul>
+      <li>☐ Crear design-tokens.json con todos los valores</li>
+      <li>☐ Generar variables.css automáticamente</li>
+      <li>☐ Sincronizar con Figma (plugin Tokens Studio)</li>
+      <li>☐ Documentar accesibilidad en manual</li>
+      <li>☐ Crear archivo de breakpoints CSS</li>
+    </ul>
+
+    <h3>Fase 2: Componentes (2 semanas)</h3>
+    <ul>
+      <li>☐ Especificar Input (text, email, number, textarea)</li>
+      <li>☐ Especificar Button (primary, ghost, sizes)</li>
+      <li>☐ Especificar validación y error states</li>
+      <li>☐ Especificar loading spinners</li>
+      <li>☐ Crear ejemplos HTML para cada uno</li>
+    </ul>
+
+    <h3>Fase 3: Iconografía (1 semana)</h3>
+    <ul>
+      <li>☐ Diseñar 30-50 iconos en Figma</li>
+      <li>☐ Exportar como SVG sprite</li>
+      <li>☐ Crear clases CSS para tamaños</li>
+      <li>☐ Documentar en manual</li>
+    </ul>
+
+    <h3>Fase 4: Documentación (1 semana)</h3>
+    <ul>
+      <li>☐ Frontend implementation guide</li>
+      <li>☐ Ejemplos interactivos en Storybook o similar</li>
+      <li>☐ Testing checklist</li>
+      <li>☐ Maintenance guide</li>
+    </ul>
+
+    <h3>Fase 5: Validación (1 semana)</h3>
+    <ul>
+      <li>☐ Testing automatizado (Lighthouse, axe)</li>
+      <li>☐ Testing manual con screen reader</li>
+      <li>☐ Testing responsive (chrome devtools)</li>
+      <li>☐ Feedback del equipo de desarrollo</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- ============================================
+       MAINTENANCE STRATEGY
+       ============================================ -->
+
+  <h2>Estrategia de Mantenimiento</h2>
+
+  <div class="section">
+    <h3>Versioning</h3>
+    <ul>
+      <li><strong>v2.0:</strong> Lanzamiento con todas las mejoras</li>
+      <li><strong>v2.1, v2.2, etc:</strong> Parches (nuevo icono, ajuste de color)</li>
+      <li><strong>v3.0:</strong> Próxima generación (cuando cambio fundamental)</li>
+    </ul>
+
+    <h3>Changelog + Documentación</h3>
+    <div class="code-block"><pre># DeskWork Design System Changelog
+
+## v2.0 — Foundation Release (2026-Q1)
+- ✨ New: Tokens system (JSON)
+- ✨ New: Icon library (30+ icons)
+- ✨ New: Semantic colors (success, warning, info)
+- 📚 Docs: WCAG 2.1 AA compliance guide
+- 📚 Docs: Frontend implementation guide
+- 🔧 Improved: Responsive design patterns
+
+## v2.0.1 — Bug fixes (2026-Q1)
+- 🐛 Fixed: Focus outline Safari (outline-offset)
+- 🐛 Fixed: Icon scaling on Windows high-DPI
+
+## v2.1 — New components (2026-Q2)
+- ✨ New: Modal/Dialog pattern
+- ✨ New: Toast/Notification pattern
+- 📚 Docs: Form validation patterns</pre></div>
+
+    <h3>Feedback Loop</h3>
+    <ul>
+      <li>Equipo de desarrollo reporta issues vía GitHub Issues</li>
+      <li>Diseño revisa y propone fix</li>
+      <li>Cambio se documenta + versiona</li>
+      <li>Actualizar design-tokens.json + todos los outputs</li>
+    </ul>
+
+    <div class="warning">
+      <strong>Importante:</strong> No cambiar hardcoded values en CSS. Siempre cambiar design-tokens.json y regenerar.
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

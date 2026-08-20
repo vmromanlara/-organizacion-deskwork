@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeskWork — Presentación Ejecutiva | Caso TECHO-Chile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-elev: #ffffff;
+    --bg-dark: #0a3d39;
+    --ink: #14171e;
+    --ink-2: #3a4256;
+    --muted: #7c7a72;
+    --line: #e9e3d6;
+    --line-soft: #f0ebde;
+    --primary: #0d4f4a;
+    --primary-2: #0a3d39;
+    --primary-soft: #d9eae7;
+    --primary-accent: #6ee7df;
+    --critical: #b3331f;
+    --high: #c2410c;
+    --normal: #a16207;
+    --low: #047857;
+    --info: #1d4ed8;
+    --shadow-sm: 0 2px 4px rgba(20, 23, 30, 0.04);
+    --shadow-md: 0 8px 24px -4px rgba(20, 23, 30, 0.08);
+    --shadow-lg: 0 16px 48px -8px rgba(20, 23, 30, 0.14);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    background: #11141a;
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ====== PRESENTATION STAGE & SLIDES ====== */
+  #deck-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #11141a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .slide-stage {
+    position: relative;
+    width: min(100vw, calc(100vh * 16 / 9));
+    height: min(100vh, calc(100vw * 9 / 16));
+    max-width: 1600px;
+    max-height: 900px;
+    background: var(--bg);
+    box-shadow: 0 25px 70px rgba(0,0,0,0.5);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 44px 60px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateY(12px) scale(0.995);
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    z-index: 10;
+  }
+
+  /* Slide Themes */
+  .slide.theme-dark {
+    background: linear-gradient(145deg, #072e2b 0%, #0d4f4a 55%, #13635d 100%);
+    color: white;
+  }
+  .slide.theme-dark h1, .slide.theme-dark h2, .slide.theme-dark h3, .slide.theme-dark p {
+    color: white;
+  }
+
+  /* Slide Header / Subheaders */
+  .slide-header {
+    margin-bottom: 20px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 20px;
+    height: 1px;
+    background: var(--primary);
+  }
+  .theme-dark .eyebrow {
+    color: var(--primary-accent);
+  }
+  .theme-dark .eyebrow::before {
+    background: var(--primary-accent);
+  }
+
+  h1 { font-size: clamp(34px, 4vw, 54px); font-weight: 700; line-height: 1.08; letter-spacing: -0.025em; color: var(--ink); }
+  h2 { font-size: clamp(26px, 2.8vw, 38px); font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; color: var(--ink); }
+  h3 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+  p { color: var(--ink-2); font-size: 15px; line-height: 1.5; }
+  .lead { font-size: clamp(15px, 1.5vw, 18px); color: var(--ink-2); line-height: 1.5; max-width: 820px; }
+  .theme-dark .lead { color: rgba(255,255,255,0.8); }
+
+  /* Slide Body & Grids */
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    padding: 8px 0;
+  }
+
+  .grid { display: grid; gap: 16px; width: 100%; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+  /* Cards */
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .card-dark {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: white;
+  }
+
+  /* Slide Footer Meta */
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .theme-dark .slide-footer {
+    border-color: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ====== SLIDE 01: COVER ====== */
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 24px;
+    color: white;
+  }
+  .cover-title {
+    font-size: clamp(38px, 4.8vw, 64px);
+    line-height: 1.05;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .cover-title .accent { color: var(--primary-accent); }
+  .cover-desc {
+    font-size: clamp(16px, 1.8vw, 22px);
+    color: rgba(255,255,255,0.85);
+    max-width: 760px;
+    line-height: 1.5;
+    font-weight: 300;
+    margin-bottom: 36px;
+  }
+  .cover-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    max-width: 780px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+  }
+  .cover-stat { display: flex; flex-direction: column; gap: 4px; }
+  .cover-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.55); }
+  .cover-stat-val { font-size: 16px; font-weight: 600; color: white; }
+
+  /* ====== SLIDE 02: PROBLEM ====== */
+  .pain-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+  .pain-badge {
+    width: 24px; height: 24px;
+    background: #fee2e2;
+    color: var(--critical);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .chaos-mosaic {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+    background: #f4f0e6;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px;
+  }
+  .chaos-bubble {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink-2);
+    box-shadow: var(--shadow-sm);
+  }
+  .chaos-source {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  /* ====== SLIDE 04: 4 PILLARS ====== */
+  .pillar-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 24px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .pillar-icon {
+    width: 48px; height: 48px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: 12px;
+    display: grid; place-items: center;
+    margin-bottom: 16px;
+  }
+  .pillar-title { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .pillar-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* ====== SLIDE 05: 6 STEPS ====== */
+  .step-flow {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+  .step-box {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 16px 12px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .step-box:hover, .step-box.active-step {
+    border-color: var(--primary);
+    background: #f0f7f5;
+    transform: translateY(-2px);
+  }
+  .step-box-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .step-box-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .step-box-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* ====== SLIDE 07: 5 ROLES ====== */
+  .role-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .role-tab-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .role-tab-btn.active-role {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .role-detail-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  /* ====== SLIDE 08: PRIORITY ENGINE INTERACTIVE ====== */
+  .interactive-engine {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 28px;
+    box-shadow: var(--shadow-sm);
+  }
+  .ctrl-group { margin-bottom: 14px; }
+  .ctrl-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: block; }
+  .btn-select-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .opt-btn {
+    padding: 7px 12px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .opt-btn.selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .engine-result-box {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .priority-badge-big {
+    font-size: 32px;
+    font-weight: 800;
+    padding: 8px 24px;
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    margin: 12px 0;
+  }
+
+  /* ====== SLIDE 09: TECHNICIAN PANEL ====== */
+  .backend-hud {
+    background: #14171e;
+    color: white;
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-lg);
+  }
+  .backend-kpi-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .backend-kpi-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .backend-kpi-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .backend-table-mini {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .backend-table-mini th {
+    text-align: left;
+    padding: 8px 10px;
+    color: rgba(255,255,255,0.5);
+    font-size: 10px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .backend-table-mini td {
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* ====== SLIDE 11: DASHBOARD DIRECTIVO ====== */
+  .exec-stat-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 18px;
+  }
+  .exec-bar-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 45px;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .progress-track {
+    height: 8px;
+    background: var(--line-soft);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+
+  /* ====== SLIDE 15: TICKETS TO PROJECTS ====== */
+  .project-flow-banner {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 24px;
+  }
+  .flow-nodes {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    position: relative;
+    margin-top: 16px;
+  }
+  .flow-node {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 12px;
+  }
+  .flow-node-num { font-size: 10px; font-weight: 700; color: var(--primary); font-family: 'JetBrains Mono', monospace; }
+  .flow-node-title { font-size: 13px; font-weight: 600; margin: 4px 0; color: var(--ink); }
+
+  /* ====== SLIDE 16: ROADMAP ====== */
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .roadmap-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .roadmap-card.active-today {
+    border-color: var(--primary);
+    background: #f0f7f5;
+    box-shadow: 0 4px 16px rgba(13, 79, 74, 0.12);
+  }
+  .roadmap-card-tag {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--primary);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .roadmap-list {
+    list-style: none;
+    font-size: 11px;
+    color: var(--ink-2);
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+  .roadmap-list li::before {
+    content: "•";
+    color: var(--primary);
+    font-weight: bold;
+    display: inline-block;
+    width: 10px;
+  }
+
+  /* ====== SLIDE 18: COMMERCIAL ====== */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .pricing-box {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    color: white;
+  }
+  .pricing-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--primary-accent);
+    margin-bottom: 8px;
+  }
+  .pricing-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+  .pricing-list { list-style: none; font-size: 12px; line-height: 1.7; color: rgba(255,255,255,0.85); }
+  .pricing-list li::before { content: "✓ "; color: var(--primary-accent); font-weight: bold; }
+
+  /* ====== FLOATING NAVIGATION / CONTROLS ====== */
+  .deck-hud {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 23, 30, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    color: white;
+    font-size: 13px;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .hud-btn {
+    background: transparent;
+    border: 0;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .hud-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.08); }
+  .hud-counter { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: rgba(255,255,255,0.85); }
+  .hud-timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--primary-accent);
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  /* Progress Bar at Top */
+  .deck-progress-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: rgba(0,0,0,0.1);
+    z-index: 200;
+  }
+  .deck-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width 0.25s ease-out;
+  }
+  .theme-dark .deck-progress-fill {
+    background: var(--primary-accent);
+  }
+
+  /* ====== OVERVIEW / GRID MODAL ====== */
+  #overview-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 12, 16, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 2000;
+    display: none;
+    flex-direction: column;
+    padding: 40px;
+    overflow-y: auto;
+  }
+  #overview-modal.open { display: flex; }
+  .overview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    margin-bottom: 28px;
+    max-width: 1400px;
+    width: 100%;
+    margin-inline: auto;
+  }
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+    width: 100%;
+    margin-inline: auto;
+  }
+  .overview-thumb {
+    background: var(--bg);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 16px;
+    aspect-ratio: 16 / 9;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .overview-thumb:hover {
+    border-color: var(--primary-accent);
+    transform: translateY(-4px);
+  }
+  .overview-thumb.current-thumb {
+    border-color: var(--primary-accent);
+    outline: 3px solid rgba(110, 231, 223, 0.4);
+  }
+  .thumb-num { font-size: 10px; font-weight: 700; color: var(--primary); font-family: 'JetBrains Mono', monospace; }
+  .thumb-title { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+
+  /* ====== SPEAKER NOTES DRAWER ====== */
+  #speaker-drawer {
+    position: fixed;
+    right: 0; top: 0; bottom: 0;
+    width: 380px;
+    background: #14171e;
+    color: white;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    z-index: 1500;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    padding: 28px;
+    border-left: 1px solid rgba(255,255,255,0.1);
+  }
+  #speaker-drawer.open { transform: translateX(0); }
+  .speaker-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .speaker-content { flex: 1; overflow-y: auto; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+  .speaker-cue {
+    background: rgba(255,255,255,0.05);
+    border-left: 3px solid var(--primary-accent);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+  }
+
+  /* ====== HELP MODAL ====== */
+  #help-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    z-index: 2500;
+    display: none;
+    justify-content: center;
+    align-items: center;
+  }
+  #help-modal.open { display: flex; }
+  .help-card {
+    background: #1e222d;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius-md);
+    padding: 32px;
+    max-width: 500px;
+    width: 90%;
+  }
+  .kbd-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
+  .kbd {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* ====== PRINT MODE STYLING ====== */
+  @media print {
+    body, #deck-container {
+      background: white !important;
+      overflow: visible !important;
+      height: auto !important;
+      width: auto !important;
+      display: block !important;
+    }
+    .deck-hud, #overview-modal, #speaker-drawer, #help-modal, .deck-progress-bar {
+      display: none !important;
+    }
+    .slide-stage {
+      max-width: none !important;
+      max-height: none !important;
+      width: 100% !important;
+      height: auto !important;
+      box-shadow: none !important;
+      overflow: visible !important;
+      border: 0 !important;
+      display: block !important;
+    }
+    .slide {
+      position: relative !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: none !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      min-height: 100vh !important;
+      height: 100vh !important;
+      padding: 40px !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck-container">
+  <div class="slide-stage" id="slideStage">
+    <div class="deck-progress-bar"><div class="deck-progress-fill" id="progressFill"></div></div>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 01: PORTADA                          -->
+    <!-- ========================================== -->
+    <section class="slide theme-dark active" data-slide="1" data-title="Portada · Gestión Inteligente">
+      <div>
+        <div class="cover-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+          DeskWork · Propuesta Comercial 2026
+        </div>
+        <h1 class="cover-title">
+          Gestión <span class="accent">inteligente</span><br>del soporte interno.
+        </h1>
+        <p class="cover-desc">
+          Una plataforma que transforma las solicitudes de los usuarios en información operativa, métricas de desempeño, conocimiento organizacional y oportunidades de mejora continua.
+        </p>
+      </div>
+      <div class="cover-stats-row">
+        <div class="cover-stat">
+          <span class="cover-stat-label">Caso de Estudio</span>
+          <span class="cover-stat-val">Fundación TECHO-Chile</span>
+        </div>
+        <div class="cover-stat">
+          <span class="cover-stat-label">Enfoque</span>
+          <span class="cover-stat-val">Soporte a Servicio Medible</span>
+        </div>
+        <div class="cover-stat">
+          <span class="cover-stat-label">Versión</span>
+          <span class="cover-stat-val">Dossier Ejecutivo v1.0</span>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>DeskWork Technologies · Propuesta Comercial</span>
+        <span>Slide 01 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 02: EL PROBLEMA                      -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="2" data-title="El Problema Actual">
+      <div class="slide-header">
+        <div class="eyebrow">02 · El problema actual</div>
+        <h2>El soporte interno se pierde entre canales, memoria y urgencias.</h2>
+        <p class="lead">En organizaciones con equipos distribuidos, voluntariado masivo y una sola persona gestionando TI, las solicitudes llegan por todas partes sin trazabilidad.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-2">
+          <div class="pain-item">
+            <div class="pain-badge">01</div>
+            <div><strong>Solicitudes dispersas:</strong> WhatsApp, correos, llamadas y pasillos sin repositorio central.</div>
+          </div>
+          <div class="pain-item">
+            <div class="pain-badge">02</div>
+            <div><strong>Cuello de botella de 1 persona:</strong> Una sola persona atiende, prioriza y responde a toda la fundación.</div>
+          </div>
+          <div class="pain-item">
+            <div class="pain-badge">03</div>
+            <div><strong>Sin trazabilidad ni historia:</strong> Al cerrarse el ticket, el conocimiento se queda solo en la cabeza del técnico.</div>
+          </div>
+          <div class="pain-item">
+            <div class="pain-badge">04</div>
+            <div><strong>Imposible demostrar valor:</strong> Sin métricas de SLA, el área TI queda encasillada en "arreglar computadores".</div>
+          </div>
+        </div>
+
+        <div class="chaos-mosaic">
+          <div class="chaos-bubble"><div class="chaos-source">WhatsApp</div>"Hola, no puedo entrar al correo, ¿me ayudas urgente?"</div>
+          <div class="chaos-bubble"><div class="chaos-source">Correo</div>"Estimado, favor reiniciar clave de rendiciones."</div>
+          <div class="chaos-bubble"><div class="chaos-source">Teams</div>"@soporte, el scanner no responde, tenemos entrega hoy."</div>
+          <div class="chaos-bubble"><div class="chaos-source">Pasillo</div>"Oye, ¿puedes venir un segundo? No me imprime."</div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Diagnóstico Operacional TECHO-Chile</span>
+        <span>Slide 02 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 03: LA OPORTUNIDAD                   -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="3" data-title="La Oportunidad">
+      <div class="slide-header">
+        <div class="eyebrow">03 · La oportunidad</div>
+        <h2>Convertir la presión diaria en información útil para la organización.</h2>
+        <p class="lead">El cambio real no es comprar un software genérico de tickets, sino transformar el modelo de operación: pasar de apagar incendios a medir, aprender y mejorar.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-2">
+          <div class="card" style="border-left: 4px solid var(--muted); background: #f7f6f2;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px;">El Paradigma Actual</div>
+            <h3 style="margin-bottom: 10px; color: var(--ink);">Soporte Reactivo</h3>
+            <p style="margin-bottom: 12px;">Se atiende lo que grita más fuerte. Lo urgente desplaza a lo importante. No hay tiempo para analizar patrones y el conocimiento se esfuma.</p>
+            <ul style="font-size: 13px; color: var(--muted); padding-left: 18px; line-height: 1.6;">
+              <li>Percepción de soporte lento y opaco</li>
+              <li>Mismos errores repetidos cada semana</li>
+              <li>Sin datos para justificar presupuesto o personal</li>
+            </ul>
+          </div>
+          <div class="card" style="border-left: 4px solid var(--primary); background: #f0f7f5;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 8px;">Con DeskWork</div>
+            <h3 style="margin-bottom: 10px; color: var(--primary);">Servicio Medible y Mejorable</h3>
+            <p style="margin-bottom: 12px;">Cada solicitud queda registrada, ponderada y cronometrada. Los patrones se vuelven visibles y las mejoras se comprueban con datos.</p>
+            <ul style="font-size: 13px; color: var(--ink-2); padding-left: 18px; line-height: 1.6;">
+              <li>Tiempos de respuesta y resolución en tiempo real</li>
+              <li>Detección automática de problemas recurrentes</li>
+              <li>Transición fluida de tickets a proyectos de mejora</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Visión Estratégica de Transformación</span>
+        <span>Slide 03 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 04: LA PROPUESTA (4 PILARES)        -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="4" data-title="La Propuesta · 4 Pilares">
+      <div class="slide-header">
+        <div class="eyebrow">04 · La propuesta de valor</div>
+        <h2>DeskWork es una plataforma de gestión, no un simple sistema de tickets.</h2>
+        <p class="lead">Comienza resolviendo el dolor inmediato y evoluciona hasta convertirse en un motor de inteligencia operacional para toda la organización.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-4">
+          <div class="pillar-card">
+            <div class="pillar-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <div class="pillar-title">Centraliza</div>
+            <div class="pillar-desc">Todas las solicitudes —vengan de web, correo o WhatsApp— se consolidan en un único flujo ordenado.</div>
+          </div>
+          <div class="pillar-card">
+            <div class="pillar-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </div>
+            <div class="pillar-title">Mide</div>
+            <div class="pillar-desc">Cronómetro por ticket, tiempos efectivos, SLA por persona, área y período sin burocracia.</div>
+          </div>
+          <div class="pillar-card">
+            <div class="pillar-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+            </div>
+            <div class="pillar-title">Aprende</div>
+            <div class="pillar-desc">Cada resolución alimenta la base de conocimiento organizacional y expone patrones ocultos.</div>
+          </div>
+          <div class="pillar-card">
+            <div class="pillar-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M12 8v4l2 2"/></svg>
+            </div>
+            <div class="pillar-title">Mejora</div>
+            <div class="pillar-desc">Los problemas repetidos se transforman en iniciativas con seguimiento de impacto cuantitativo.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Arquitectura Funcional DeskWork</span>
+        <span>Slide 04 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 05: CÓMO FUNCIONA (6 PASOS)          -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="5" data-title="Flujo en 6 Pasos">
+      <div class="slide-header">
+        <div class="eyebrow">05 · Flujo operativo</div>
+        <h2>Para el usuario, seis pasos mínimos. Para el área, el control total.</h2>
+        <p class="lead">El solicitante no necesita entender conceptos técnicos. El sistema se encarga de identificarlo, clasificarlo y calcular los tiempos.</p>
+      </div>
+      <div class="slide-body">
+        <div class="step-flow" id="stepFlowContainer">
+          <div class="step-box active-step" onclick="selectStep(1)">
+            <div class="step-box-num">PASO 01</div>
+            <div class="step-box-title">Entrar</div>
+            <div class="step-box-desc">Acceso instantáneo desde navegador o móvil.</div>
+          </div>
+          <div class="step-box" onclick="selectStep(2)">
+            <div class="step-box-num">PASO 02</div>
+            <div class="step-box-title">Identificarse</div>
+            <div class="step-box-desc">Correo institucional. Se autocompleta área, cargo y sede.</div>
+          </div>
+          <div class="step-box" onclick="selectStep(3)">
+            <div class="step-box-num">PASO 03</div>
+            <div class="step-box-title">Indicar Tipo</div>
+            <div class="step-box-desc">Selección ágil: Correo, Accesos, PC, Conectividad.</div>
+          </div>
+          <div class="step-box" onclick="selectStep(4)">
+            <div class="step-box-num">PASO 04</div>
+            <div class="step-box-title">Describir</div>
+            <div class="step-box-desc">Campo de texto libre sin formularios complejos.</div>
+          </div>
+          <div class="step-box" onclick="selectStep(5)">
+            <div class="step-box-num">PASO 05</div>
+            <div class="step-box-title">Adjuntar</div>
+            <div class="step-box-desc">Captura de pantalla o documento opcional.</div>
+          </div>
+          <div class="step-box" onclick="selectStep(6)" style="border-color: var(--primary); background: #e6f3f0;">
+            <div class="step-box-num" style="color: var(--primary);">PASO 06</div>
+            <div class="step-box-title">Enviar</div>
+            <div class="step-box-desc">DeskWork asigna prioridad, SLA y notifica.</div>
+          </div>
+        </div>
+
+        <div class="card" id="stepDetailBox" style="margin-top: 20px; background: #ffffff; border-color: var(--primary); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <strong id="stepDetailTitle" style="color: var(--primary); font-size: 15px;">Paso 01: Entrar al portal</strong>
+            <p id="stepDetailText" style="font-size: 13px; margin-top: 4px;">El usuario ingresa a soporte.techo.cl con una interfaz limpia, sin menús confusos ni sobrecarga visual.</p>
+          </div>
+          <span style="font-size: 11px; background: var(--primary-soft); color: var(--primary); padding: 4px 10px; border-radius: 999px; font-weight: 600;">Haz clic en cada paso</span>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>El usuario final NO define SLA ni técnicos; el sistema lo automatiza.</span>
+        <span>Slide 05 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 06: EXPERIENCIA DEL USUARIO          -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="6" data-title="Experiencia del Usuario">
+      <div class="slide-header">
+        <div class="eyebrow">06 · Experiencia del usuario</div>
+        <h2>Una pantalla limpia. La información justa.</h2>
+        <p class="lead">Diseñado para que cualquier persona —desde la dirección hasta un voluntario en terreno— pueda pedir ayuda en menos de 20 segundos.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-2" style="align-items: center;">
+          <!-- Mockup Interfaz Usuario -->
+          <div class="card" style="background: #ffffff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-md); padding: 18px;">
+            <div style="display: flex; gap: 6px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line-soft);">
+              <span style="width:8px; height:8px; border-radius:50%; background:#e2e8f0;"></span>
+              <span style="width:8px; height:8px; border-radius:50%; background:#e2e8f0;"></span>
+              <span style="width:8px; height:8px; border-radius:50%; background:#e2e8f0;"></span>
+              <span style="font-size: 10px; color: var(--muted); font-family:'JetBrains Mono'; margin-left: 8px;">soporte.techo.cl</span>
+            </div>
+            <div style="font-size: 18px; font-weight: 700; color: var(--ink);">Hola, María</div>
+            <div style="font-size: 12px; color: var(--muted); margin-bottom: 14px;">Administración · Sucursal Santiago | Jefatura: Juan Pérez</div>
+            
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;">Mis solicitudes activas</div>
+            <div style="display: grid; gap: 6px; font-size: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f8fafc; border: 1px solid var(--line); border-radius: 6px;">
+                <span><strong>#00152</strong> Problema correo</span>
+                <span style="background: #fef3c7; color: var(--normal); padding: 2px 8px; border-radius: 999px; font-weight: 600; font-size: 10px;">En proceso</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f8fafc; border: 1px solid var(--line); border-radius: 6px;">
+                <span><strong>#00148</strong> Acceso plataforma</span>
+                <span style="background: #d1fae5; color: var(--low); padding: 2px 8px; border-radius: 999px; font-weight: 600; font-size: 10px;">Resuelto</span>
+              </div>
+            </div>
+
+            <button style="width: 100%; margin-top: 14px; padding: 10px; background: var(--primary); color: white; border: 0; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+              + Crear nueva solicitud
+            </button>
+          </div>
+
+          <!-- Puntos Clave de UX -->
+          <div style="display: grid; gap: 12px;">
+            <div class="card" style="padding: 14px 16px;">
+              <strong style="color: var(--primary); font-size: 14px;">1. Cero formularios extensos</strong>
+              <p style="font-size: 13px; margin-top: 2px;">El sistema ya conoce la identidad, jefatura y sucursal. No hay que rellenar datos redundantes.</p>
+            </div>
+            <div class="card" style="padding: 14px 16px;">
+              <strong style="color: var(--primary); font-size: 14px;">2. Trazabilidad pasiva</strong>
+              <p style="font-size: 13px; margin-top: 2px;">El usuario recibe confirmación por correo y WhatsApp con el tiempo estimado de atención.</p>
+            </div>
+            <div class="card" style="padding: 14px 16px;">
+              <strong style="color: var(--primary); font-size: 14px;">3. Vista simple e intuitiva</strong>
+              <p style="font-size: 13px; margin-top: 2px;">Solo ve sus tickets activos y el botón de acción principal. Cero fricción.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Diseñado para máxima adopción en voluntariado y colaboradores.</span>
+        <span>Slide 06 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 07: 5 NIVELES DE USUARIO             -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="7" data-title="Niveles de Usuario (5 Roles)">
+      <div class="slide-header">
+        <div class="eyebrow">07 · Seguridad y Gobernanza</div>
+        <h2>Cinco perfiles especializados, una sola plataforma.</h2>
+        <p class="lead">Nivel jerárquico no es igual a conocimiento técnico: cada nivel accede a las vistas y herramientas que su función requiere.</p>
+      </div>
+      <div class="slide-body">
+        <div class="role-tabs">
+          <button class="role-tab-btn active-role" onclick="showRole(0)">Nivel 0 · Soporte TI</button>
+          <button class="role-tab-btn" onclick="showRole(1)">Nivel 1 · Director / Gerente</button>
+          <button class="role-tab-btn" onclick="showRole(2)">Nivel 2 · Jefatura</button>
+          <button class="role-tab-btn" onclick="showRole(3)">Nivel 3 · Administrativo</button>
+          <button class="role-tab-btn" onclick="showRole(4)">Nivel 4 · Voluntario</button>
+        </div>
+
+        <div class="role-detail-card" id="roleDetailContent">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Permisos y accesos definidos por configuración, no por código a medida.</span>
+        <span>Slide 07 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 08: MOTOR DE PRIORIZACIÓN            -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="8" data-title="Motor de Priorización Inteligente">
+      <div class="slide-header">
+        <div class="eyebrow">08 · Priorización objetiva</div>
+        <h2>La prioridad la calcula el sistema con contexto, no la pide el usuario.</h2>
+        <p class="lead">Un director pidiendo un cambio menor de firma no debe superar la caída de un sistema crítico que paraliza a toda una oficina regional.</p>
+      </div>
+      <div class="slide-body">
+        <div class="interactive-engine">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--primary);">Simulador de Priorización en Vivo:</div>
+            
+            <div class="ctrl-group">
+              <span class="ctrl-label">1. Rol del Solicitante</span>
+              <div class="btn-select-row" id="roleSelectRow">
+                <button class="opt-btn selected" onclick="setSimRole('director', this)">Director</button>
+                <button class="opt-btn" onclick="setSimRole('jefe', this)">Jefatura</button>
+                <button class="opt-btn" onclick="setSimRole('admin', this)">Administrativo</button>
+                <button class="opt-btn" onclick="setSimRole('voluntario', this)">Voluntario</button>
+              </div>
+            </div>
+
+            <div class="ctrl-group">
+              <span class="ctrl-label">2. Tipo de Incidencia</span>
+              <div class="btn-select-row" id="typeSelectRow">
+                <button class="opt-btn selected" onclick="setSimType('correo', this)">Firma / Consulta</button>
+                <button class="opt-btn" onclick="setSimType('sistema', this)">Caída de Sistema / Plataforma</button>
+                <button class="opt-btn" onclick="setSimType('hardware', this)">Falla PC Personal</button>
+              </div>
+            </div>
+
+            <div class="ctrl-group">
+              <span class="ctrl-label">3. Alcance / Impacto</span>
+              <div class="btn-select-row" id="scopeSelectRow">
+                <button class="opt-btn selected" onclick="setSimScope('single', this)">Individual (1 usuario)</button>
+                <button class="opt-btn" onclick="setSimScope('team', this)">Equipo / Departamento</button>
+                <button class="opt-btn" onclick="setSimScope('org', this)">Toda la Organización</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="engine-result-box">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted);">Prioridad Calculada</div>
+            <div class="priority-badge-big" id="prioOutputBadge" style="background:#e8f5f0; color:var(--low);">P4 · BAJA</div>
+            <div id="prioOutputExplanation" style="font-size: 12px; color: var(--ink-2); line-height: 1.4;">
+              Cargo alto pero alcance individual y sin bloqueo operativo crítico. No desplaza emergencias institucionales.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>MVP: Reglas ponderadas. Etapa 3: Prioridad dinámica con DeskWork AI.</span>
+        <span>Slide 08 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 09: PANEL DEL TÉCNICO                -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="9" data-title="Panel del Técnico">
+      <div class="slide-header">
+        <div class="eyebrow">09 · Operación TI</div>
+        <h2>Una sola persona puede tener el control de toda la organización.</h2>
+        <p class="lead">El panel técnico permite saber de inmediato qué atender primero, qué está detenido esperando información y qué ticket está próximo a vencer su SLA.</p>
+      </div>
+      <div class="slide-body">
+        <div class="backend-hud">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.7);">DESKWORK · CONSOLA DE SOPORTE TI</div>
+            <span style="font-size: 11px; color: var(--primary-accent); display: flex; align-items: center; gap: 6px;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--primary-accent); display: inline-block;"></span>
+              Monitoreo en Vivo
+            </span>
+          </div>
+
+          <div class="backend-kpi-bar">
+            <div class="backend-kpi-item">
+              <div style="font-size: 10px; color: rgba(255,255,255,0.5);">Abiertos</div>
+              <div class="backend-kpi-val">12</div>
+            </div>
+            <div class="backend-kpi-item">
+              <div style="font-size: 10px; color: rgba(255,255,255,0.5);">En Proceso</div>
+              <div class="backend-kpi-val">4</div>
+            </div>
+            <div class="backend-kpi-item">
+              <div style="font-size: 10px; color: rgba(255,255,255,0.5);">Esperando Usuario</div>
+              <div class="backend-kpi-val">3</div>
+            </div>
+            <div class="backend-kpi-item">
+              <div style="font-size: 10px; color: rgba(255,255,255,0.5);">Escalados</div>
+              <div class="backend-kpi-val">1</div>
+            </div>
+            <div class="backend-kpi-item" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1);">
+              <div style="font-size: 10px; color: #fca5a5;">Vencidos</div>
+              <div class="backend-kpi-val" style="color: #fca5a5;">2</div>
+            </div>
+          </div>
+
+          <table class="backend-table-mini">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Usuario / Sede</th>
+                <th>Incidencia</th>
+                <th>Prioridad</th>
+                <th style="text-align: right;">Cronómetro</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">#00125</td>
+                <td>Director Ejecutivo <span>· Sede Central</span></td>
+                <td>Acceso Banca Remuneraciones</td>
+                <td><span style="color:#f87171; font-weight:700;">P1 CRÍTICA</span></td>
+                <td class="mono live-timer" style="text-align: right; color:#f87171;" data-secs="1124">00:18:44</td>
+              </tr>
+              <tr>
+                <td class="mono">#00124</td>
+                <td>Ana Morales <span>· Administración</span></td>
+                <td>Falla conexión VPN Regiones</td>
+                <td><span style="color:#fbbf24; font-weight:700;">P2 ALTA</span></td>
+                <td class="mono live-timer" style="text-align: right; color:#fbbf24;" data-secs="6135">01:42:15</td>
+              </tr>
+              <tr>
+                <td class="mono">#00123</td>
+                <td>Pedro Soto <span>· Operaciones</span></td>
+                <td>Configuración impresora térmica</td>
+                <td><span style="color:#fde047; font-weight:700;">P3 MEDIA</span></td>
+                <td class="mono live-timer" style="text-align: right; color:#fde047;" data-secs="15398">04:16:38</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>El cronómetro desglosa el tiempo real de trabajo vs. tiempo bloqueado.</span>
+        <span>Slide 09 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 10: TIMER + KPIS                     -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="10" data-title="Timer y Métricas de Desempeño">
+      <div class="slide-header">
+        <div class="eyebrow">10 · Métricas Honestas</div>
+        <h2>Medir para gestionar. Gestionar para mejorar.</h2>
+        <p class="lead">DeskWork mide seis momentos clave de cada ticket para desglosar con honestidad dónde se concentran las demoras operacionales.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-4" style="margin-bottom: 16px;">
+          <div class="card" style="text-align: center;">
+            <div style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Solicitudes Mes</div>
+            <div style="font-size: 32px; font-weight: 700; color: var(--ink); margin: 6px 0;" class="mono">147</div>
+            <div style="font-size: 11px; color: var(--low); font-weight: 600;">132 Resueltas (89,8%)</div>
+          </div>
+          <div class="card" style="text-align: center; background: #0d4f4a; color: white;">
+            <div style="font-size: 11px; color: var(--primary-accent); text-transform: uppercase;">SLA Cumplido</div>
+            <div style="font-size: 32px; font-weight: 700; color: white; margin: 6px 0;" class="mono">94,0%</div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.8);">Meta institucional superada</div>
+          </div>
+          <div class="card" style="text-align: center;">
+            <div style="font-size: 11px; color: var(--muted); text-transform: uppercase;">1ra Respuesta</div>
+            <div style="font-size: 32px; font-weight: 700; color: var(--ink); margin: 6px 0;" class="mono">18 min</div>
+            <div style="font-size: 11px; color: var(--muted);">Promedio mensual</div>
+          </div>
+          <div class="card" style="text-align: center;">
+            <div style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Tiempo Resolución</div>
+            <div style="font-size: 32px; font-weight: 700; color: var(--ink); margin: 6px 0;" class="mono">3h 42m</div>
+            <div style="font-size: 11px; color: var(--muted);">Promedio general</div>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="card" style="padding: 12px 14px; font-size: 12px;">
+            <strong style="color: var(--primary);">1. Tiempo desde Creación</strong>
+            <p style="font-size: 11px; color: var(--muted);">Hora exacta en que ingresó al sistema.</p>
+          </div>
+          <div class="card" style="padding: 12px 14px; font-size: 12px;">
+            <strong style="color: var(--primary);">2. Primera Respuesta</strong>
+            <p style="font-size: 11px; color: var(--muted);">Minutos hasta que TI tomó control del caso.</p>
+          </div>
+          <div class="card" style="padding: 12px 14px; font-size: 12px;">
+            <strong style="color: var(--primary);">3. Tiempo Efectivo TI</strong>
+            <p style="font-size: 11px; color: var(--muted);">Minutos reales de trabajo técnico activo.</p>
+          </div>
+          <div class="card" style="padding: 12px 14px; font-size: 12px;">
+            <strong style="color: var(--primary);">4. Espera de Usuario</strong>
+            <p style="font-size: 11px; color: var(--muted);">Pausas por falta de respuesta del solicitante.</p>
+          </div>
+          <div class="card" style="padding: 12px 14px; font-size: 12px;">
+            <strong style="color: var(--primary);">5. Tiempo Total Cierre</strong>
+            <p style="font-size: 11px; color: var(--muted);">Desde la apertura hasta la validación.</p>
+          </div>
+          <div class="card" style="padding: 12px 14px; font-size: 12px;">
+            <strong style="color: var(--primary);">6. Cumplimiento SLA</strong>
+            <p style="font-size: 11px; color: var(--muted);">Evaluación automática de compromiso.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Lo que no se mide objetivamente, no se puede defender ante el directorio.</span>
+        <span>Slide 10 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 11: DASHBOARD EJECUTIVO              -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="11" data-title="Dashboard Ejecutivo">
+      <div class="slide-header">
+        <div class="eyebrow">11 · Visión Directiva</div>
+        <h2>La dirección necesita otra lente, no más datos crudos.</h2>
+        <p class="lead">El directivo no necesita auditar ticket por ticket: requiere saber la salud del servicio, dónde se fuga el tiempo y qué áreas demandan más soporte.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-2">
+          <!-- Vista Gráfica Categorías -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <strong style="font-size: 14px;">Demanda por Categoría (Marzo 2026)</strong>
+              <span class="mono" style="font-size: 12px; color: var(--muted);">347 Total</span>
+            </div>
+            
+            <div class="exec-bar-row">
+              <span>Correo y Auth</span>
+              <div class="progress-track"><div class="progress-fill" style="width: 31%;"></div></div>
+              <span class="mono" style="font-weight: 600;">31%</span>
+            </div>
+            <div class="exec-bar-row">
+              <span>Accesos / VPN</span>
+              <div class="progress-track"><div class="progress-fill" style="width: 24%;"></div></div>
+              <span class="mono" style="font-weight: 600;">24%</span>
+            </div>
+            <div class="exec-bar-row">
+              <span>Hardware / PCs</span>
+              <div class="progress-track"><div class="progress-fill" style="width: 18%;"></div></div>
+              <span class="mono" style="font-weight: 600;">18%</span>
+            </div>
+            <div class="exec-bar-row">
+              <span>Software Fondos</span>
+              <div class="progress-track"><div class="progress-fill" style="width: 14%;"></div></div>
+              <span class="mono" style="font-weight: 600;">14%</span>
+            </div>
+            <div class="exec-bar-row">
+              <span>Redes y WiFi</span>
+              <div class="progress-track"><div class="progress-fill" style="width: 9%;"></div></div>
+              <span class="mono" style="font-weight: 600;">9%</span>
+            </div>
+            <div class="exec-bar-row">
+              <span>Otros</span>
+              <div class="progress-track"><div class="progress-fill" style="width: 4%;"></div></div>
+              <span class="mono" style="font-weight: 600;">4%</span>
+            </div>
+          </div>
+
+          <!-- Indicadores Estratégicos -->
+          <div style="display: grid; gap: 10px;">
+            <div class="card" style="padding: 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase;">1. Volumen vs Capacidad</div>
+              <p style="font-size: 13px; margin-top: 2px;">Permite dimensionar si el equipo de 1 persona da abasto o si se requiere automatización en categorías críticas.</p>
+            </div>
+            <div class="card" style="padding: 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase;">2. Identificación de Sedes Problemáticas</div>
+              <p style="font-size: 13px; margin-top: 2px;">Muestra claramente si una sucursal regional concentra más tickets por problemas de conectividad o equipos obsoletos.</p>
+            </div>
+            <div class="card" style="padding: 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase;">3. Detección Temprana de Cuellos de Botella</div>
+              <p style="font-size: 13px; margin-top: 2px;">Reportes ejecutivos listos para presentar al directorio sin necesidad de armar excels manuales.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>El técnico ve el árbol (el ticket); el director ve el bosque (la salud organizacional).</span>
+        <span>Slide 11 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 12: CANALES Y WHATSAPP               -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="12" data-title="WhatsApp y Canales Unificados">
+      <div class="slide-header">
+        <div class="eyebrow">12 · Omnicanalidad Real</div>
+        <h2>Varios canales. Un solo sistema. Un mismo ticket.</h2>
+        <p class="lead">WhatsApp no es un mundo aparte: es una puerta de entrada más a DeskWork que genera el mismo ticket, con la misma prioridad y trazabilidad.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-3" style="align-items: center;">
+          <!-- Canales Entrada -->
+          <div style="display: grid; gap: 8px;">
+            <div class="card" style="padding: 12px; display: flex; align-items: center; gap: 10px;">
+              <span style="width:28px; height:28px; background:#16a34a; border-radius:6px; color:white; display:grid; place-items:center; font-size:12px; font-weight:bold;">WA</span>
+              <div><strong style="font-size: 13px;">WhatsApp</strong><div style="font-size: 11px; color: var(--muted);">Mensaje de texto o audio</div></div>
+            </div>
+            <div class="card" style="padding: 12px; display: flex; align-items: center; gap: 10px;">
+              <span style="width:28px; height:28px; background:#0284c7; border-radius:6px; color:white; display:grid; place-items:center; font-size:12px; font-weight:bold;">WEB</span>
+              <div><strong style="font-size: 13px;">Portal Web</strong><div style="font-size: 11px; color: var(--muted);">soporte.techo.cl</div></div>
+            </div>
+            <div class="card" style="padding: 12px; display: flex; align-items: center; gap: 10px;">
+              <span style="width:28px; height:28px; background:#475569; border-radius:6px; color:white; display:grid; place-items:center; font-size:12px; font-weight:bold;">@</span>
+              <div><strong style="font-size: 13px;">Correo</strong><div style="font-size: 11px; color: var(--muted);">soporte@techo.cl</div></div>
+            </div>
+          </div>
+
+          <!-- Centro DeskWork -->
+          <div class="card" style="background: var(--primary); color: white; text-align: center; padding: 24px 16px;">
+            <div style="width: 44px; height: 44px; background: rgba(255,255,255,0.15); border-radius: 10px; display: grid; place-items: center; margin: 0 auto 12px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+            </div>
+            <h3 style="color: white; margin-bottom: 4px;">Motor Central DeskWork</h3>
+            <p style="font-size: 12px; color: rgba(255,255,255,0.8); margin-bottom: 12px;">Identifica al usuario, asigna ID y prioridad única.</p>
+            <span class="mono" style="background: rgba(255,255,255,0.12); padding: 4px 10px; border-radius: 6px; font-size: 12px;">TK-00153</span>
+          </div>
+
+          <!-- Notificaciones Salientes -->
+          <div class="card" style="padding: 16px;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Notificaciones Automáticas</div>
+            <div style="display: grid; gap: 8px; font-size: 12px;">
+              <div style="padding: 6px 8px; background: #f0f9ff; border-left: 3px solid #0284c7; border-radius: 4px;">
+                "Recibimos tu solicitud #00153 (Respuesta estimada: 30m)"
+              </div>
+              <div style="padding: 6px 8px; background: #f0fdf4; border-left: 3px solid #16a34a; border-radius: 4px;">
+                "Tu solicitud #00153 fue resuelta exitosamente."
+              </div>
+            </div>
+            <p style="font-size: 11px; color: var(--muted); margin-top: 10px;">El usuario no necesita iniciar sesión constantemente: recibe el estado en el canal donde ya está.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Elimina la duplicidad de tickets creados simultáneamente por correo y WhatsApp.</span>
+        <span>Slide 12 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 13: DESKWORK AI                      -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="13" data-title="DeskWork AI · Inteligencia Artificial">
+      <div class="slide-header">
+        <div class="eyebrow">13 · DeskWork AI</div>
+        <h2>La inteligencia artificial llega después, sobre datos reales.</h2>
+        <p class="lead">DeskWork no promete magia vacía desde el día 1. La IA entra en la Etapa 3, una vez que existe un histórico consistente para asistir al equipo técnico.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-3">
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 6px;">1. Antes de Resolver</div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">Triage y Sugerencias</h3>
+            <p style="font-size: 13px; color: var(--muted);">Analiza el texto de la solicitud, detecta tickets similares del pasado y sugiere al técnico la causa más probable y el procedimiento estándar.</p>
+          </div>
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 6px;">2. Durante la Resolución</div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">Borradores y Resúmenes</h3>
+            <p style="font-size: 13px; color: var(--muted);">Redacta respuestas claras para el usuario final sin jerga técnica y resume conversaciones largas de WhatsApp o correo.</p>
+          </div>
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 6px;">3. Después de Resolver</div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">Documentación Automática</h3>
+            <p style="font-size: 13px; color: var(--muted);">Convierte la solución aplicada en un artículo de la Base de Conocimiento para que no haya que resolver el mismo problema desde cero.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 16px; background: #f8fafc; border: 1px dashed var(--primary); padding: 14px 20px; text-align: center;">
+          <strong style="color: var(--primary); font-size: 14px;">El Ciclo de Aprendizaje:</strong>
+          <span style="font-size: 13px; color: var(--ink-2); margin-left: 8px;">
+            Ticket resuelto → Base de Conocimiento → Detección de Patrones → Proyectos de Mejora → Medición de Impacto.
+          </span>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>La IA potencia al técnico, no lo reemplaza: amplifica su capacidad de respuesta.</span>
+        <span>Slide 13 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 14: DE SOPORTE A MEJORA CONTINUA     -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="14" data-title="De Soporte a Mejora Continua">
+      <div class="slide-header">
+        <div class="eyebrow">14 · Cambio Cultural</div>
+        <h2>El área TI deja de "arreglar computadores" y pasa a gestionar un servicio.</h2>
+        <p class="lead">La conversación con la dirección y las jefaturas cambia radicalmente cuando existen datos objetivos sobre la mesa.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-2">
+          <div class="card" style="background: #fdf2f2; border-color: #fca5a5;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--critical); text-transform: uppercase; margin-bottom: 8px;">Antes · Percepción y Ruido</div>
+            <ul style="font-size: 13px; color: var(--ink); line-height: 1.8; padding-left: 18px;">
+              <li>"Se cayó el sistema otra vez."</li>
+              <li>"El correo no funciona en ninguna parte."</li>
+              <li>"El área de TI siempre pasa ocupada."</li>
+              <li>Imposible saber qué equipo falla más o por qué.</li>
+            </ul>
+          </div>
+          <div class="card" style="background: #f0fdf4; border-color: #86efac;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--low); text-transform: uppercase; margin-bottom: 8px;">Con DeskWork · Datos y Hechos</div>
+            <ul style="font-size: 13px; color: var(--ink); line-height: 1.8; padding-left: 18px;">
+              <li>"147 solicitudes recibidas, 132 resueltas en 3h promedio."</li>
+              <li>"94% de cumplimiento de SLA institucional."</li>
+              <li>"31% de casos eran reseteo de claves: se implementó autoservicio."</li>
+              <li>"La incidencia en esa sede cayó 62% tras la mejora ejecutada."</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; text-align: center; padding: 16px; background: var(--bg-elev); border-radius: 10px; border: 1px solid var(--line);">
+          <em style="font-size: 15px; color: var(--ink); font-weight: 500;">
+            "Dejamos de preguntar <span style="color: var(--critical);">¿qué se rompió hoy?</span> y empezamos a preguntar <span style="color: var(--primary);">¿qué problema recurrente podemos eliminar definitivamente este mes?</span>"
+          </em>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Evolución del área tecnológica como socio estratégico de la fundación.</span>
+        <span>Slide 14 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 15: DE TICKETS A PROYECTOS           -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="15" data-title="De Tickets a Proyectos (Caso Real)">
+      <div class="slide-header">
+        <div class="eyebrow">15 · Caso Práctico</div>
+        <h2>Cuando un problema se repite, DeskWork lo convierte en iniciativa.</h2>
+        <p class="lead">Ejemplo concreto: Los mismos 47 tickets sobre mala señal WiFi en la misma sede dejan de ser ruido diario y se convierten en un proyecto con impacto medible.</p>
+      </div>
+      <div class="slide-body">
+        <div class="project-flow-banner">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px;">
+            <div>
+              <span style="font-size: 10px; font-weight: 700; color: var(--primary); text-transform: uppercase;">Iniciativa Generada por Datos</span>
+              <h3 style="font-size: 17px; margin-top: 2px;">Mejora de Conectividad — Sucursal Santiago</h3>
+            </div>
+            <div style="text-align: right;">
+              <span class="mono" style="font-size: 24px; font-weight: 800; color: var(--low);">−62%</span>
+              <div style="font-size: 10px; color: var(--muted);">Reducción de Incidencias</div>
+            </div>
+          </div>
+
+          <div class="flow-nodes">
+            <div class="flow-node">
+              <div class="flow-node-num">01 · Señal</div>
+              <div class="flow-node-title">47 Tickets</div>
+              <p style="font-size: 11px; color: var(--muted);">3 meses con quejas continuas de WiFi en sede Santiago.</p>
+            </div>
+            <div class="flow-node">
+              <div class="flow-node-num">02 · Patrón</div>
+              <div class="flow-node-title">Detección</div>
+              <p style="font-size: 11px; color: var(--muted);">DeskWork agrupa los tickets por ubicación y causa común.</p>
+            </div>
+            <div class="flow-node">
+              <div class="flow-node-num">03 · Proyecto</div>
+              <div class="flow-node-title">Propuesta</div>
+              <p style="font-size: 11px; color: var(--muted);">Se aprueba cambio de APs y cableado estructurado.</p>
+            </div>
+            <div class="flow-node">
+              <div class="flow-node-num">04 · Ejecución</div>
+              <div class="flow-node-title">Acción</div>
+              <p style="font-size: 11px; color: var(--muted);">Implementación técnica y validación en terreno.</p>
+            </div>
+            <div class="flow-node" style="background: #e8f5f0; border-color: var(--low);">
+              <div class="flow-node-num" style="color: var(--low);">05 · Impacto</div>
+              <div class="flow-node-title" style="color: var(--low);">Medición</div>
+              <p style="font-size: 11px; color: var(--ink-2);">Cero caídas en el trimestre posterior.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>DeskWork cierra el ciclo: registra el ticket, justifica la inversión y mide el resultado.</span>
+        <span>Slide 15 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 16: ROADMAP DE PRODUCTO              -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="16" data-title="Roadmap de Producto">
+      <div class="slide-header">
+        <div class="eyebrow">16 · Roadmap Progresivo</div>
+        <h2>Empezamos simple. Construimos sobre datos reales.</h2>
+        <p class="lead">No vendemos lo que aún no existe: la Etapa 1 (MVP) ya resuelve la totalidad del dolor actual de TECHO. Las etapas siguientes se activan según necesidad.</p>
+      </div>
+      <div class="slide-body">
+        <div class="roadmap-grid">
+          <div class="roadmap-card active-today">
+            <span class="roadmap-card-tag">HOY</span>
+            <div style="font-size: 10px; font-weight: 700; color: var(--primary); font-family: 'JetBrains Mono';">ETAPA 1</div>
+            <strong style="font-size: 14px; margin-top: 2px;">MVP TECHO</strong>
+            <ul class="roadmap-list">
+              <li>5 Niveles de usuario</li>
+              <li>Prioridad ponderada</li>
+              <li>Kanban + 6 Estados</li>
+              <li>Timer por ticket</li>
+              <li>Dashboard técnico</li>
+              <li>Dashboard directivo</li>
+            </ul>
+          </div>
+
+          <div class="roadmap-card">
+            <div style="font-size: 10px; font-weight: 700; color: var(--muted); font-family: 'JetBrains Mono';">ETAPA 2</div>
+            <strong style="font-size: 14px; margin-top: 2px;">Gestión</strong>
+            <ul class="roadmap-list">
+              <li>WhatsApp sincronizado</li>
+              <li>SLAs avanzados</li>
+              <li>Base de Conocimiento</li>
+              <li>Inventario básico PC</li>
+            </ul>
+          </div>
+
+          <div class="roadmap-card">
+            <div style="font-size: 10px; font-weight: 700; color: var(--muted); font-family: 'JetBrains Mono';">ETAPA 3</div>
+            <strong style="font-size: 14px; margin-top: 2px;">Inteligencia</strong>
+            <ul class="roadmap-list">
+              <li>DeskWork AI Triage</li>
+              <li>Detección de patrones</li>
+              <li>Borradores automáticos</li>
+              <li>Clasificación asistida</li>
+            </ul>
+          </div>
+
+          <div class="roadmap-card">
+            <div style="font-size: 10px; font-weight: 700; color: var(--muted); font-family: 'JetBrains Mono';">ETAPA 4</div>
+            <strong style="font-size: 14px; margin-top: 2px;">Proyectos</strong>
+            <ul class="roadmap-list">
+              <li>Gestión de iniciativas</li>
+              <li>Medición de impacto</li>
+              <li>Benchmarking</li>
+              <li>Inteligencia preventiva</li>
+            </ul>
+          </div>
+
+          <div class="roadmap-card">
+            <div style="font-size: 10px; font-weight: 700; color: var(--muted); font-family: 'JetBrains Mono';">ETAPA 5</div>
+            <strong style="font-size: 14px; margin-top: 2px;">SaaS</strong>
+            <ul class="roadmap-list">
+              <li>Multi-organización</li>
+              <li>Onboarding autónomo</li>
+              <li>Planes y facturación</li>
+              <li>Catálogo sectorial</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Compromiso de entrega garantizado sobre la Etapa 1 desde el primer día.</span>
+        <span>Slide 16 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 17: IMPLEMENTACIÓN TECHO             -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="17" data-title="Implementación Propuesta">
+      <div class="slide-header">
+        <div class="eyebrow">17 · Plan de Salida en Vivo</div>
+        <h2>Una salida en semanas, no en meses.</h2>
+        <p class="lead">Despliegue ágil estructurado en seis fases progresivas con piloto controlado para no interrumpir la operación de TECHO-Chile.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid grid-6" style="margin-bottom: 18px;">
+          <div class="card" style="padding: 14px 10px; text-align: center;">
+            <div class="mono" style="font-size: 10px; color: var(--primary); font-weight: 700;">FASE 1</div>
+            <div style="font-size: 13px; font-weight: 600; margin: 4px 0;">Levantamiento</div>
+            <div style="font-size: 11px; color: var(--muted);">Usuarios y cargos</div>
+          </div>
+          <div class="card" style="padding: 14px 10px; text-align: center;">
+            <div class="mono" style="font-size: 10px; color: var(--primary); font-weight: 700;">FASE 2</div>
+            <div style="font-size: 13px; font-weight: 600; margin: 4px 0;">Configuración</div>
+            <div style="font-size: 11px; color: var(--muted);">Reglas y marcas</div>
+          </div>
+          <div class="card" style="padding: 14px 10px; text-align: center; border-color: var(--primary); background: #f0f7f5;">
+            <div class="mono" style="font-size: 10px; color: var(--primary); font-weight: 700;">FASE 3</div>
+            <div style="font-size: 13px; font-weight: 600; margin: 4px 0;">Entrega MVP</div>
+            <div style="font-size: 11px; color: var(--ink-2);">Plataforma lista</div>
+          </div>
+          <div class="card" style="padding: 14px 10px; text-align: center;">
+            <div class="mono" style="font-size: 10px; color: var(--primary); font-weight: 700;">FASE 4</div>
+            <div style="font-size: 13px; font-weight: 600; margin: 4px 0;">Piloto</div>
+            <div style="font-size: 11px; color: var(--muted);">Grupo controlado</div>
+          </div>
+          <div class="card" style="padding: 14px 10px; text-align: center;">
+            <div class="mono" style="font-size: 10px; color: var(--primary); font-weight: 700;">FASE 5</div>
+            <div style="font-size: 13px; font-weight: 600; margin: 4px 0;">Lanzamiento</div>
+            <div style="font-size: 11px; color: var(--muted);">Toda la fundación</div>
+          </div>
+          <div class="card" style="padding: 14px 10px; text-align: center;">
+            <div class="mono" style="font-size: 10px; color: var(--primary); font-weight: 700;">FASE 6</div>
+            <div style="font-size: 13px; font-weight: 600; margin: 4px 0;">Evolución</div>
+            <div style="font-size: 11px; color: var(--muted);">Mejoras continuas</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card" style="padding: 16px;">
+            <strong style="color: var(--primary); font-size: 14px;">✓ Datos reales desde el día 1</strong>
+            <p style="font-size: 13px; margin-top: 2px;">No se entrega una maqueta vacía: se carga la estructura real de sedes, jefaturas y categorías de TECHO.</p>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <strong style="color: var(--primary); font-size: 14px;">✓ Sin dependencia artificial</strong>
+            <p style="font-size: 13px; margin-top: 2px;">La fundación es dueña de sus datos y de su configuración operativa.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Metodología probada para implementaciones rápidas en organizaciones sociales.</span>
+        <span>Slide 17 / 18</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 18: MODELO COMERCIAL Y CIERRE        -->
+    <!-- ========================================== -->
+    <section class="slide theme-dark" data-slide="18" data-title="Modelo Comercial y Cierre">
+      <div>
+        <div class="cover-badge">
+          18 · Propuesta de Trabajo y Cierre
+        </div>
+        <h2 style="font-size: 36px; margin-bottom: 8px;">Pago por implementar. Evolución cuando se necesite.</h2>
+        <p style="color: rgba(255,255,255,0.8); font-size: 15px; margin-bottom: 20px; max-width: 800px;">
+          Un esquema comercial transparente y justo: se paga por poner en marcha DeskWork y luego se decide con total libertad el ritmo de evolución.
+        </p>
+
+        <div class="pricing-grid">
+          <div class="pricing-box">
+            <div class="pricing-tag">Fase Inicial</div>
+            <div class="pricing-title">Implementación MVP</div>
+            <ul class="pricing-list">
+              <li>Levantamiento y diseño funcional</li>
+              <li>Carga de estructura y usuarios</li>
+              <li>Reglas de prioridad y SLA</li>
+              <li>Dashboards técnico y directivo</li>
+              <li>Capacitación y puesta en marcha</li>
+            </ul>
+          </div>
+
+          <div class="pricing-box">
+            <div class="pricing-tag">Continuidad</div>
+            <div class="pricing-title">Evolución Mensual</div>
+            <ul class="pricing-list">
+              <li>Soporte técnico del sistema</li>
+              <li>Ajustes y optimizaciones</li>
+              <li>Monitoreo y respaldos</li>
+              <li>Actualizaciones de plataforma</li>
+              <li>Reportes ejecutivos periódicos</li>
+            </ul>
+          </div>
+
+          <div class="pricing-box">
+            <div class="pricing-tag">A Medida</div>
+            <div class="pricing-title">Desarrollos Especiales</div>
+            <ul class="pricing-list">
+              <li>Integraciones con ERPs internos</li>
+              <li>Módulos avanzados de inventario</li>
+              <li>Flujos específicos por mandante</li>
+              <li>Cotización independiente y opcional</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; text-align: center; padding: 14px; background: rgba(255,255,255,0.06); border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+          <span style="font-size: 16px; font-weight: 500; color: white;">
+            DeskWork: De <span style="color:var(--primary-accent);">soporte reactivo</span> › A <span style="color:var(--primary-accent);">servicio medible</span> › A <span style="color:var(--primary-accent);">mejora continua</span>.
+          </span>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>DeskWork Technologies · Caso TECHO-Chile 2026</span>
+        <span>Slide 18 / 18</span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ====== FLOATING DECK HUD / CONTROLS ====== -->
+<nav class="deck-hud" id="deckHud">
+  <button class="hud-btn" id="prevBtn" title="Anterior (← / Shift+Espacio)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+
+  <span class="hud-counter" id="slideCounter">01 / 18</span>
+
+  <button class="hud-btn" id="nextBtn" title="Siguiente (→ / Espacio)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+
+  <span style="width: 1px; height: 16px; background: rgba(255,255,255,0.2);"></span>
+
+  <span class="hud-timer" id="deckTimer" title="Clic para pausar/reanudar cronómetro de presentación">00:00</span>
+
+  <button class="hud-btn" id="overviewBtn" title="Vista General (O / Esc)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+  </button>
+
+  <button class="hud-btn" id="speakerBtn" title="Notas del Orador (S)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+  </button>
+
+  <button class="hud-btn" id="fullscreenBtn" title="Pantalla Completa (F)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+  </button>
+
+  <button class="hud-btn" id="helpBtn" title="Atajos de Teclado (?)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>
+  </button>
+</nav>
+
+<!-- ====== OVERVIEW / GRID MODAL ====== -->
+<div id="overview-modal">
+  <div class="overview-head">
+    <h2>Vista General de Diapositivas</h2>
+    <button class="hud-btn" onclick="toggleOverview()" style="width: 40px; height: 40px; background: rgba(255,255,255,0.1);">✕</button>
+  </div>
+  <div class="overview-grid" id="overviewGrid">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- ====== SPEAKER NOTES DRAWER ====== -->
+<aside id="speaker-drawer">
+  <div class="speaker-head">
+    <div>
+      <div style="font-size: 11px; text-transform: uppercase; color: var(--primary-accent); font-weight: 700;">Modo Orador</div>
+      <h3 style="color: white; font-size: 16px;" id="speakerSlideTitle">Slide 01</h3>
+    </div>
+    <button class="hud-btn" onclick="toggleSpeaker()" style="background: rgba(255,255,255,0.1);">✕</button>
+  </div>
+  <div class="speaker-content" id="speakerContent">
+    <!-- Dynamic Talking Points -->
+  </div>
+</aside>
+
+<!-- ====== HELP MODAL ====== -->
+<div id="help-modal" onclick="toggleHelp(false)">
+  <div class="help-card" onclick="event.stopPropagation()">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="color: white;">Atajos de Teclado</h3>
+      <button class="hud-btn" onclick="toggleHelp(false)">✕</button>
+    </div>
+    <div class="kbd-row"><span>Siguiente diapositiva</span><div><span class="kbd">→</span> <span class="kbd">Espacio</span> <span class="kbd">PageDown</span></div></div>
+    <div class="kbd-row"><span>Diapositiva anterior</span><div><span class="kbd">←</span> <span class="kbd">Shift+Espacio</span> <span class="kbd">PageUp</span></div></div>
+    <div class="kbd-row"><span>Primera / Última</span><div><span class="kbd">Home</span> / <span class="kbd">End</span></div></div>
+    <div class="kbd-row"><span>Vista General (Grid)</span><div><span class="kbd">O</span> o <span class="kbd">Esc</span></div></div>
+    <div class="kbd-row"><span>Modo Orador (Notas)</span><div><span class="kbd">S</span></div></div>
+    <div class="kbd-row"><span>Pantalla Completa</span><div><span class="kbd">F</span></div></div>
+    <div class="kbd-row"><span>Exportar a PDF / Imprimir</span><div><span class="kbd">P</span> o <span class="kbd">Ctrl+P</span></div></div>
+    <div class="kbd-row"><span>Mostrar esta ayuda</span><div><span class="kbd">?</span></div></div>
+  </div>
+</div>
+
+<script>
+  // Slide State
+  let currentSlide = 1;
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  const progressFill = document.getElementById('progressFill');
+  const slideCounter = document.getElementById('slideCounter');
+  const overviewModal = document.getElementById('overview-modal');
+  const speakerDrawer = document.getElementById('speaker-drawer');
+  const helpModal = document.getElementById('help-modal');
+  const overviewGrid = document.getElementById('overviewGrid');
+
+  // Speaker Notes Content
+  const speakerNotesData = {
+    1: {
+      title: "01 · Portada",
+      cues: [
+        "Agradecer la reunión y contextualizar que esta propuesta nace de un análisis real de las operaciones de TECHO-Chile.",
+        "Frase clave: 'No venimos a vender un software de tickets más, sino a resolver cómo TI acompaña el crecimiento de la fundación de forma medible.'",
+        "Tiempo sugerido: 1 minuto."
+      ]
+    },
+    2: {
+      title: "02 · El Problema Actual",
+      cues: [
+        "Empatizar con la realidad de 1 persona en TI atendiendo a cientos de colaboradores y voluntarios.",
+        "Hacer notar el caos: WhatsApp, pasillos y correos que terminan siendo 'agujeros negros' de información.",
+        "Preguntar sutilmente: '¿Cuántas veces no sabemos si un problema fue resuelto o quién se hizo cargo?'"
+      ]
+    },
+    3: {
+      title: "03 · La Oportunidad",
+      cues: [
+        "Explicar el contraste: de apagar incendios a tener un servicio con métricas y aprendizaje.",
+        "Resaltar que cada ticket cerrado en la cabeza del técnico es conocimiento perdido para la organización."
+      ]
+    },
+    4: {
+      title: "04 · La Propuesta de Valor",
+      cues: [
+        "Mencionar los 4 verbos rectores: Centraliza, Mide, Aprende y Mejora.",
+        "Destacar la filosofía: 'Empezamos por resolver el dolor de hoy, no por implementar un monstruo informático de 6 meses.'"
+      ]
+    },
+    5: {
+      title: "05 · Flujo en 6 Pasos",
+      cues: [
+        "Demostrar que el usuario no tiene que clasificar si es 'Incidencia ITIL' o 'Requerimiento'.",
+        "Hacer clic en los pasos de la diapositiva para mostrar el detalle interactivo."
+      ]
+    },
+    6: {
+      title: "06 · Experiencia del Usuario",
+      cues: [
+        "Mostrar el mockup: interfaz limpia, minimalista y libre de fricciones.",
+        "Destacar que se adapta a voluntarios que usan el sistema una vez al mes y a directores con poco tiempo."
+      ]
+    },
+    7: {
+      title: "07 · Niveles de Usuario",
+      cues: [
+        "Hacer clic en los botones de roles para mostrar qué ve cada nivel.",
+        "Enfatizar que la seguridad y permisos se configuran sin alterar el código base."
+      ]
+    },
+    8: {
+      title: "08 · Motor de Priorización",
+      cues: [
+        "HACER LA DEMO EN VIVO: Probar 'Director + Cambio de Firma' (da P4) vs 'Administrativo + Caída Sistema' (da P1).",
+        "Mensaje clave: La prioridad se calcula objetivamente con el impacto real, no por la jerarquía del solicitante."
+      ]
+    },
+    9: {
+      title: "09 · Panel del Técnico",
+      cues: [
+        "Mostrar cómo el técnico de TI tiene todo bajo control en una sola pantalla.",
+        "Señalar los cronómetros en vivo que miden el tiempo honesto de resolución."
+      ]
+    },
+    10: {
+      title: "10 · Timer + KPIs",
+      cues: [
+        "Explicar los 6 momentos del timer: tiempo efectivo vs tiempo de espera del usuario.",
+        "Mostrar métricas de referencia: 94% de SLA y 18m de primera respuesta."
+      ]
+    },
+    11: {
+      title: "11 · Dashboard Directivo",
+      cues: [
+        "Explicar la diferencia entre la vista técnica y la vista de directorio.",
+        "Destacar que los reportes ejecutivos se generan automáticamente sin horas de Excel manual."
+      ]
+    },
+    12: {
+      title: "12 · Omnicanalidad y WhatsApp",
+      cues: [
+        "Aclarar que WhatsApp no compite con la web: se sincronizan en el mismo número de ticket TK-00153.",
+        "Las notificaciones salientes avisan al voluntario directamente a su teléfono."
+      ]
+    },
+    13: {
+      title: "13 · DeskWork AI",
+      cues: [
+        "Destacar la honestidad comercial: la IA se activa en la Etapa 3 sobre datos históricos reales.",
+        "Mencionar la documentación automática de la base de conocimiento."
+      ]
+    },
+    14: {
+      title: "14 · De Soporte a Mejora Continua",
+      cues: [
+        "Destacar el impacto cultural: TI pasa a ser un área que previene fallas en lugar de solo arreglarlas.",
+        "Leer la cita central con convicción."
+      ]
+    },
+    15: {
+      title: "15 · De Tickets a Proyectos",
+      cues: [
+        "Contar la historia de los 47 tickets de WiFi en Santiago y la reducción del 62%.",
+        "Este es el argumento decisivo para justificar proyectos de inversión tecnológica."
+      ]
+    },
+    16: {
+      title: "16 · Roadmap de Producto",
+      cues: [
+        "Enfatizar que la Etapa 1 (HOY) ya está lista para operar en TECHO.",
+        "Las etapas 2 a 5 son escalables según las prioridades del cliente."
+      ]
+    },
+    17: {
+      title: "17 · Implementación Propuesta",
+      cues: [
+        "Reiterar el plazo de salida en semanas con piloto controlado.",
+        "Garantizar que TECHO no queda atado a costos ocultos ni dependencia exclusiva."
+      ]
+    },
+    18: {
+      title: "18 · Modelo Comercial y Cierre",
+      cues: [
+        "Presentar los 3 bloques: Pago único de implementación + Evolución mensual opcional + Desarrollos especiales.",
+        "Cerrar invitando a definir la fecha de inicio del levantamiento (Fase 1)."
+      ]
+    }
+  };
+
+  // Roles Data (Slide 7)
+  const roleData = {
+    0: {
+      name: "Nivel 0 · Soporte TI",
+      subtitle: "Operación Técnica y Gestión Total",
+      badge: "Control Operativo",
+      items: [
+        "Recepción, asignación y cambio de estados en Kanban",
+        "Control de cronómetros, pausas y cumplimiento de SLA",
+        "Asistente IA para sugerencias de resolución rápida",
+        "Gestión de Base de Conocimiento y configuración"
+      ],
+      vision: "Visión completa de tickets de toda la organización."
+    },
+    1: {
+      name: "Nivel 1 · Director / Gerente",
+      subtitle: "Visión Estratégica e Institucional",
+      badge: "Gobernanza",
+      items: [
+        "Dashboard ejecutivo con gráficos de demanda y SLA",
+        "Visibilidad de tickets críticos (P1) en tiempo real",
+        "Reportes periódicos consolidados de desempeño",
+        "Aprobación de proyectos de mejora continua"
+      ],
+      vision: "Visión agregada macro sin sobrecarga de detalles técnicos."
+    },
+    2: {
+      name: "Nivel 2 · Jefatura",
+      subtitle: "Gestión Departamental y de Equipo",
+      badge: "Coordinación",
+      items: [
+        "Monitoreo de solicitudes abiertas por su equipo directo",
+        "Capacidad de escalar o crear tickets a nombre de terceros",
+        "Seguimiento de tiempos de atención en su área",
+        "Detección de necesidades de capacitación técnica"
+      ],
+      vision: "Visibilidad acotada a su departamento o sucursal."
+    },
+    3: {
+      name: "Nivel 3 · Administrativo",
+      subtitle: "Perfil Colaborador Estándar",
+      badge: "Usuario General",
+      items: [
+        "Creación ágil de tickets en 20 segundos",
+        "Historial personal con estado y tiempo estimado",
+        "Notificaciones de avance por correo o WhatsApp",
+        "Confirmación de resolución y cierre de ticket"
+      ],
+      vision: "Acceso únicamente a sus propias solicitudes."
+    },
+    4: {
+      name: "Nivel 4 · Voluntario",
+      subtitle: "Acceso Esencial y en Terreno",
+      badge: "Acceso Móvil",
+      items: [
+        "Ingreso rápido desde smartphone sin capacitaciones",
+        "Creación de requerimientos simples de acceso o equipos",
+        "Consulta de estado con un solo toque",
+        "Envío de propuestas de mejora de procesos"
+      ],
+      vision: "Interfaz ultra-simplificada orientada a movilidad."
+    }
+  };
+
+  // Step Details (Slide 5)
+  const stepDetails = {
+    1: { title: "Paso 01: Entrar al portal", text: "El usuario ingresa a soporte.techo.cl con una interfaz limpia, sin menús confusos ni sobrecarga visual." },
+    2: { title: "Paso 02: Identificarse", text: "Al ingresar su correo institucional, el sistema autocompleta su nombre, cargo, sede y jefatura directa." },
+    3: { title: "Paso 03: Indicar Tipo", text: "Elige entre 5 categorías esenciales: Correo, Accesos/VPN, Computador, Conectividad o Software." },
+    4: { title: "Paso 04: Describir el Problema", text: "Un único campo de texto libre donde el usuario explica qué le ocurre con sus propias palabras." },
+    5: { title: "Paso 05: Adjuntar Evidencia (Opcional)", text: "Permite subir una captura de pantalla, foto o documento que grafique la falla." },
+    6: { title: "Paso 06: Enviar y Trazabilidad", text: "DeskWork asigna ID único, calcula prioridad, activa cronómetro y envía confirmación por WhatsApp/Email." }
+  };
+
+  // Initialize
+  function initDeck() {
+    buildOverviewGrid();
+    goToSlide(1);
+    showRole(0);
+    startLiveTimers();
+    startDeckTimer();
+  }
+
+  // Slide Navigation
+  function goToSlide(n) {
+    if (n < 1) n = 1;
+    if (n > totalSlides) n = totalSlides;
+    currentSlide = n;
+
+    slides.forEach((s, idx) => {
+      if (idx + 1 === currentSlide) {
+        s.classList.add('active');
+      } else {
+        s.classList.remove('active');
+      }
+    });
+
+    // Update UI elements
+    const pct = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+    progressFill.style.width = pct + '%';
+    slideCounter.textContent = `${String(currentSlide).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+
+    // Update Speaker Notes
+    updateSpeakerNotes();
+
+    // Update Overview Thumb highlights
+    document.querySelectorAll('.overview-thumb').forEach((thumb, idx) => {
+      if (idx + 1 === currentSlide) {
+        thumb.classList.add('current-thumb');
+      } else {
+        thumb.classList.remove('current-thumb');
+      }
+    });
+  }
+
+  function nextSlide() { goToSlide(currentSlide + 1); }
+  function prevSlide() { goToSlide(currentSlide - 1); }
+
+  // Speaker Notes logic
+  function updateSpeakerNotes() {
+    const data = speakerNotesData[currentSlide] || { title: `Slide ${currentSlide}`, cues: ["Revisar contenidos de la diapositiva."] };
+    document.getElementById('speakerSlideTitle').textContent = data.title;
+    
+    let html = `<div style="font-size:11px; color:var(--muted); margin-bottom:12px; text-transform:uppercase;">Puntos Clave para la Presentación:</div>`;
+    data.cues.forEach((cue) => {
+      html += `<div class="speaker-cue">${cue}</div>`;
+    });
+    document.getElementById('speakerContent').innerHTML = html;
+  }
+
+  // Overview Grid
+  function buildOverviewGrid() {
+    let html = '';
+    slides.forEach((s, idx) => {
+      const num = idx + 1;
+      const title = s.getAttribute('data-title') || `Slide ${num}`;
+      html += `
+        <div class="overview-thumb ${num === currentSlide ? 'current-thumb' : ''}" onclick="selectThumb(${num})">
+          <div class="thumb-num">SLIDE ${String(num).padStart(2, '0')}</div>
+          <div class="thumb-title">${title}</div>
+          <div style="font-size: 10px; color: var(--muted);">Click para saltar</div>
+        </div>
+      `;
+    });
+    overviewGrid.innerHTML = html;
+  }
+
+  function selectThumb(n) {
+    goToSlide(n);
+    toggleOverview(false);
+  }
+
+  function toggleOverview(force) {
+    if (typeof force === 'boolean') {
+      if (force) overviewModal.classList.add('open');
+      else overviewModal.classList.remove('open');
+    } else {
+      overviewModal.classList.toggle('open');
+    }
+  }
+
+  function toggleSpeaker(force) {
+    if (typeof force === 'boolean') {
+      if (force) speakerDrawer.classList.add('open');
+      else speakerDrawer.classList.remove('open');
+    } else {
+      speakerDrawer.classList.toggle('open');
+    }
+  }
+
+  function toggleHelp(force) {
+    if (typeof force === 'boolean') {
+      if (force) helpModal.classList.add('open');
+      else helpModal.classList.remove('open');
+    } else {
+      helpModal.classList.toggle('open');
+    }
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+
+  // Role Switcher (Slide 7)
+  function showRole(roleIndex) {
+    document.querySelectorAll('.role-tab-btn').forEach((btn, idx) => {
+      if (idx === roleIndex) btn.classList.add('active-role');
+      else btn.classList.remove('active-role');
+    });
+
+    const data = roleData[roleIndex];
+    if (!data) return;
+
+    let itemsHtml = data.items.map(it => `<li style="margin-bottom: 6px;">✓ ${it}</li>`).join('');
+
+    document.getElementById('roleDetailContent').innerHTML = `
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase;">${data.badge}</div>
+        <h3 style="font-size: 20px; margin: 4px 0 6px;">${data.name}</h3>
+        <div style="font-size: 13px; color: var(--muted); margin-bottom: 14px;">${data.subtitle}</div>
+        <p style="font-size: 13px; color: var(--ink); background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);">
+          <strong>Alcance de Datos:</strong> ${data.vision}
+        </p>
+      </div>
+      <div>
+        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;">Capacidades del Perfil:</div>
+        <ul style="list-style: none; font-size: 13px; color: var(--ink-2); line-height: 1.6;">
+          ${itemsHtml}
+        </ul>
+      </div>
+    `;
+  }
+
+  // Step selector (Slide 5)
+  function selectStep(stepNum) {
+    document.querySelectorAll('.step-box').forEach((box, idx) => {
+      if (idx + 1 === stepNum) box.classList.add('active-step');
+      else box.classList.remove('active-step');
+    });
+    const info = stepDetails[stepNum];
+    if (info) {
+      document.getElementById('stepDetailTitle').textContent = info.title;
+      document.getElementById('stepDetailText').textContent = info.text;
+    }
+  }
+
+  // Priority Simulation Engine (Slide 8)
+  let simState = { role: 'director', type: 'correo', scope: 'single' };
+
+  function setSimRole(val, btn) {
+    simState.role = val;
+    highlightBtn('#roleSelectRow', btn);
+    calcPriority();
+  }
+  function setSimType(val, btn) {
+    simState.type = val;
+    highlightBtn('#typeSelectRow', btn);
+    calcPriority();
+  }
+  function setSimScope(val, btn) {
+    simState.scope = val;
+    highlightBtn('#scopeSelectRow', btn);
+    calcPriority();
+  }
+
+  function highlightBtn(rowSelector, activeBtn) {
+    document.querySelectorAll(`${rowSelector} .opt-btn`).forEach(b => b.classList.remove('selected'));
+    activeBtn.classList.add('selected');
+  }
+
+  function calcPriority() {
+    let score = 10;
+    
+    // Impact of Type
+    if (simState.type === 'sistema') score += 50;
+    else if (simState.type === 'hardware') score += 20;
+    else if (simState.type === 'correo') score += 5;
+
+    // Impact of Scope
+    if (simState.scope === 'org') score += 40;
+    else if (simState.scope === 'team') score += 25;
+    else if (simState.scope === 'single') score += 5;
+
+    // Role weight
+    if (simState.role === 'director') score += 10;
+    else if (simState.role === 'jefe') score += 5;
+    else score += 2;
+
+    const badge = document.getElementById('prioOutputBadge');
+    const expl = document.getElementById('prioOutputExplanation');
+
+    if (score >= 80) {
+      badge.textContent = "P1 · CRÍTICA";
+      badge.style.background = "#fef2f0";
+      badge.style.color = "var(--critical)";
+      expl.innerHTML = "<strong>Emergencia Institucional:</strong> Falla crítica que afecta la operación masiva o bloquea procesos estratégicos. SLA de atención inmediata.";
+    } else if (score >= 50) {
+      badge.textContent = "P2 · ALTA";
+      badge.style.background = "#fff5e6";
+      badge.style.color = "var(--high)";
+      expl.innerHTML = "<strong>Impacto Departamental:</strong> Falla técnica relevante que impide trabajar a un equipo completo o a un cargo clave sin alternativa inmediata.";
+    } else if (score >= 30) {
+      badge.textContent = "P3 · NORMAL";
+      badge.style.background = "#fef9e7";
+      badge.style.color = "var(--normal)";
+      expl.innerHTML = "<strong>Incidencia Estándar:</strong> Problema acotado a un único puesto de trabajo con resolución programada dentro del turno.";
+    } else {
+      badge.textContent = "P4 · BAJA";
+      badge.style.background = "#e8f5f0";
+      badge.style.color = "var(--low)";
+      expl.innerHTML = "<strong>Requerimiento Menor:</strong> Consulta o ajuste estético sin bloqueo operativo. No desplaza emergencias institucionales de otros colaboradores.";
+    }
+  }
+
+  // Live ticking timers in technician panel
+  function startLiveTimers() {
+    setInterval(() => {
+      document.querySelectorAll('.live-timer').forEach(el => {
+        let secs = parseInt(el.getAttribute('data-secs') || '0', 10);
+        secs++;
+        el.setAttribute('data-secs', secs);
+        const h = String(Math.floor(secs / 3600)).padStart(2, '0');
+        const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
+        const s = String(secs % 60).padStart(2, '0');
+        el.textContent = `${h}:${m}:${s}`;
+      });
+    }, 1000);
+  }
+
+  // Deck elapsed timer
+  let deckSecs = 0;
+  let timerRunning = true;
+  function startDeckTimer() {
+    const timerEl = document.getElementById('deckTimer');
+    setInterval(() => {
+      if (timerRunning) {
+        deckSecs++;
+        const m = String(Math.floor(deckSecs / 60)).padStart(2, '0');
+        const s = String(deckSecs % 60).padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+      }
+    }, 1000);
+
+    timerEl.addEventListener('click', () => {
+      timerRunning = !timerRunning;
+      timerEl.style.opacity = timerRunning ? '1' : '0.5';
+    });
+  }
+
+  // Keyboard Event Handlers
+  window.addEventListener('keydown', (e) => {
+    // Ignore when inside inputs
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+    switch(e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+      case 'PageDown':
+      case 'n':
+      case 'N':
+        nextSlide();
+        break;
+      case ' ':
+        if (e.shiftKey) prevSlide();
+        else nextSlide();
+        e.preventDefault();
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+      case 'PageUp':
+        prevSlide();
+        break;
+      case 'Home':
+        goToSlide(1);
+        break;
+      case 'End':
+        goToSlide(totalSlides);
+        break;
+      case 'o':
+      case 'O':
+        toggleOverview();
+        break;
+      case 'Escape':
+        toggleOverview(false);
+        toggleHelp(false);
+        break;
+      case 's':
+      case 'S':
+        toggleSpeaker();
+        break;
+      case 'f':
+      case 'F':
+        toggleFullscreen();
+        break;
+      case '?':
+        toggleHelp();
+        break;
+      case 'p':
+      case 'P':
+        if (!e.ctrlKey && !e.metaKey) {
+          window.print();
+        }
+        break;
+    }
+  });
+
+  // Touch Swipe Support
+  let touchStartX = 0;
+  let touchEndX = 0;
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, false);
+  document.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, false);
+
+  function handleSwipe() {
+    const diff = touchEndX - touchStartX;
+    if (Math.abs(diff) > 50) {
+      if (diff < 0) nextSlide();
+      else prevSlide();
+    }
+  }
+
+  // HUD Button Click Bindings
+  document.getElementById('nextBtn').addEventListener('click', nextSlide);
+  document.getElementById('prevBtn').addEventListener('click', prevSlide);
+  document.getElementById('overviewBtn').addEventListener('click', () => toggleOverview());
+  document.getElementById('speakerBtn').addEventListener('click', () => toggleSpeaker());
+  document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+  document.getElementById('helpBtn').addEventListener('click', () => toggleHelp(true));
+
+  // Run on start
+  initDeck();
+</script>
+
+</body>
+</html>

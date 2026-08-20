@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskWork v2.0 — Mockup Interactivo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafaf7;
+      --bg-elev: #ffffff;
+      --ink: #14171e;
+      --ink-2: #3a4256;
+      --muted: #7c7a72;
+      --line: #e9e3d6;
+      --line-soft: #f0ebde;
+      --primary: #0d4f4a;
+      --primary-dark: #0a3d39;
+      --primary-soft: #d9eae7;
+      --accent: #6ee7df;
+      --critical: #b3331f;
+      --high: #c2410c;
+      --normal: #a16207;
+      --low: #047857;
+      --info: #1d4ed8;
+      --warning: #d97706;
+      --success: #059669;
+      --error: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    /* ===== HEADER NAVEGACIÓN ===== */
+    .nav-header {
+      background: white;
+      border-bottom: 1px solid var(--line);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--primary);
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-steps {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .step-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      color: var(--ink-2);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 200ms;
+    }
+
+    .step-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .step-btn:hover:not(.active) {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* ===== CONTENEDOR PRINCIPAL ===== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      background: white;
+      border-right: 1px solid var(--line);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      position: sticky;
+      top: 60px;
+    }
+
+    .sidebar-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: all 200ms;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-item:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .sidebar-item.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .sidebar-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      padding: 32px;
+      overflow-y: auto;
+      max-height: calc(100vh - 60px);
+      background: var(--bg);
+    }
+
+    /* ===== SCREEN ===== */
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+      animation: fadeIn 300ms ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== TÍTULOS ===== */
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .page-header p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ===== STATS CARDS ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .stat-delta {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    /* ===== TABLA TICKETS ===== */
+    .tickets-section {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .section-header .filters {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      padding: 6px 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--ink-2);
+      transition: all 200ms;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tickets-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .tickets-table th {
+      padding: 14px 20px;
+      background: var(--bg);
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tickets-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line-soft);
+      font-size: 14px;
+    }
+
+    .tickets-table tr:hover {
+      background: var(--bg);
+    }
+
+    .ticket-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .ticket-title {
+      color: var(--ink);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .ticket-user {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-open {
+      background: #e0f2fe;
+      color: var(--info);
+    }
+
+    .status-in-progress {
+      background: #fef3c7;
+      color: var(--normal);
+    }
+
+    .status-resolved {
+      background: #d1fae5;
+      color: var(--success);
+    }
+
+    .status-escalated {
+      background: #fecaca;
+      color: var(--critical);
+    }
+
+    .priority-critical { color: var(--critical); font-weight: 600; }
+    .priority-high { color: var(--high); font-weight: 600; }
+    .priority-normal { color: var(--normal); font-weight: 600; }
+    .priority-low { color: var(--success); font-weight: 600; }
+
+    /* ===== FORM ===== */
+    .form-section {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 32px;
+      max-width: 600px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      transition: all 200ms;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+      border-color: var(--primary);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.55;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .form-error {
+      font-size: 12px;
+      color: var(--error);
+      margin-top: 6px;
+    }
+
+    .form-group.error input {
+      border-color: var(--error);
+      background: #fff5f5;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 200ms;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      box-shadow: 0 4px 16px -2px rgba(13, 79, 74, 0.2);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-ghost {
+      background: white;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    /* ===== DETAIL VIEW ===== */
+    .detail-container {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+    }
+
+    .detail-main {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 28px;
+    }
+
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .detail-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .detail-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .detail-section {
+      margin-bottom: 28px;
+    }
+
+    .detail-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .detail-content {
+      color: var(--ink-2);
+      line-height: 1.65;
+    }
+
+    .detail-sidebar {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .sidebar-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .sidebar-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    /* ===== VALIDATION MESSAGE ===== */
+    .validation-message {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .validation-success {
+      background: #d1fae5;
+      color: var(--success);
+      border: 1px solid #a7f3d0;
+    }
+
+    .validation-error {
+      background: #fee2e2;
+      color: var(--error);
+      border: 1px solid #fecaca;
+    }
+
+    .validation-icon {
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1024px) {
+      .container { grid-template-columns: 1fr; }
+      .sidebar { max-height: auto; border-right: none; border-bottom: 1px solid var(--line); display: flex; flex-direction: row; overflow-x: auto; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .detail-container { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .nav-header { padding: 0 16px; }
+      .main { padding: 20px 16px; }
+      .page-header h1 { font-size: 24px; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .form-section { max-width: 100%; }
+      .sidebar-item { padding: 8px 10px; font-size: 12px; }
+      .tickets-table th, .tickets-table td { padding: 12px 14px; font-size: 13px; }
+    }
+
+    /* ===== IMPROVEMENT BADGES ===== */
+    .improvement-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .legend {
+      background: var(--primary-soft);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .legend-item:last-child { margin-bottom: 0; }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- SVG ICONS -->
+<svg style="display: none;">
+  <defs>
+    <!-- Icon: Check Circle (success) -->
+    <symbol id="icon-check-circle" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M 8 12 L 11 15 L 16 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <!-- Icon: Alert Circle (error) -->
+    <symbol id="icon-alert-circle" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M 12 8 L 12 12 M 12 16 L 12.01 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <!-- Icon: Ticket -->
+    <symbol id="icon-ticket" viewBox="0 0 24 24">
+      <path d="M3 7h18M3 11h18M3 15h18M8 3v3M8 18v3M16 3v3M16 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <!-- Icon: Clock -->
+    <symbol id="icon-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <!-- Icon: User -->
+    <symbol id="icon-user" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M6 20c0-3.5 2.5-6 6-6s6 2.5 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- HEADER -->
+<div class="nav-header">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">D</div>
+    <span>DeskWork v2.0</span>
+  </div>
+  <div class="nav-steps">
+    <button class="step-btn active" onclick="showScreen('screen-1')">① Dashboard</button>
+    <button class="step-btn" onclick="showScreen('screen-2')">② Crear Ticket</button>
+    <button class="step-btn" onclick="showScreen('screen-3')">③ Detalle</button>
+    <button class="step-btn" onclick="showScreen('screen-4')">④ Mobile</button>
+  </div>
+  <div class="nav-user">
+    <span style="font-size: 12px; color: var(--muted);">Ana García</span>
+    <div class="avatar">AG</div>
+  </div>
+</div>
+
+<!-- CONTAINER -->
+<div class="container">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-item active">
+      <svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      Dashboard
+    </div>
+    <div class="sidebar-item">
+      <svg class="sidebar-icon" viewBox="0 0 24 24"><path d="M3 7h18M3 11h18M3 15h18M8 3v3M8 18v3M16 3v3M16 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      Tickets
+    </div>
+    <div class="sidebar-item">
+      <svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 20c0-3.5 2.5-6 6-6s6 2.5 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Usuarios
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- SCREEN 1: DASHBOARD -->
+    <div id="screen-1" class="screen active">
+      <div class="page-header">
+        <h1>Dashboard <span class="improvement-badge">✓ v2.0</span></h1>
+        <p>Vista de tickets abiertos y métricas en tiempo real</p>
+      </div>
+
+      <div class="legend">
+        <strong>🎨 Mejoras aplicadas:</strong>
+        <div class="legend-item"><div class="legend-color" style="background: var(--primary);"></div>① Tokens CSS + Paleta extendida</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--accent);"></div>③ Iconografía nativa minimalista</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--success);"></div>⑥ Estados interactivos (hover/focus)</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--info);"></div>⑦ Colores semánticos (success/info)</div>
+      </div>
+
+      <!-- STATS CARDS (MEJORA 1: Tokens + Paleta) -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Abiertos</div>
+          <div class="stat-value" style="color: var(--info);">12</div>
+          <div class="stat-delta">↑ 3 desde ayer</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">En progreso</div>
+          <div class="stat-value" style="color: var(--normal);">7</div>
+          <div class="stat-delta">↓ 1 desde ayer</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Resueltos</div>
+          <div class="stat-value" style="color: var(--success);">24</div>
+          <div class="stat-delta">↑ 2 desde ayer</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Escalados</div>
+          <div class="stat-value" style="color: var(--critical);">2</div>
+          <div class="stat-delta">Require atención</div>
+        </div>
+      </div>
+
+      <!-- TABLA (MEJORA 1: Tokens + 6: Estados + 7: Colores semánticos) -->
+      <div class="tickets-section">
+        <div class="section-header">
+          <h2>Tickets Recientes</h2>
+          <div class="filters">
+            <button class="filter-btn">Todos</button>
+            <button class="filter-btn">Abiertos</button>
+            <button class="filter-btn">Mi asignados</button>
+          </div>
+        </div>
+        <table class="tickets-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Descripción</th>
+              <th>Reportado por</th>
+              <th>Estado</th>
+              <th>Prioridad</th>
+              <th>Asignado a</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="ticket-id">TKT-2401</td>
+              <td>
+                <div class="ticket-title">Sistema lento en carga de reportes</div>
+                <div class="ticket-user">Carlos Mendoza</div>
+              </td>
+              <td>Carlos Mendoza</td>
+              <td><span class="status-badge status-open">
+                <svg style="width: 8px; height: 8px;"><circle cx="4" cy="4" r="3" fill="currentColor"/></svg>
+                Abierto
+              </span></td>
+              <td class="priority-critical">🔴 Crítico</td>
+              <td>Ana García</td>
+            </tr>
+            <tr>
+              <td class="ticket-id">TKT-2400</td>
+              <td>
+                <div class="ticket-title">Error en exportar datos a CSV</div>
+                <div class="ticket-user">María López</div>
+              </td>
+              <td>María López</td>
+              <td><span class="status-badge status-in-progress">
+                <svg style="width: 8px; height: 8px;"><circle cx="4" cy="4" r="3" fill="currentColor"/></svg>
+                En progreso
+              </span></td>
+              <td class="priority-high">🟠 Alto</td>
+              <td>Roberto Silva</td>
+            </tr>
+            <tr>
+              <td class="ticket-id">TKT-2399</td>
+              <td>
+                <div class="ticket-title">Solicitud: integración Slack</div>
+                <div class="ticket-user">Juan Pérez</div>
+              </td>
+              <td>Juan Pérez</td>
+              <td><span class="status-badge status-resolved">
+                <svg style="width: 8px; height: 8px;"><circle cx="4" cy="4" r="3" fill="currentColor"/></svg>
+                Resuelto
+              </span></td>
+              <td class="priority-normal">🟡 Normal</td>
+              <td>Ana García</td>
+            </tr>
+            <tr>
+              <td class="ticket-id">TKT-2398</td>
+              <td>
+                <div class="ticket-title">Fallo al cargar dashboard principal</div>
+                <div class="ticket-user">Admin</div>
+              </td>
+              <td>Admin</td>
+              <td><span class="status-badge status-escalated">
+                <svg style="width: 8px; height: 8px;"><circle cx="4" cy="4" r="3" fill="currentColor"/></svg>
+                Escalado
+              </span></td>
+              <td class="priority-critical">🔴 Crítico</td>
+              <td>Tech Lead</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: CREAR TICKET (MEJORA 2: Componentes + Validación) -->
+    <div id="screen-2" class="screen">
+      <div class="page-header">
+        <h1>Crear Nuevo Ticket <span class="improvement-badge">✓ v2.0</span></h1>
+        <p>Formulario con validación y feedback en tiempo real</p>
+      </div>
+
+      <div class="legend">
+        <strong>🎨 Mejoras aplicadas:</strong>
+        <div class="legend-item"><div class="legend-color" style="background: var(--primary);"></div>② Componentes interactivos (inputs, validación)</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--success);"></div>④ Accesibilidad (labels, hints, focus visible)</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--error);"></div>⑥ Estados: error, validación, disabled</div>
+      </div>
+
+      <div class="form-section">
+        <!-- SUCCESS MESSAGE -->
+        <div class="validation-message validation-success">
+          <span class="validation-icon">✓</span>
+          <span>Email verificado correctamente</span>
+        </div>
+
+        <!-- FORM -->
+        <form>
+          <div class="form-group">
+            <label for="email">Email <span style="color: var(--error);">*</span></label>
+            <input 
+              type="email" 
+              id="email" 
+              placeholder="tu@empresa.com"
+              value="carlos@empresa.com"
+              aria-describedby="email-hint"
+            />
+            <div class="form-hint">✓ Email verificado</div>
+          </div>
+
+          <div class="form-group">
+            <label for="title">Título del ticket <span style="color: var(--error);">*</span></label>
+            <input 
+              type="text" 
+              id="title" 
+              placeholder="Describe brevemente el problema"
+              value="Sistema lento en carga de reportes"
+            />
+            <div class="form-hint">Se mostrará en el dashboard</div>
+          </div>
+
+          <div class="form-group">
+            <label for="priority">Prioridad <span style="color: var(--error);">*</span></label>
+            <select id="priority">
+              <option value="">-- Selecciona prioridad --</option>
+              <option value="critical" style="color: var(--critical);">🔴 Crítico</option>
+              <option value="high" style="color: var(--high);">🟠 Alto</option>
+              <option value="normal" selected style="color: var(--normal);">🟡 Normal</option>
+              <option value="low" style="color: var(--success);">🟢 Bajo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="category">Categoría <span style="color: var(--error);">*</span></label>
+            <select id="category">
+              <option value="">-- Selecciona categoría --</option>
+              <option value="performance">Performance</option>
+              <option value="bug" selected>Bug</option>
+              <option value="feature">Solicitud de feature</option>
+              <option value="access">Acceso/Permisos</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Descripción detallada <span style="color: var(--error);">*</span></label>
+            <textarea 
+              id="description" 
+              placeholder="Incluye pasos para reproducir, logs, screenshots..."
+            >El dashboard toma más de 30 segundos en cargar cuando abro la sección de reportes. He probado en Chrome y Firefox, mismo comportamiento. Mi conexión es de 100Mbps, así que no debería ser un problema de red.</textarea>
+            <div class="form-hint">Mínimo 10 caracteres</div>
+          </div>
+
+          <!-- ERROR FIELD -->
+          <div class="form-group error">
+            <label for="attachment">Archivos adjuntos</label>
+            <input 
+              type="file" 
+              id="attachment"
+              aria-describedby="attachment-error"
+            />
+            <div class="form-error" id="attachment-error">El archivo es muy grande (máx. 10MB)</div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="alert('Ticket creado: TKT-2402')">
+              ✓ Crear Ticket
+            </button>
+            <button class="btn btn-ghost" onclick="alert('Cancelado')">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: DETAIL VIEW (MEJORA 1,3,6,7) -->
+    <div id="screen-3" class="screen">
+      <div class="page-header">
+        <h1>Detalle de Ticket <span class="improvement-badge">✓ v2.0</span></h1>
+        <p>Vista completa con timeline y acciones</p>
+      </div>
+
+      <div class="legend">
+        <strong>🎨 Mejoras aplicadas:</strong>
+        <div class="legend-item"><div class="legend-color" style="background: var(--primary);"></div>③ Iconografía nativa en badge/acciones</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--accent);"></div>① Tokens consistentes (espacios, colores)</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--success);"></div>⑥ Estados de botones interactivos</div>
+      </div>
+
+      <div class="detail-container">
+        <div class="detail-main">
+          <div class="detail-header">
+            <div>
+              <div class="detail-title">Sistema lento en carga de reportes</div>
+              <div class="detail-meta">TKT-2401 · Creado hace 2 horas</div>
+            </div>
+            <div class="detail-actions">
+              <button class="btn btn-ghost">Responder</button>
+              <button class="btn btn-primary">Resolver</button>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Problema reportado</h3>
+            <div class="detail-content">
+              El dashboard toma más de 30 segundos en cargar cuando abro la sección de reportes. He probado en Chrome y Firefox, mismo comportamiento. Mi conexión es de 100Mbps, así que no debería ser un problema de red.
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Timeline de actividad</h3>
+            <div style="background: var(--bg); padding: 16px; border-radius: 8px; border-left: 3px solid var(--primary);">
+              <div style="font-size: 13px; color: var(--ink-2); line-height: 1.6;">
+                <div style="margin-bottom: 12px;"><strong style="color: var(--ink);">Ana García</strong> asignó a sí misma · hace 1 hora</div>
+                <div style="margin-bottom: 12px;"><strong style="color: var(--ink);">Roberto Silva</strong> cambió prioridad a Crítico · hace 45 min</div>
+                <div><strong style="color: var(--ink);">Sistema</strong> generó alerta · hace 30 min</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-sidebar">
+          <div class="sidebar-section">
+            <div class="sidebar-label">Estado actual</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="status-badge status-open">
+                <svg style="width: 8px; height: 8px;"><circle cx="4" cy="4" r="3" fill="currentColor"/></svg>
+                Abierto
+              </span>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">Prioridad</div>
+            <div class="sidebar-value" style="color: var(--critical);">🔴 Crítico</div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">Asignado a</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="avatar" style="width: 28px; height: 28px; font-size: 11px;">AG</div>
+              <div class="sidebar-value">Ana García</div>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">Categoría</div>
+            <div class="sidebar-value">Performance</div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">Reportado por</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="avatar" style="width: 28px; height: 28px; background: linear-gradient(135deg, #c2410c, #d97706); font-size: 11px;">CM</div>
+              <div class="sidebar-value">Carlos Mendoza</div>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">Tiempo de respuesta</div>
+            <div class="sidebar-value">23 minutos ✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: MOBILE VIEW (MEJORA 5: Responsive) -->
+    <div id="screen-4" class="screen">
+      <div class="page-header">
+        <h1>Vista Mobile (480px) <span class="improvement-badge">✓ v2.0</span></h1>
+        <p>Responsive design sistemático con breakpoints</p>
+      </div>
+
+      <div class="legend">
+        <strong>🎨 Mejoras aplicadas:</strong>
+        <div class="legend-item"><div class="legend-color" style="background: var(--primary);"></div>⑤ Responsive sistemático (480/768/1024px)</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--accent);"></div>③ Iconografía escalable</div>
+        <div class="legend-item"><div class="legend-color" style="background: var(--success);"></div>④ Touch targets accesibles (44x44px)</div>
+      </div>
+
+      <div style="background: white; border: 1px solid var(--line); border-radius: 12px; max-width: 360px; margin: 24px auto; overflow: hidden; box-shadow: 0 12px 32px -4px rgba(0,0,0,0.1);">
+        <!-- MOBILE HEADER -->
+        <div style="background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary) 100%); color: white; padding: 16px; text-align: center;">
+          <div style="font-size: 14px; font-weight: 600;">DeskWork</div>
+          <div style="font-size: 11px; opacity: 0.8; margin-top: 2px;">Dashboard Mobile</div>
+        </div>
+
+        <!-- MOBILE STATS (STACKED) -->
+        <div style="padding: 16px; border-bottom: 1px solid var(--line);">
+          <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+            <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Abiertos</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--info);">12</div>
+          </div>
+          <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+            <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">En progreso</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--normal);">7</div>
+          </div>
+          <div style="background: var(--bg); padding: 12px; border-radius: 8px;">
+            <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Resueltos</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--success);">24</div>
+          </div>
+        </div>
+
+        <!-- MOBILE TICKETS (CARDS) -->
+        <div style="padding: 16px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Tickets pendientes</div>
+          
+          <div style="background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--primary); font-weight: 600; margin-bottom: 4px;">TKT-2401</div>
+            <div style="font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 6px;">Sistema lento en reportes</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="status-badge status-open" style="font-size: 10px; padding: 4px 8px;">
+                <svg style="width: 6px; height: 6px;"><circle cx="3" cy="3" r="2" fill="currentColor"/></svg>
+                Abierto
+              </span>
+              <span style="color: var(--critical); font-weight: 600; font-size: 11px;">Crítico</span>
+            </div>
+          </div>
+
+          <div style="background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--primary); font-weight: 600; margin-bottom: 4px;">TKT-2400</div>
+            <div style="font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 6px;">Error exportar CSV</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="status-badge status-in-progress" style="font-size: 10px; padding: 4px 8px;">
+                <svg style="width: 6px; height: 6px;"><circle cx="3" cy="3" r="2" fill="currentColor"/></svg>
+                En progreso
+              </span>
+              <span style="color: var(--high); font-weight: 600; font-size: 11px;">Alto</span>
+            </div>
+          </div>
+
+          <!-- CTA BUTTON -->
+          <button class="btn btn-primary" style="width: 100%; padding: 12px 16px; font-size: 13px; margin-top: 8px; justify-content: center;">
+            ➕ Crear Ticket
+          </button>
+        </div>
+      </div>
+
+      <div style="background: var(--primary-soft); border: 1px solid var(--primary); border-radius: 8px; padding: 16px; max-width: 360px; margin: 24px auto; font-size: 12px;">
+        <strong style="color: var(--primary);">📱 Características Responsive:</strong>
+        <ul style="margin: 8px 0 0 16px; color: var(--ink-2);">
+          <li>Stats en 1 columna (en mobile)</li>
+          <li>Tickets como cards (no tabla)</li>
+          <li>Botones 44px mínimo (toque accesible)</li>
+          <li>Padding adaptativo 16px→24px→32px</li>
+          <li>Tipografía legible en todo tamaño</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showScreen(screenId) {
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(screen => {
+    screen.classList.remove('active');
+  });
+  
+  // Show selected screen
+  document.getElementById(screenId).classList.add('active');
+  
+  // Update button states
+  document.querySelectorAll('.step-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Map screen ID to button
+  const buttonIndex = screenId.replace('screen-', '');
+  document.querySelectorAll('.step-btn')[buttonIndex - 1].classList.add('active');
+}
+</script>
+
+</body>
+</html>

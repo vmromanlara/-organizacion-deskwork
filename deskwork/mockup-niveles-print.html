@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>DeskWork — Mockup por niveles de usuario v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: Letter;
+    margin: 0.6in 0.6in 0.7in 0.6in;
+  }
+  @page :first { margin: 0; }
+
+  :root {
+    --bg: #fafaf7;
+    --bg-elev: #ffffff;
+    --ink: #14171e;
+    --ink-2: #3a4256;
+    --muted: #7c7a72;
+    --line: #e9e3d6;
+    --line-soft: #f0ebde;
+    --primary: #0d4f4a;
+    --primary-soft: #d9eae7;
+    --critical: #b3331f;
+    --high: #c2410c;
+    --normal: #a16207;
+    --low: #047857;
+    --info: #1d4ed8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: white; color: var(--ink);
+    line-height: 1.45; -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Page = one section */
+  .page { page-break-after: always; page-break-inside: avoid; position: relative; }
+  .page:last-of-type { page-break-after: auto; }
+
+  /* COVER */
+  .cover {
+    height: 11in;
+    margin: -0.6in -0.6in 0;
+    padding: 0.8in 0.7in;
+    background: linear-gradient(180deg, #0a3d39 0%, #0d4f4a 50%, #105853 100%);
+    color: white; position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+  }
+  .cover-mark { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .cover-mark-icon {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 9px;
+    display: grid; place-items: center;
+  }
+  .cover-mark-text { font-weight: 600; font-size: 15px; }
+  .cover h1 { color: white; font-size: 44px; line-height: 1.05; margin-bottom: 20px; max-width: 6in; }
+  .cover h1 .accent { color: #6ee7df; }
+  .cover-sub { color: rgba(255,255,255,0.8); font-size: 13px; line-height: 1.5; max-width: 5.5in; font-weight: 300; }
+  .cover-foot { position: absolute; bottom: 0.8in; left: 0.7in; right: 0.7in; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; gap: 32px; flex-wrap: wrap; font-size: 11px; }
+  .cover-foot strong { color: white; }
+  .cover-foot span { display: block; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 3px; }
+
+  /* Generic page styles */
+  .p-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    break-inside: avoid;
+  }
+  .p-head-left { max-width: 5.5in; }
+  .p-num-tag {
+    display: inline-block; padding: 4px 10px;
+    background: var(--primary-soft); color: var(--primary);
+    border-radius: 5px; font-size: 10px; font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .p-head h2 { font-size: 22px; line-height: 1.1; font-weight: 600; letter-spacing: -0.015em; }
+  .p-head p { font-size: 11px; margin-top: 4px; max-width: 5.5in; }
+
+  .p-caps {
+    background: white; border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px;
+    min-width: 1.8in; max-width: 2.1in;
+    break-inside: avoid;
+  }
+  .p-caps-l { font-size: 8.5px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; font-weight: 500; }
+  .p-caps ul { list-style: none; }
+  .p-caps li { font-size: 9.5px; color: var(--ink-2); padding: 3px 0 3px 10px; position: relative; line-height: 1.35; }
+  .p-caps li::before { content: ""; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; position: absolute; left: 0; top: 7px; }
+
+  /* App frame */
+  .app {
+    background: white; border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 8px 24px -4px rgba(0,0,0,0.06);
+    break-inside: avoid;
+  }
+  .app.dark { background: #14171e; border-color: #14171e; }
+  .app-top {
+    background: #f4f1ea; border-bottom: 1px solid var(--line);
+    padding: 7px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .app.dark .app-top { background: #1a1d24; border-bottom-color: #232730; }
+  .app-top-l { display: flex; align-items: center; gap: 7px; }
+  .app-dots { display: flex; gap: 4px; }
+  .app-dot { width: 7px; height: 7px; border-radius: 50%; background: #d4cdc0; }
+  .app.dark .app-dot { background: #3a4256; }
+  .app-url {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--muted); background: white;
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 3px 8px; min-width: 200px;
+  }
+  .app.dark .app-url { background: #232730; color: rgba(255,255,255,0.5); border-color: #2a2f3a; }
+  .app-user {
+    display: flex; align-items: center; gap: 7px;
+    padding: 2px 9px 2px 2px;
+    background: white; border: 1px solid var(--line);
+    border-radius: 999px; font-size: 9.5px; color: var(--ink-2);
+  }
+  .app.dark .app-user { background: #232730; border-color: #2a2f3a; color: rgba(255,255,255,0.7); }
+  .app-av {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--primary); color: white;
+    display: grid; place-items: center;
+    font-size: 8px; font-weight: 600;
+  }
+  .av-orange { background: #c2410c; }
+  .av-blue { background: #1d4ed8; }
+  .av-purple { background: #6d28d9; }
+  .av-amber { background: #b45309; }
+
+  .app-body { display: grid; }
+  .app-body.sb { grid-template-columns: 130px 1fr; }
+
+  .app-sb {
+    background: #fafaf7; border-right: 1px solid var(--line);
+    padding: 12px 8px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .app.dark .app-sb { background: #1a1d24; border-right-color: #232730; }
+  .sb-i {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 7px; border-radius: 5px;
+    font-size: 10px; color: var(--ink-2);
+  }
+  .app.dark .sb-i { color: rgba(255,255,255,0.6); }
+  .sb-i.active { background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+  .app.dark .sb-i.active { background: rgba(13,79,74,0.3); color: #6ee7df; }
+  .sb-i .b { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 8px; background: var(--line); color: var(--muted); padding: 1px 4px; border-radius: 3px; }
+  .app.dark .sb-i .b { background: #2a2f3a; color: rgba(255,255,255,0.5); }
+  .sb-i.active .b { background: var(--primary); color: white; }
+  .sb-sec { font-size: 7.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 8px 7px 3px; font-weight: 500; }
+
+  .app-c { padding: 14px 16px; }
+  .app.dark .app-c { color: white; }
+
+  .app-pt {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+  }
+  .app-pt h3 { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .app.dark .app-pt h3 { color: white; }
+  .app-pt-s { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  /* KPI row */
+  .kpi-r { display: grid; gap: 5px; margin-bottom: 12px; }
+  .kpi-r.k5 { grid-template-columns: repeat(5, 1fr); }
+  .kpi-r.k4 { grid-template-columns: repeat(4, 1fr); }
+  .kt {
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 7px; padding: 8px 10px;
+  }
+  .app.dark .kt { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+  .kt-l { font-size: 8px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
+  .app.dark .kt-l { color: rgba(255,255,255,0.5); }
+  .kt-v { font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--ink); line-height: 1; }
+  .app.dark .kt-v { color: white; }
+  .kt-s { font-size: 8px; color: var(--muted); margin-top: 2px; }
+  .app.dark .kt-s { color: rgba(255,255,255,0.4); }
+  .kt.alert .kt-v { color: var(--critical); }
+  .kt.warn .kt-v { color: var(--high); }
+  .kt.ok .kt-v { color: var(--low); }
+  .kt.hl { background: var(--primary); border-color: var(--primary); }
+  .kt.hl .kt-l { color: rgba(255,255,255,0.7); }
+  .kt.hl .kt-v { color: white; }
+  .kt.hl .kt-s { color: rgba(255,255,255,0.6); }
+
+  /* Ticket table */
+  .tt {
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 7px; overflow: hidden;
+  }
+  .app.dark .tt { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.08); }
+  .tt-h {
+    display: grid; grid-template-columns: 50px 1.2fr 1fr 50px 60px;
+    gap: 8px; padding: 7px 10px;
+    background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--line);
+    font-size: 8px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
+  }
+  .app.dark .tt-h { background: rgba(255,255,255,0.03); border-bottom-color: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+  .tt-r {
+    display: grid; grid-template-columns: 50px 1.2fr 1fr 50px 60px;
+    gap: 8px; padding: 8px 10px; align-items: center;
+    font-size: 10px; border-top: 1px solid var(--line);
+  }
+  .app.dark .tt-r { border-top-color: rgba(255,255,255,0.04); }
+  .tt-r:first-of-type { border-top: 0; }
+  .tt-id { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 9px; }
+  .app.dark .tt-id { color: rgba(255,255,255,0.4); }
+  .tt-u { color: var(--ink); font-weight: 500; }
+  .app.dark .tt-u { color: white; }
+  .tt-u span { display: block; font-size: 8px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+  .app.dark .tt-u span { color: rgba(255,255,255,0.4); }
+  .tt-i { color: var(--ink-2); font-size: 9.5px; }
+  .app.dark .tt-i { color: rgba(255,255,255,0.6); }
+  .tt-p { font-weight: 600; font-size: 10px; }
+  .app.dark .tt-p { color: white; }
+  .tt-t { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; text-align: right; }
+  .app.dark .tt-t { color: rgba(255,255,255,0.6); }
+  .tt-t.alert { color: var(--critical); }
+  .tt-t.warn { color: var(--high); }
+  .tt-t.ok { color: var(--low); }
+
+  /* Pills */
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 999px; font-size: 8.5px; font-weight: 500; }
+  .pill .d { width: 4px; height: 4px; border-radius: 50%; }
+  .p-open { background: #e0f2fe; color: var(--info); } .p-open .d { background: var(--info); }
+  .p-proc { background: #fef3c7; color: var(--normal); } .p-proc .d { background: var(--normal); }
+  .p-wait { background: #fed7aa; color: var(--high); } .p-wait .d { background: var(--high); }
+  .p-esc { background: #fecaca; color: var(--critical); } .p-esc .d { background: var(--critical); }
+  .p-done { background: #d1fae5; color: var(--low); } .p-done .d { background: var(--low); }
+  .p-closed { background: #f3f4f6; color: var(--muted); } .p-closed .d { background: var(--muted); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 11px; border-radius: 6px;
+    font-size: 9.5px; font-weight: 500; font-family: inherit;
+    border: 0; cursor: pointer;
+  }
+  .btn-p { background: var(--primary); color: white; }
+  .btn-g { background: white; border: 1px solid var(--line); color: var(--ink-2); }
+
+  /* Exec dashboard */
+  .exec-g { display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px; margin-top: 6px; }
+  .exec-c { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; break-inside: avoid; }
+  .exec-t { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 10px; }
+  .exec-m { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+  .em { background: white; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; }
+  .em-l { font-size: 8px; color: var(--muted); margin-bottom: 2px; }
+  .em-v { font-size: 15px; font-weight: 600; color: var(--ink); font-family: 'JetBrains Mono', monospace; line-height: 1; }
+  .em-v.green { color: var(--low); }
+  .em-v.red { color: var(--high); }
+  .em-bar { height: 3px; background: var(--line); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .em-bar-f { height: 100%; background: var(--primary); border-radius: 2px; }
+  .bars { display: grid; gap: 4px; }
+  .b-r { display: grid; grid-template-columns: 60px 1fr 28px; gap: 6px; align-items: center; font-size: 9px; }
+  .b-l { color: var(--muted); }
+  .b-t { height: 5px; background: var(--line-soft); border-radius: 2px; overflow: hidden; }
+  .b-f { height: 100%; background: var(--primary); border-radius: 2px; }
+  .b-v { font-family: 'JetBrains Mono', monospace; text-align: right; color: var(--ink); font-weight: 500; }
+
+  .mini-list { display: grid; gap: 5px; }
+  .mini-r { background: white; border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; display: flex; align-items: center; gap: 7px; font-size: 9.5px; }
+  .mini-r-id { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 9px; }
+  .mini-r-t { flex: 1; color: var(--ink); }
+
+  .chart-svg { width: 100%; height: 70px; margin: 6px 0; }
+
+  /* Team header (Jefatura) */
+  .team-h {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--primary-soft); border: 1px solid #b8d4d0;
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
+  }
+  .team-avs { display: flex; }
+  .team-avs .av { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: white; display: grid; place-items: center; font-size: 8px; font-weight: 600; border: 2px solid var(--primary-soft); margin-left: -5px; }
+  .team-avs .av:first-child { margin-left: 0; }
+  .team-avs .av:nth-child(2) { background: #c2410c; }
+  .team-avs .av:nth-child(3) { background: #1d4ed8; }
+  .team-avs .av:nth-child(4) { background: #6d28d9; }
+  .team-avs .av.more { background: white; color: var(--ink-2); font-size: 7.5px; }
+  .team-info { flex: 1; }
+  .team-info h4 { font-size: 12px; color: var(--ink); font-weight: 600; }
+  .team-info p { font-size: 9px; color: var(--ink-2); margin-top: 1px; }
+
+  .tabs-in { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+  .tab-in { padding: 6px 10px; background: transparent; border: 0; border-bottom: 2px solid transparent; font-family: inherit; font-size: 10px; color: var(--muted); font-weight: 500; margin-bottom: -1px; }
+  .tab-in.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-in .c { font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 1px 4px; background: var(--line-soft); color: var(--muted); border-radius: 3px; margin-left: 4px; }
+  .tab-in.active .c { background: var(--primary-soft); color: var(--primary); }
+
+  .mem-list { display: grid; gap: 5px; }
+  .mem-r {
+    display: grid; grid-template-columns: 24px 1fr 40px 40px 30px;
+    gap: 10px; align-items: center;
+    padding: 7px 10px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  .mem-av { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: white; display: grid; place-items: center; font-size: 8px; font-weight: 600; }
+  .mem-n { font-size: 10px; color: var(--ink); font-weight: 500; }
+  .mem-rl { font-size: 8.5px; color: var(--muted); }
+  .mem-st { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-2); text-align: center; }
+  .mem-st span { display: block; font-size: 7px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .mem-a { color: var(--primary); font-size: 9px; }
+
+  /* User view */
+  .user-greet { margin-bottom: 12px; }
+  .user-greet h3 { font-size: 18px; font-weight: 600; color: var(--ink); }
+  .user-prof { margin-top: 3px; font-size: 9.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; }
+  .user-prof strong { color: var(--ink-2); font-weight: 500; }
+
+  .new-cta {
+    background: var(--primary); color: white; border-radius: 9px;
+    padding: 11px 14px; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .new-cta-t { font-size: 11px; font-weight: 500; }
+  .new-cta-s { font-size: 9px; opacity: 0.7; margin-top: 1px; }
+  .new-cta-i { width: 26px; height: 26px; background: rgba(255,255,255,0.15); border-radius: 6px; display: grid; place-items: center; }
+
+  .sec-l {
+    font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500; margin-bottom: 7px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sec-l a { color: var(--primary); font-size: 9px; text-decoration: none; font-weight: 500; letter-spacing: 0; text-transform: none; }
+
+  .user-tk-list { display: grid; gap: 5px; }
+  .user-tk {
+    display: grid; grid-template-columns: auto 1fr auto auto;
+    gap: 10px; align-items: center;
+    padding: 9px 11px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 7px;
+  }
+  .user-tk-id { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); }
+  .user-tk-t { font-size: 10.5px; color: var(--ink); font-weight: 500; }
+  .user-tk-m { font-size: 8.5px; color: var(--muted); margin-top: 1px; }
+  .user-tk-tm { font-size: 9px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* Voluntario */
+  .vol-h { background: var(--primary-soft); border-radius: 9px; padding: 14px 16px; margin-bottom: 12px; }
+  .vol-h h3 { font-size: 16px; color: var(--ink); font-weight: 600; }
+  .vol-h p { color: var(--ink-2); font-size: 10px; margin-top: 2px; }
+
+  .vol-cta {
+    background: var(--primary); color: white; border-radius: 9px;
+    padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .vol-cta-t { font-size: 12px; font-weight: 500; }
+  .vol-cta-s { font-size: 9px; opacity: 0.75; margin-top: 1px; }
+
+  .vol-list { display: grid; gap: 6px; }
+  .vol-r { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+  .vol-r-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+  .vol-r-id { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); }
+  .vol-r-t { font-size: 10.5px; color: var(--ink); font-weight: 500; }
+  .vol-r-m { font-size: 8.5px; color: var(--muted); margin-top: 1px; }
+
+  /* Matrix */
+  .matrix-w { background: white; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; break-inside: avoid; }
+  .matrix { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .matrix th, .matrix td { padding: 8px 9px; text-align: left; border-bottom: 1px solid var(--line); }
+  .matrix th { background: #f4f1ea; font-weight: 600; color: var(--ink); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .matrix th:first-child, .matrix td:first-child { background: #fafaf7; font-weight: 500; color: var(--ink-2); }
+  .matrix th:not(:first-child) { text-align: center; }
+  .matrix td:not(:first-child) { text-align: center; }
+  .matrix tr:last-child td { border-bottom: 0; }
+  .col-h { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .col-h-n { font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 1px 5px; background: var(--primary); color: white; border-radius: 3px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+  .col-h-name { font-size: 8.5px; }
+  .check { color: var(--low); font-weight: 600; font-size: 12px; }
+  .cross { color: var(--muted); font-size: 11px; opacity: 0.5; }
+  .partial { display: inline-block; width: 14px; height: 3px; background: var(--high); border-radius: 2px; }
+  .partial.empty { background: var(--line); }
+  .partial.half { background: linear-gradient(90deg, var(--high) 50%, var(--line) 50%); }
+  .matrix td.feature strong { color: var(--ink); font-weight: 500; }
+
+  .note-p {
+    margin-top: 14px; font-size: 10px; color: var(--muted);
+    padding: 10px 12px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px;
+    line-height: 1.5;
+  }
+  .note-p strong { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- 01 · COVER -->
+<section class="page cover">
+  <div class="cover-mark">
+    <span class="cover-mark-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+    </span>
+    <span class="cover-mark-text">DeskWork</span>
+  </div>
+  <h1>Cómo se ve DeskWork<br>según el rol de quien entra.</h1>
+  <p class="cover-sub">Una plataforma, cinco pantallas. Cada nivel ve la información y ejecuta las acciones que corresponden a su rol — nada más, nada menos. Aquí está la maqueta conceptual de cada vista.</p>
+  <div class="cover-foot">
+    <div><span>Mockup por niveles</span><strong>5 vistas + matriz</strong></div>
+    <div><span>Versión</span><strong>Mockup 1.0 · 2026</strong></div>
+    <div><span>Caso piloto</span><strong>Fundación TECHO-Chile</strong></div>
+  </div>
+</section>
+
+<!-- 02 · NIVEL 0 -->
+<section class="page">
+  <div class="p-head">
+    <div class="p-head-left">
+      <div class="p-num-tag">Nivel 0 · Soporte TI · operación</div>
+      <h2>La mesa de trabajo del técnico.</h2>
+      <p>Una sola persona —o un equipo pequeño— puede ver de un vistazo qué atender primero, qué está detenido y qué se está saliendo de tiempo.</p>
+    </div>
+    <div class="p-caps">
+      <div class="p-caps-l">Capacidades</div>
+      <ul>
+        <li>Recibe y gestiona todos los tickets</li>
+        <li>Cambia estados, asigna, escala</li>
+        <li>Ve timer, SLA y vencidos</li>
+        <li>Usa asistente IA y conocimiento</li>
+        <li>Genera reportes operativos</li>
+      </ul>
+    </div>
+  </div>
+  <div class="app dark">
+    <div class="app-top">
+      <div class="app-top-l">
+        <div class="app-dots"><span class="app-dot"></span><span class="app-dot"></span><span class="app-dot"></span></div>
+        <div class="app-url">deskwork.techo.cl/bandeja</div>
+      </div>
+      <div class="app-user"><span class="app-av">CM</span>Carlos Méndez · TI</div>
+    </div>
+    <div class="app-body sb">
+      <aside class="app-sb">
+        <div class="sb-i active"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>Bandeja<span class="b">22</span></div>
+        <div class="sb-i"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Kanban</div>
+        <div class="sb-i"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18"/></svg>SLA<span class="b">2</span></div>
+        <div class="sb-i"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Reportes</div>
+        <div class="sb-sec">Conocimiento</div>
+        <div class="sb-i"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>Base de conocimiento</div>
+        <div class="sb-i"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Asistente IA</div>
+        <div class="sb-sec">Administración</div>
+        <div class="sb-i"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Usuarios</div>
+        <div class="sb-i"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 9v3l2 2"/></svg>Configuración</div>
+      </aside>
+      <div class="app-c">
+        <div class="app-pt">
+          <div>
+            <h3>Bandeja de tickets</h3>
+            <div class="app-pt-s">22 solicitudes activas · 2 vencidas · 1 escalada</div>
+          </div>
+          <div style="display: flex; gap: 5px;">
+            <button class="btn btn-g" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);">Filtrar</button>
+            <button class="btn btn-p" style="background: #6ee7df; color: var(--primary);">Buscar</button>
+          </div>
+        </div>
+        <div class="kpi-r k5">
+          <div class="kt"><div class="kt-l">Abiertos</div><div class="kt-v">12</div><div class="kt-s">+3 hoy</div></div>
+          <div class="kt"><div class="kt-l">En proceso</div><div class="kt-v">4</div><div class="kt-s">asignados a ti</div></div>
+          <div class="kt"><div class="kt-l">Esperando</div><div class="kt-v">3</div><div class="kt-s">bloq. usuario</div></div>
+          <div class="kt"><div class="kt-l">Escalados</div><div class="kt-v">1</div><div class="kt-s">proveedor</div></div>
+          <div class="kt alert"><div class="kt-l">Vencidos</div><div class="kt-v">2</div><div class="kt-s">fuera de SLA</div></div>
+        </div>
+        <div class="tt">
+          <div class="tt-h">
+            <div>Ticket</div><div>Usuario</div><div>Incidencia</div><div>Prio</div><div style="text-align:right;">Timer</div>
+          </div>
+          <div class="tt-r"><div class="tt-id">#00125</div><div class="tt-u">Director Vargas<span>Dirección · Santiago</span></div><div class="tt-i">Correo no envía</div><div class="tt-p" style="color: #fca5a5;">P1</div><div class="tt-t alert">00:18:42</div></div>
+          <div class="tt-r"><div class="tt-id">#00124</div><div class="tt-u">Ana Morales<span>Administración</span></div><div class="tt-i">Notebook no enciende</div><div class="tt-p" style="color: #fbbf24;">P2</div><div class="tt-t warn">01:42:11</div></div>
+          <div class="tt-r"><div class="tt-id">#00123</div><div class="tt-u">Pedro Soto<span>Operaciones</span></div><div class="tt-i">Impresora no responde</div><div class="tt-p" style="color: #fde047;">P3</div><div class="tt-t warn">04:16:38</div></div>
+          <div class="tt-r"><div class="tt-id">#00122</div><div class="tt-u">María López<span>Finanzas</span></div><div class="tt-i">Cambio de configuración</div><div class="tt-p" style="color: #6ee7df;">P4</div><div class="tt-t ok">01:31:09</div></div>
+          <div class="tt-r"><div class="tt-id">#00121</div><div class="tt-u">Voluntario R.<span>Región Biobío</span></div><div class="tt-i">Acceso a plataforma</div><div class="tt-p" style="color: #fde047;">P3</div><div class="tt-t warn">02:08:51</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 · NIVEL 1 -->
+<section class="page">
+  <div class="p-head">
+    <div class="p-head-left">
+      <div class="p-num-tag">Nivel 1 · Director / Gerente · vista institucional</div>
+      <h2>Cómo está funcionando el servicio, en una pantalla.</h2>
+      <p>No ve tickets individuales. Ve el bosque: volumen, SLA, distribución, tendencias, críticos. Lo suficiente para decidir, sin ahogarse en datos.</p>
+    </div>
+    <div class="p-caps">
+      <div class="p-caps-l">Capacidades</div>
+      <ul>
+        <li>Ve solicitudes globales y SLA</li>
+        <li>Estadísticas por área, categoría, período</li>
+        <li>Identifica tickets críticos</li>
+        <li>Accede a reportes ejecutivos</li>
+        <li>Acciones administrativas</li>
+      </ul>
+    </div>
+  </div>
+  <div class="app">
+    <div class="app-top">
+      <div class="app-top-l">
+        <div class="app-dots"><span class="app-dot"></span><span class="app-dot"></span><span class="app-dot"></span></div>
+        <div class="app-url">deskwork.techo.cl/ejecutivo</div>
+      </div>
+      <div class="app-user"><span class="app-av av-blue">RV</span>Rosalba Vargas · Dirección</div>
+    </div>
+    <div class="app-c">
+      <div class="app-pt">
+        <div>
+          <h3>Servicio de soporte · vista institucional</h3>
+          <div class="app-pt-s">Marzo 2026 · Comparado con febrero</div>
+        </div>
+        <div style="display: flex; gap: 5px;">
+          <button class="btn btn-g">Marzo 2026</button>
+          <button class="btn btn-p">Exportar</button>
+        </div>
+      </div>
+      <div class="kpi-r k4">
+        <div class="kt hl"><div class="kt-l">Solicitudes</div><div class="kt-v">347</div><div class="kt-s">+8% vs febrero</div></div>
+        <div class="kt ok"><div class="kt-l">Resueltas</div><div class="kt-v">312</div><div class="kt-s">89,9% cierre</div></div>
+        <div class="kt warn"><div class="kt-l">Pendientes</div><div class="kt-v">35</div><div class="kt-s">en gestión</div></div>
+        <div class="kt hl"><div class="kt-l">SLA</div><div class="kt-v">94,2%</div><div class="kt-s">objetivo 90%</div></div>
+      </div>
+      <div class="exec-g">
+        <div class="exec-c">
+          <div class="exec-t">Distribución por categoría</div>
+          <div class="bars">
+            <div class="b-r"><span class="b-l">Correo</span><div class="b-t"><div class="b-f" style="width: 31%;"></div></div><span class="b-v">31%</span></div>
+            <div class="b-r"><span class="b-l">Accesos</span><div class="b-t"><div class="b-f" style="width: 24%;"></div></div><span class="b-v">24%</span></div>
+            <div class="b-r"><span class="b-l">Hardware</span><div class="b-t"><div class="b-f" style="width: 18%;"></div></div><span class="b-v">18%</span></div>
+            <div class="b-r"><span class="b-l">Software</span><div class="b-t"><div class="b-f" style="width: 14%;"></div></div><span class="b-v">14%</span></div>
+            <div class="b-r"><span class="b-l">Conect.</span><div class="b-t"><div class="b-f" style="width: 9%;"></div></div><span class="b-v">9%</span></div>
+            <div class="b-r"><span class="b-l">Otros</span><div class="b-t"><div class="b-f" style="width: 4%;"></div></div><span class="b-v">4%</span></div>
+          </div>
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 9.5px; color: var(--muted);">
+            <strong style="color: var(--ink);">Patrón detectado:</strong> 24% de solicitudes son de accesos. Conviene evaluar automatización del alta de usuarios.
+          </div>
+        </div>
+        <div class="exec-c">
+          <div class="exec-t">Evolución mensual</div>
+          <svg class="chart-svg" viewBox="0 0 280 70" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0d4f4a" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#0d4f4a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="60" x2="280" y2="60" stroke="#e9e3d6"/>
+            <line x1="0" y1="35" x2="280" y2="35" stroke="#f0ebde" stroke-dasharray="2 3"/>
+            <line x1="0" y1="12" x2="280" y2="12" stroke="#f0ebde" stroke-dasharray="2 3"/>
+            <path d="M0 45 L46 35 L93 42 L140 28 L186 22 L233 10 L233 60 L0 60 Z" fill="url(#grad)"/>
+            <path d="M0 45 L46 35 L93 42 L140 28 L186 22 L233 10" fill="none" stroke="#0d4f4a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="233" cy="10" r="3" fill="#0d4f4a"/>
+          </svg>
+          <div class="bars" style="margin-top: 4px;">
+            <div class="b-r"><span class="b-l">SLA</span><div class="b-t"><div class="b-f" style="width: 94%; background: var(--low);"></div></div><span class="b-v">94%</span></div>
+            <div class="b-r"><span class="b-l">1ª resp.</span><div class="b-t"><div class="b-f" style="width: 18%; background: var(--info);"></div></div><span class="b-v">18m</span></div>
+            <div class="b-r"><span class="b-l">Resol.</span><div class="b-t"><div class="b-f" style="width: 42%; background: var(--high);"></div></div><span class="b-v">3h 17m</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="exec-g" style="margin-top: 10px;">
+        <div class="exec-c">
+          <div class="exec-t">Tickets críticos · requiere atención</div>
+          <div class="mini-list">
+            <div class="mini-r"><span class="mini-r-id">#00125</span><span class="mini-r-t">Director Vargas — Correo no envía</span><span class="pill p-proc"><span class="d"></span>Proceso</span></div>
+            <div class="mini-r"><span class="mini-r-id">#00119</span><span class="mini-r-t">Sistema remuneraciones — oficina central</span><span class="pill p-esc"><span class="d"></span>Escalado</span></div>
+            <div class="mini-r"><span class="mini-r-id">#00114</span><span class="mini-r-t">Acceso VPN — Región Valparaíso</span><span class="pill p-wait"><span class="d"></span>Esperando</span></div>
+          </div>
+        </div>
+        <div class="exec-c">
+          <div class="exec-t">Propuestas de mejora detectadas</div>
+          <div class="mini-list">
+            <div class="mini-r"><span class="mini-r-t"><strong>Automatizar alta de usuarios</strong></span><span style="font-size: 8.5px; color: var(--muted);">12 menciones</span></div>
+            <div class="mini-r"><span class="mini-r-t"><strong>Renovar WiFi Sucursal Santiago</strong></span><span style="font-size: 8.5px; color: var(--muted);">47 tickets</span></div>
+            <div class="mini-r"><span class="mini-r-t"><strong>Tutorial: configuración Outlook</strong></span><span style="font-size: 8.5px; color: var(--muted);">8 casos repetidos</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 · NIVEL 2 -->
+<section class="page">
+  <div class="p-head">
+    <div class="p-head-left">
+      <div class="p-num-tag">Nivel 2 · Jefatura / Supervisor · gestión de equipo</div>
+      <h2>El jefe ve a su gente, no solo a sí mismo.</h2>
+      <p>Cada solicitud de su equipo, solicitudes departamentales, posibilidad de elevar o crear tickets para dependientes. Visibilidad completa del área sin intervenir técnicamente.</p>
+    </div>
+    <div class="p-caps">
+      <div class="p-caps-l">Capacidades</div>
+      <ul>
+        <li>Ve solicitudes de todo su equipo</li>
+        <li>Eleva o crea para dependientes</li>
+        <li>Solicitudes departamentales</li>
+        <li>Solicita reuniones o seguimientos</li>
+        <li>Accede a métricas del área</li>
+      </ul>
+    </div>
+  </div>
+  <div class="app">
+    <div class="app-top">
+      <div class="app-top-l">
+        <div class="app-dots"><span class="app-dot"></span><span class="app-dot"></span><span class="app-dot"></span></div>
+        <div class="app-url">deskwork.techo.cl/mi-equipo</div>
+      </div>
+      <div class="app-user"><span class="app-av av-purple">JP</span>Juan Pérez · Jefatura Administración</div>
+    </div>
+    <div class="app-c">
+      <div class="team-h">
+        <div class="team-avs">
+          <div class="av">MP</div><div class="av">PG</div><div class="av">JS</div><div class="av">AT</div><div class="av more">+8</div>
+        </div>
+        <div class="team-info">
+          <h4>Equipo de Administración</h4>
+          <p>12 personas · Sucursal Santiago</p>
+        </div>
+        <button class="btn btn-p">+ Crear para dependiente</button>
+      </div>
+      <div class="kpi-r k4">
+        <div class="kt"><div class="kt-l">Solicitudes abiertas</div><div class="kt-v">5</div><div class="kt-s">del equipo</div></div>
+        <div class="kt"><div class="kt-l">En proceso</div><div class="kt-v">3</div><div class="kt-s">con TI</div></div>
+        <div class="kt"><div class="kt-l">Esperando</div><div class="kt-v">1</div><div class="kt-s">bloq. usuario</div></div>
+        <div class="kt ok"><div class="kt-l">Resueltas (mes)</div><div class="kt-v">17</div><div class="kt-s">+3 vs febrero</div></div>
+      </div>
+      <div class="tabs-in">
+        <button class="tab-in active">Personas <span class="c">12</span></button>
+        <button class="tab-in">Solicitudes <span class="c">26</span></button>
+        <button class="tab-in">Departamentales <span class="c">2</span></button>
+        <button class="tab-in">Reuniones</button>
+      </div>
+      <div class="mem-list">
+        <div class="mem-r"><div class="mem-av">MP</div><div><div class="mem-n">María Pérez</div><div class="mem-rl">Administrativo · Adquisiciones</div></div><div class="mem-st">3<span>Tickets</span></div><div class="mem-st" style="color: var(--low);">0<span>Crít.</span></div><div class="mem-a">Ver →</div></div>
+        <div class="mem-r"><div class="mem-av" style="background: #c2410c;">PG</div><div><div class="mem-n">Pedro González</div><div class="mem-rl">Administrativo · Rendiciones</div></div><div class="mem-st">1<span>Tickets</span></div><div class="mem-st" style="color: var(--low);">0<span>Crít.</span></div><div class="mem-a">Ver →</div></div>
+        <div class="mem-r"><div class="mem-av" style="background: #1d4ed8;">JS</div><div><div class="mem-n">Juan Soto</div><div class="mem-rl">Analista · Contabilidad</div></div><div class="mem-st">5<span>Tickets</span></div><div class="mem-st" style="color: var(--high);">1<span>Crít.</span></div><div class="mem-a">Ver →</div></div>
+        <div class="mem-r"><div class="mem-av" style="background: #6d28d9;">AT</div><div><div class="mem-n">Andrea Torres</div><div class="mem-rl">Asistente · Logística</div></div><div class="mem-st">0<span>Tickets</span></div><div class="mem-st" style="color: var(--low);">0<span>Crít.</span></div><div class="mem-a">Ver →</div></div>
+        <div class="mem-r"><div class="mem-av" style="background: #b45309;">CR</div><div><div class="mem-n">Carlos Rojas</div><div class="mem-rl">Jefe · Adquisiciones</div></div><div class="mem-st">2<span>Tickets</span></div><div class="mem-st" style="color: var(--low);">0<span>Crít.</span></div><div class="mem-a">Ver →</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 · NIVEL 3 -->
+<section class="page">
+  <div class="p-head">
+    <div class="p-head-left">
+      <div class="p-num-tag">Nivel 3 · Administrativo / Operacional · usuario completo</div>
+      <h2>Una pantalla, su nombre y sus solicitudes.</h2>
+      <p>Quien usa DeskWork todos los días para pedir ayuda. Ve su perfil, sus tickets, su estado, su tiempo estimado. Sin panel técnico, sin métricas, sin ruido.</p>
+    </div>
+    <div class="p-caps">
+      <div class="p-caps-l">Capacidades</div>
+      <ul>
+        <li>Crea solicitudes en 6 pasos</li>
+        <li>Ve sus tickets y estados</li>
+        <li>Tiempo estimado y respuesta</li>
+        <li>Historial propio completo</li>
+        <li>Recibe notificaciones</li>
+      </ul>
+    </div>
+  </div>
+  <div class="app" style="max-width: 4.5in; margin: 0 auto;">
+    <div class="app-top">
+      <div class="app-top-l">
+        <div class="app-dots"><span class="app-dot"></span><span class="app-dot"></span><span class="app-dot"></span></div>
+        <div class="app-url">soporte.techo.cl</div>
+      </div>
+      <div class="app-user"><span class="app-av av-amber">ML</span>María López · Finanzas</div>
+    </div>
+    <div class="app-c">
+      <div class="user-greet">
+        <h3>Hola, María</h3>
+        <div class="user-prof">
+          <span><strong>Finanzas</strong> · Sucursal Santiago</span>
+          <span>Jefatura: Juan Pérez</span>
+          <span>Cargo: Analista contable</span>
+        </div>
+      </div>
+      <div class="new-cta">
+        <div>
+          <div class="new-cta-t">¿Necesitas ayuda con algo?</div>
+          <div class="new-cta-s">Te tomará menos de un minuto crear una solicitud</div>
+        </div>
+        <div class="new-cta-i"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </div>
+      <div class="sec-l">
+        <span>Mis solicitudes</span>
+        <a href="#">Ver historial completo →</a>
+      </div>
+      <div class="user-tk-list">
+        <div class="user-tk"><span class="user-tk-id">#00152</span><div><div class="user-tk-t">Problema con correo corporativo</div><div class="user-tk-m">Creada hoy · 09:42</div></div><span class="pill p-proc"><span class="d"></span>En proceso</span><span class="user-tk-tm">~1h 30m</span></div>
+        <div class="user-tk"><span class="user-tk-id">#00148</span><div><div class="user-tk-t">Acceso a plataforma de rendiciones</div><div class="user-tk-m">Resuelta ayer</div></div><span class="pill p-done"><span class="d"></span>Resuelta</span><span class="user-tk-tm">2h 14m</span></div>
+        <div class="user-tk"><span class="user-tk-id">#00143</span><div><div class="user-tk-t">Configuración notebook nuevo</div><div class="user-tk-m">Cerrada lunes</div></div><span class="pill p-closed"><span class="d"></span>Cerrada</span><span class="user-tk-tm">3h 02m</span></div>
+        <div class="user-tk"><span class="user-tk-id">#00137</span><div><div class="user-tk-t">Solicitud de licencia Office</div><div class="user-tk-m">Cerrada semana pasada</div></div><span class="pill p-closed"><span class="d"></span>Cerrada</span><span class="user-tk-tm">1h 48m</span></div>
+        <div class="user-tk"><span class="user-tk-id">#00128</span><div><div class="user-tk-t">Cambio de configuración impresora</div><div class="user-tk-m">Cerrada hace 2 semanas</div></div><span class="pill p-closed"><span class="d"></span>Cerrada</span><span class="user-tk-tm">45m</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 · NIVEL 4 -->
+<section class="page">
+  <div class="p-head">
+    <div class="p-head-left">
+      <div class="p-num-tag">Nivel 4 · Voluntario · acceso esencial</div>
+      <h2>Lo mínimo indispensable, bien hecho.</h2>
+      <p>El voluntario no es un usuario permanente. Está de paso, en regiones, con disponibilidad variable. La pantalla tiene que ser tan simple que cualquier persona la use sin capacitación.</p>
+    </div>
+    <div class="p-caps">
+      <div class="p-caps-l">Capacidades</div>
+      <ul>
+        <li>Crea solicitudes simples</li>
+        <li>Realiza propuestas</li>
+        <li>Consulta estado y tiempo</li>
+        <li>Ve últimos 3–5 requerimientos</li>
+        <li>Recibe notificaciones</li>
+      </ul>
+    </div>
+  </div>
+  <div class="app" style="max-width: 3.6in; margin: 0 auto;">
+    <div class="app-top">
+      <div class="app-top-l">
+        <div class="app-dots"><span class="app-dot"></span><span class="app-dot"></span><span class="app-dot"></span></div>
+        <div class="app-url">soporte.techo.cl</div>
+      </div>
+      <div class="app-user"><span class="app-av" style="background: #0d4f4a;">RM</span>R. Méndez</div>
+    </div>
+    <div class="app-c">
+      <div class="vol-h">
+        <h3>Hola, Rodrigo</h3>
+        <p>Voluntario · Región del Biobío</p>
+      </div>
+      <div class="vol-cta">
+        <div>
+          <div class="vol-cta-t">¿Tienes un problema o idea?</div>
+          <div class="vol-cta-s">Crear nueva solicitud</div>
+        </div>
+        <div class="new-cta-i"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></div>
+      </div>
+      <div class="sec-l">Mis últimas solicitudes</div>
+      <div class="vol-list">
+        <div class="vol-r"><div class="vol-r-h"><span class="vol-r-id">#00121</span><span class="pill p-wait"><span class="d"></span>Esperando</span></div><div class="vol-r-t">Acceso a plataforma</div><div class="vol-r-m">Creada hace 2 días · Tiempo estimado: 24h</div></div>
+        <div class="vol-r"><div class="vol-r-h"><span class="vol-r-id">#00098</span><span class="pill p-done"><span class="d"></span>Resuelta</span></div><div class="vol-r-t">No podía entrar al correo</div><div class="vol-r-m">Resuelta hace 3 semanas</div></div>
+        <div class="vol-r"><div class="vol-r-h"><span class="vol-r-id">#00081</span><span class="pill p-closed"><span class="d"></span>Cerrada</span></div><div class="vol-r-t">Cambio de clave VPN</div><div class="vol-r-m">Cerrada el mes pasado</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 · MATRIZ -->
+<section class="page">
+  <div class="p-head" style="margin-bottom: 10px;">
+    <div class="p-head-left">
+      <div class="p-num-tag">Matriz de capacidades</div>
+      <h2>Qué puede ver y hacer cada nivel.</h2>
+      <p>Misma plataforma, distintas lentes. El nivel define la información disponible y las acciones permitidas. <strong>El nivel jerárquico nunca es igual a permiso técnico.</strong></p>
+    </div>
+  </div>
+  <div class="matrix-w">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th style="width: 36%;">Capacidad</th>
+          <th><div class="col-h"><span class="col-h-n">N0</span><span class="col-h-name">Soporte TI</span></div></th>
+          <th><div class="col-h"><span class="col-h-n">N1</span><span class="col-h-name">Director</span></div></th>
+          <th><div class="col-h"><span class="col-h-n">N2</span><span class="col-h-name">Jefatura</span></div></th>
+          <th><div class="col-h"><span class="col-h-n">N3</span><span class="col-h-name">Administrativo</span></div></th>
+          <th><div class="col-h"><span class="col-h-n">N4</span><span class="col-h-name">Voluntario</span></div></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="feature"><strong>Crear solicitud propia</strong></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td class="feature"><strong>Crear para un dependiente</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Crear solicitud departamental</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Ver tickets propios</strong></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td class="feature"><strong>Ver tickets del equipo / área</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Ver tickets de toda la org.</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Cambiar estado de un ticket</strong></td><td><span class="check">✓</span></td><td><span class="partial"></span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Escalar / asignar tickets</strong></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="partial"></span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Elevar prioridad de un ticket</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Ver timer y SLA por ticket</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial"></span></td><td><span class="partial half"></span></td><td><span class="partial empty"></span></td></tr>
+        <tr><td class="feature"><strong>Ver dashboard ejecutivo</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial"></span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Generar reportes</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial"></span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Usar asistente IA</strong></td><td><span class="check">✓</span></td><td><span class="partial"></span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Editar base de conocimiento</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Administrar usuarios y permisos</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Configurar categorías, SLA, prioridades</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td class="feature"><strong>Recibir notificaciones email/WhatsApp</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note-p">
+    <strong>Cómo leer la tabla.</strong> El <span style="color: var(--low); font-weight: 600;">✓</span> indica acceso completo. La <span class="partial"></span> barra naranja indica acceso parcial o filtrado (por ejemplo, el directivo puede "cambiar estado" solo en casos administrativos configurados). El <span style="color: var(--muted);">—</span> indica que el nivel no tiene esa capacidad por diseño. <strong>El nivel jerárquico nunca es igual a permiso técnico</strong>: alguien puede ser director y aun así no ver el detalle operativo de cada ticket.
+  </div>
+</section>
+
+</body>
+</html>

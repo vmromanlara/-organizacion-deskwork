@@ -1,0 +1,2817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeskWork — Dossier comercial | Caso TECHO-Chile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-elev: #ffffff;
+    --ink: #14171e;
+    --ink-2: #3a4256;
+    --muted: #7c7a72;
+    --line: #e9e3d6;
+    --line-soft: #f0ebde;
+    --primary: #0d4f4a;
+    --primary-2: #0a3d39;
+    --primary-soft: #d9eae7;
+    --critical: #b3331f;
+    --high: #c2410c;
+    --normal: #a16207;
+    --low: #047857;
+    --info: #1d4ed8;
+    --shadow-sm: 0 1px 2px rgba(20, 23, 30, 0.04);
+    --shadow-md: 0 4px 16px -2px rgba(20, 23, 30, 0.06);
+    --shadow-lg: 0 12px 32px -4px rgba(20, 23, 30, 0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ====== NAV ====== */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(250, 250, 247, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 17px; color: var(--ink);
+    text-decoration: none;
+  }
+  .nav-logo-mark {
+    width: 28px; height: 28px;
+    background: var(--primary);
+    border-radius: 7px;
+    display: grid; place-items: center;
+    color: white;
+  }
+  .nav-meta {
+    display: flex; gap: 18px; align-items: center;
+    font-size: 13px; color: var(--muted);
+  }
+  .nav-meta strong { color: var(--ink); font-weight: 500; }
+  .nav-progress {
+    height: 2px;
+    background: var(--line-soft);
+    position: relative;
+    overflow: hidden;
+  }
+  .nav-progress-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 0%;
+    background: var(--primary);
+    transition: width 0.15s linear;
+  }
+
+  /* ====== SECTION ====== */
+  section.slide {
+    min-height: 100vh;
+    padding: 100px 32px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .container-narrow {
+    max-width: 880px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.8s cubic-bezier(.2,.7,.2,1), transform 0.8s cubic-bezier(.2,.7,.2,1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-delay-1 { transition-delay: 0.08s; }
+  .reveal-delay-2 { transition-delay: 0.16s; }
+  .reveal-delay-3 { transition-delay: 0.24s; }
+  .reveal-delay-4 { transition-delay: 0.32s; }
+  .reveal-delay-5 { transition-delay: 0.40s; }
+
+  /* ====== EYEBROW ====== */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 18px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 24px; height: 1px;
+    background: var(--primary);
+  }
+  .eyebrow-light { color: rgba(255,255,255,0.7); }
+  .eyebrow-light::before { background: rgba(255,255,255,0.5); }
+
+  /* ====== HEADLINES ====== */
+  h1, h2, h3, h4 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  h1 { font-size: clamp(40px, 6vw, 72px); line-height: 1.05; font-weight: 700; }
+  h2 { font-size: clamp(32px, 4.4vw, 52px); line-height: 1.1; }
+  h3 { font-size: clamp(22px, 2.4vw, 28px); line-height: 1.25; }
+  p { color: var(--ink-2); }
+
+  .lead {
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 680px;
+  }
+
+  /* ====== COVER ====== */
+  .cover {
+    background: linear-gradient(180deg, #0a3d39 0%, #0d4f4a 50%, #105853 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.06), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(13, 79, 74, 0.6), transparent 60%);
+    pointer-events: none;
+  }
+  .cover-grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+  }
+  .cover-content { position: relative; z-index: 1; }
+  .cover-mark {
+    display: inline-flex; align-items: center; gap: 12px;
+    margin-bottom: 36px;
+  }
+  .cover-mark-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 11px;
+    display: grid; place-items: center;
+  }
+  .cover-mark-text {
+    font-weight: 600; font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+  .cover-title {
+    color: white;
+    margin-bottom: 28px;
+  }
+  .cover-title .accent {
+    color: #6ee7df;
+  }
+  .cover-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: clamp(18px, 1.8vw, 22px);
+    line-height: 1.5;
+    max-width: 640px;
+    font-weight: 300;
+  }
+  .cover-footer {
+    margin-top: 80px;
+    padding-top: 28px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .cover-footer-block { display: flex; flex-direction: column; gap: 6px; }
+  .cover-footer-label {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+  .cover-footer-value {
+    font-size: 15px;
+    color: white;
+    font-weight: 500;
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px; left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    z-index: 2;
+  }
+  .scroll-hint-line {
+    width: 1px; height: 32px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.5));
+    animation: scroll-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes scroll-pulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
+    50% { opacity: 1; transform: scaleY(1); }
+  }
+
+  /* ====== CARD ====== */
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-lg { padding: 36px; border-radius: 20px; }
+  .card-tight { padding: 18px; }
+
+  /* ====== GRID HELPERS ====== */
+  .grid { display: grid; gap: 20px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4, .grid-5, .grid-6 { grid-template-columns: 1fr; }
+  }
+
+  /* ====== SECTION HEADER ====== */
+  .section-header {
+    margin-bottom: 56px;
+    max-width: 820px;
+  }
+  .section-header .lead { margin-top: 18px; }
+
+  /* ====== PAIN LIST ====== */
+  .pain-list { display: grid; gap: 14px; margin-top: 36px; }
+  .pain-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 18px;
+    align-items: start;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .pain-row:last-child { border-bottom: 0; }
+  .pain-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--primary);
+    padding-top: 4px;
+  }
+  .pain-row strong { color: var(--ink); font-weight: 600; }
+  .pain-row p { color: var(--muted); font-size: 15px; margin-top: 4px; }
+
+  /* ====== CHANNELS (pain) ====== */
+  .channels-chaos {
+    margin-top: 56px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 32px;
+  }
+  .channels-chaos-label {
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .chaos-stream {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .chaos-bubble {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--ink-2);
+    position: relative;
+  }
+  .chaos-bubble-source {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .chaos-bubble:nth-child(odd) { transform: rotate(-0.6deg); }
+  .chaos-bubble:nth-child(even) { transform: rotate(0.4deg); }
+  .chaos-arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 12px;
+    padding: 8px 0;
+  }
+
+  @media (max-width: 900px) {
+    .chaos-stream { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ====== STEPS (6 paso flow) ====== */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-top: 48px;
+    position: relative;
+  }
+  .step {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 18px;
+    position: relative;
+  }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .step-num::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+  .step-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .step-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .step-icon {
+    width: 36px; height: 36px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: 9px;
+    display: grid; place-items: center;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 900px) {
+    .steps { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ====== MOCKUP — frontend usuario ====== */
+  .mockup-wrap {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 64px;
+    align-items: center;
+  }
+  @media (max-width: 900px) { .mockup-wrap { grid-template-columns: 1fr; gap: 36px; } }
+
+  .mockup {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .mockup-topbar {
+    background: #f4f1ea;
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mockup-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #d4cdc0;
+  }
+  .mockup-url {
+    flex: 1; margin-left: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 4px 10px;
+  }
+  .mockup-body { padding: 28px; }
+  .mockup-greet { font-size: 22px; font-weight: 600; color: var(--ink); }
+  .mockup-profile {
+    margin-top: 8px; font-size: 13px; color: var(--muted);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .mockup-profile strong { color: var(--ink-2); font-weight: 500; }
+  .mockup-section-label {
+    margin-top: 28px;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .ticket-list { margin-top: 14px; display: grid; gap: 8px; }
+  .ticket-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--bg);
+  }
+  .ticket-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .ticket-info { display: flex; flex-direction: column; gap: 4px; }
+  .ticket-title { font-size: 14px; font-weight: 500; color: var(--ink); }
+  .ticket-meta { font-size: 11px; color: var(--muted); }
+  .ticket-status {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-process { background: #fef3c7; color: var(--normal); }
+  .status-process .status-dot { background: var(--normal); }
+  .status-resolved { background: #d1fae5; color: var(--low); }
+  .status-resolved .status-dot { background: var(--low); }
+  .status-closed { background: #f3f4f6; color: var(--muted); }
+  .status-closed .status-dot { background: var(--muted); }
+
+  .new-request-btn {
+    margin-top: 24px;
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: 0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  /* ====== LEVELS ====== */
+  .levels {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 900px) {
+    .levels { grid-template-columns: 1fr 1fr; }
+  }
+  .level {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px 18px;
+    position: relative;
+  }
+  .level-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .level-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .level-role {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .level-list {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+  .level-list li {
+    list-style: none;
+    padding-left: 12px;
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .level-list li::before {
+    content: "";
+    width: 4px; height: 4px;
+    background: var(--primary);
+    border-radius: 50%;
+    position: absolute; left: 0; top: 8px;
+  }
+  .level-divider {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin: 24px 0 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .level-divider::before, .level-divider::after {
+    content: "";
+    display: inline-block;
+    width: 60px; height: 1px;
+    background: var(--line);
+    vertical-align: middle;
+    margin: 0 12px;
+  }
+
+  /* ====== PRIORITY MOTOR ====== */
+  .motor {
+    margin-top: 56px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 40px;
+  }
+  .motor-flow {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr 80px 1fr;
+    gap: 20px;
+    align-items: center;
+  }
+  @media (max-width: 900px) {
+    .motor-flow { grid-template-columns: 1fr; }
+  }
+  .motor-input, .motor-engine, .motor-output {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .motor-input-row, .motor-output-row {
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--ink-2);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .motor-input-row .ico, .motor-output-row .ico {
+    width: 22px; height: 22px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: 5px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .motor-engine {
+    background: var(--primary);
+    color: white;
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+  }
+  .motor-engine-title { font-size: 13px; opacity: 0.8; margin-bottom: 4px; }
+  .motor-engine-name { font-size: 18px; font-weight: 600; }
+  .motor-engine-sub { font-size: 11px; opacity: 0.7; margin-top: 6px; }
+  .motor-arrow {
+    display: grid; place-items: center;
+    color: var(--muted);
+  }
+  .priority-pill {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .p-pill { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; }
+  .p1 { background: #fef2f0; color: var(--critical); }
+  .p2 { background: #fff5e6; color: var(--high); }
+  .p3 { background: #fef9e7; color: var(--normal); }
+  .p4 { background: #e8f5f0; color: var(--low); }
+
+  .motor-example {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) { .motor-example { grid-template-columns: 1fr; } }
+  .motor-example-block {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .motor-example-label {
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .motor-example-text { font-size: 14px; color: var(--ink); line-height: 1.5; }
+  .motor-example-verdict {
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ====== BACKEND MOCKUP ====== */
+  .backend-mockup {
+    background: var(--ink);
+    color: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+  }
+  .backend-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .backend-title {
+    font-size: 13px; color: rgba(255,255,255,0.5);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .backend-title strong { color: white; font-weight: 600; }
+  .backend-status {
+    font-size: 11px; color: #6ee7df;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    background: #6ee7df;
+    border-radius: 50%;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .backend-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 600px) {
+    .backend-kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+  .backend-kpi {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .backend-kpi-label {
+    font-size: 10px; color: rgba(255,255,255,0.5);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .backend-kpi-value {
+    font-size: 22px; font-weight: 600; color: white;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .backend-kpi.alert .backend-kpi-value { color: #fca5a5; }
+  .backend-table {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .backend-thead {
+    display: grid;
+    grid-template-columns: 70px 1.2fr 1fr 60px 80px;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.04);
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .backend-row {
+    display: grid;
+    grid-template-columns: 70px 1.2fr 1fr 60px 80px;
+    gap: 12px;
+    padding: 14px 16px;
+    align-items: center;
+    font-size: 13px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .backend-row:first-of-type { border-top: 0; }
+  .backend-id { font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.5); font-size: 12px; }
+  .backend-user { color: white; font-weight: 500; }
+  .backend-user span { display: block; font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 400; margin-top: 2px; }
+  .backend-inc { color: rgba(255,255,255,0.7); font-size: 12px; }
+  .backend-prio { font-weight: 600; font-size: 12px; }
+  .backend-timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #fca5a5;
+    text-align: right;
+  }
+  .backend-timer.normal { color: #fbbf24; }
+  .backend-timer.ok { color: #6ee7df; }
+  @media (max-width: 700px) {
+    .backend-thead, .backend-row { grid-template-columns: 60px 1fr 60px 70px; }
+    .backend-inc { display: none; }
+  }
+
+  /* ====== TIMER + KPI ====== */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 36px;
+  }
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  .kpi-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .kpi-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  .kpi-card.highlight {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+  .kpi-card.highlight .kpi-label,
+  .kpi-card.highlight .kpi-sub { color: rgba(255,255,255,0.7); }
+  .kpi-card.highlight .kpi-value { color: white; }
+
+  .timer-types {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 700px) { .timer-types { grid-template-columns: 1fr; } }
+  .timer-type {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .timer-type-dot {
+    width: 8px; height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .timer-type-text { font-size: 14px; color: var(--ink); }
+  .timer-type-text strong { font-weight: 500; }
+  .timer-type-text span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ====== DASHBOARD EJECUTIVO ====== */
+  .exec-grid {
+    margin-top: 36px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .exec-grid { grid-template-columns: 1fr; } }
+  .exec-mock {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: var(--shadow-md);
+  }
+  .exec-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .exec-head-title { font-size: 14px; color: var(--muted); }
+  .exec-head-title strong { color: var(--ink); font-weight: 600; }
+  .exec-head-pill {
+    font-size: 11px; padding: 4px 10px; background: var(--primary-soft);
+    color: var(--primary); border-radius: 999px; font-weight: 500;
+  }
+  .exec-mega {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .exec-mega-cell {
+    padding: 16px;
+    background: var(--bg);
+    border-radius: 10px;
+  }
+  .exec-mega-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; }
+  .exec-mega-value {
+    font-size: 28px; font-weight: 600; color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .exec-mega-bar {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .exec-mega-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 2px;
+  }
+  .exec-bars { display: grid; gap: 10px; }
+  .exec-bar-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 50px;
+    gap: 12px;
+    align-items: center;
+    font-size: 12px;
+  }
+  .exec-bar-label { color: var(--muted); }
+  .exec-bar-track { height: 8px; background: var(--line-soft); border-radius: 4px; overflow: hidden; }
+  .exec-bar-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+  .exec-bar-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: right; color: var(--ink); font-weight: 500; }
+
+  /* ====== CHANNELS (whatsapp) ====== */
+  .channel-flow {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+  @media (max-width: 800px) { .channel-flow { grid-template-columns: 1fr; } }
+  .channel-in {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    display: flex; flex-direction: column;
+  }
+  .channel-in-head {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .channel-in-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: white;
+  }
+  .ci-web { background: var(--info); }
+  .ci-email { background: #475569; }
+  .ci-wa { background: #16a34a; }
+  .channel-bubble {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .channel-bubble small {
+    display: block; color: var(--muted); font-size: 10px;
+    margin-top: 4px;
+  }
+  .channel-center {
+    background: var(--primary);
+    color: white;
+    border-radius: 14px;
+    padding: 24px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .channel-center-mark {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 12px;
+    display: grid; place-items: center;
+    margin-bottom: 14px;
+  }
+  .channel-center-name { font-size: 18px; font-weight: 600; }
+  .channel-center-sub { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+  .channel-center-ticket {
+    margin-top: 16px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .channel-out {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .channel-out-title {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .channel-msg {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink-2);
+    margin-bottom: 8px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .channel-msg-mark {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .cm-received { background: var(--info); }
+  .cm-process { background: var(--high); }
+  .cm-resolved { background: var(--low); }
+
+  /* ====== AI ====== */
+  .ai-grid {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) { .ai-grid { grid-template-columns: 1fr; } }
+  .ai-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .ai-icon {
+    width: 36px; height: 36px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: 9px;
+    display: grid; place-items: center;
+    margin-bottom: 14px;
+  }
+  .ai-card-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .ai-card-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .ai-stage-label {
+    display: inline-block;
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: 999px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-top: 12px;
+  }
+
+  .ai-cycle {
+    margin-top: 56px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+  }
+  .ai-cycle-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+  .ai-cycle-step {
+    padding: 8px 14px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .ai-cycle-step.cur {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .ai-cycle-arrow {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ====== BEFORE/AFTER ====== */
+  .contrast {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 800px) { .contrast { grid-template-columns: 1fr; } }
+  .contrast-block {
+    border-radius: 18px;
+    padding: 32px;
+  }
+  .contrast-before {
+    background: #f4f1ea;
+    border: 1px solid var(--line);
+  }
+  .contrast-after {
+    background: var(--primary);
+    color: white;
+  }
+  .contrast-tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+    font-weight: 500;
+  }
+  .contrast-before .contrast-tag {
+    background: white; color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .contrast-after .contrast-tag {
+    background: rgba(255,255,255,0.12);
+    color: white;
+  }
+  .contrast-list {
+    list-style: none; display: grid; gap: 14px;
+  }
+  .contrast-list li {
+    font-size: 14px;
+    line-height: 1.55;
+    padding-left: 22px;
+    position: relative;
+  }
+  .contrast-list li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 9px;
+    width: 12px; height: 1px;
+  }
+  .contrast-before .contrast-list li::before { background: var(--muted); }
+  .contrast-after .contrast-list li::before { background: rgba(255,255,255,0.6); }
+  .contrast-quote {
+    margin-top: 32px;
+    padding: 28px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    text-align: center;
+  }
+  .contrast-quote-text {
+    font-size: 18px;
+    color: var(--ink);
+    line-height: 1.5;
+    font-weight: 500;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .contrast-quote-cite {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ====== PROJECTS ====== */
+  .project-example {
+    margin-top: 48px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 36px;
+  }
+  .project-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .project-title-block { flex: 1; min-width: 240px; }
+  .project-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: 999px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  .project-title { font-size: 22px; font-weight: 600; color: var(--ink); }
+  .project-meta { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .project-result {
+    text-align: right;
+  }
+  .project-result-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .project-result-value { font-size: 32px; font-weight: 600; color: var(--low); font-family: 'JetBrains Mono', monospace; }
+  .project-flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    align-items: stretch;
+  }
+  @media (max-width: 800px) { .project-flow { grid-template-columns: 1fr; } }
+  .project-step {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 12px;
+  }
+  .project-step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .project-step-title { font-weight: 600; color: var(--ink); margin-bottom: 4px; font-size: 13px; }
+  .project-step-desc { color: var(--muted); line-height: 1.5; }
+  .project-bar {
+    margin-top: 20px;
+    background: var(--line-soft);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .project-bar-fill {
+    position: absolute;
+    inset: 0 20% 0 0;
+    background: var(--primary);
+    border-radius: 4px;
+  }
+  .project-bar-meta {
+    margin-top: 10px;
+    display: flex; justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ====== ROADMAP ====== */
+  .roadmap {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 1000px) { .roadmap { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .roadmap { grid-template-columns: 1fr; } }
+  .roadmap-stage {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .roadmap-stage.cur {
+    border-color: var(--primary);
+    background: linear-gradient(180deg, var(--bg-elev) 0%, #f0f7f5 100%);
+  }
+  .roadmap-stage-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .roadmap-stage-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .roadmap-stage-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .roadmap-stage ul {
+    list-style: none; font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+  .roadmap-stage ul li {
+    padding-left: 12px;
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .roadmap-stage ul li::before {
+    content: "";
+    width: 4px; height: 4px;
+    background: var(--primary);
+    border-radius: 50%;
+    position: absolute; left: 0; top: 8px;
+  }
+  .roadmap-cur-tag {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 9px;
+    padding: 3px 7px;
+    background: var(--primary);
+    color: white;
+    border-radius: 999px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+
+  /* ====== IMPLEMENTATION ====== */
+  .implementation {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 1100px) { .implementation { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 700px) { .implementation { grid-template-columns: repeat(2, 1fr); } }
+  .impl-phase {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+  }
+  .impl-phase::after {
+    content: "→";
+    position: absolute;
+    right: -10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary);
+    font-size: 16px;
+    z-index: 1;
+  }
+  .impl-phase:last-child::after { display: none; }
+  .impl-phase-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .impl-phase-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .impl-phase-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  @media (max-width: 700px) {
+    .impl-phase::after { display: none; }
+  }
+
+  /* ====== COMMERCIAL MODEL ====== */
+  .commercial {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) { .commercial { grid-template-columns: 1fr; } }
+  .commercial-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .commercial-tag {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .commercial-title { font-size: 18px; font-weight: 600; color: var(--ink); margin-bottom: 14px; }
+  .commercial-list { list-style: none; display: grid; gap: 8px; }
+  .commercial-list li {
+    font-size: 13px;
+    color: var(--ink-2);
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .commercial-list li::before {
+    content: "✓";
+    position: absolute; left: 0; top: 0;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  /* ====== CLOSING ====== */
+  .closing {
+    background: linear-gradient(180deg, #0a3d39 0%, #0d4f4a 100%);
+    color: white;
+  }
+  .closing .eyebrow-light { color: rgba(255,255,255,0.6); }
+  .closing h2 { color: white; }
+  .closing-lead {
+    color: rgba(255,255,255,0.75);
+    font-size: 18px;
+    line-height: 1.55;
+    max-width: 720px;
+    margin-top: 20px;
+  }
+  .closing-quote {
+    margin-top: 64px;
+    padding: 40px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    text-align: center;
+  }
+  .closing-quote-main {
+    font-size: clamp(20px, 2.6vw, 28px);
+    font-weight: 500;
+    line-height: 1.4;
+    color: white;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .closing-quote-flow {
+    margin-top: 22px;
+    display: inline-flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; justify-content: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+  }
+  .closing-quote-flow span {
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+  }
+  .closing-quote-flow em {
+    color: #6ee7df;
+    font-style: normal;
+  }
+  .closing-cta {
+    margin-top: 48px;
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+  .btn {
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    font-family: inherit;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: white; color: var(--primary);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .btn-ghost {
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.05); }
+
+  /* small helpers */
+  .accent-line {
+    width: 40px; height: 2px;
+    background: var(--primary);
+    margin: 14px 0 24px;
+  }
+  .footer-mini {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    font-size: 12px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== NAV ====== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#cover" class="nav-logo">
+      <span class="nav-logo-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="14" rx="2"/>
+          <path d="M3 9h18"/>
+        </svg>
+      </span>
+      DeskWork
+    </a>
+    <div class="nav-meta">
+      <span><strong>Dossier comercial</strong> · Caso TECHO-Chile</span>
+    </div>
+  </div>
+  <div class="nav-progress"><div class="nav-progress-fill" id="navProgress"></div></div>
+</nav>
+
+<!-- ============================================================ -->
+<!-- 01 · PORTADA                                                -->
+<!-- ============================================================ -->
+<section class="slide cover" id="cover">
+  <div class="cover-grid-bg"></div>
+  <div class="container cover-content">
+    <div class="cover-mark reveal">
+      <span class="cover-mark-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="14" rx="2"/>
+          <path d="M3 9h18"/>
+          <path d="M8 14h2M14 14h2"/>
+        </svg>
+      </span>
+      <span class="cover-mark-text">DeskWork</span>
+    </div>
+
+    <h1 class="cover-title reveal reveal-delay-1">
+      Gestión <span class="accent">inteligente</span><br>
+      del soporte interno.
+    </h1>
+
+    <p class="cover-sub reveal reveal-delay-2">
+      Una plataforma que transforma las solicitudes de los usuarios en información operativa, métricas de desempeño, conocimiento organizacional y oportunidades de mejora continua.
+    </p>
+
+    <div class="cover-footer reveal reveal-delay-3">
+      <div class="cover-footer-block">
+        <span class="cover-footer-label">Caso inicial</span>
+        <span class="cover-footer-value">Fundación TECHO-Chile</span>
+      </div>
+      <div class="cover-footer-block">
+        <span class="cover-footer-label">Versión</span>
+        <span class="cover-footer-value">Dossier 1.0 · 2026</span>
+      </div>
+      <div class="cover-footer-block">
+        <span class="cover-footer-label">Tipo de documento</span>
+        <span class="cover-footer-value">Propuesta comercial</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Desplázate para explorar</span>
+    <span class="scroll-hint-line"></span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 02 · EL PROBLEMA                                            -->
+<!-- ============================================================ -->
+<section class="slide" id="problema">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">02 · El problema actual</div>
+      <h2 class="reveal reveal-delay-1">El soporte interno se pierde entre canales, memoria y urgencias.</h2>
+      <p class="lead reveal reveal-delay-2">
+        En organizaciones como TECHO-Chile —con equipos distribuidos, voluntariado masivo y una sola persona gestionando TI— las solicitudes llegan por todas partes y rara vez queda registro útil de lo que ocurrió.
+      </p>
+    </div>
+
+    <div class="grid grid-2">
+      <div>
+        <div class="pain-list reveal">
+          <div class="pain-row">
+            <span class="pain-num">01</span>
+            <div><strong>Solicitudes dispersas en múltiples canales</strong><p>WhatsApp, correo, mensajes directos, llamadas y conversaciones informales conviven sin un repositorio común.</p></div>
+          </div>
+          <div class="pain-row">
+            <span class="pain-num">02</span>
+            <div><strong>Una sola persona intentando ordenar todo</strong><p>El área TI no es un equipo: es una persona que debe atender, priorizar y responder a toda la organización.</p></div>
+          </div>
+          <div class="pain-row">
+            <span class="pain-num">03</span>
+            <div><strong>Sin trazabilidad ni historia</strong><p>Cuando un ticket "se resolvió", no queda claro cómo, cuándo ni qué se hizo. El conocimiento se pierde.</p></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="pain-list reveal reveal-delay-1">
+          <div class="pain-row">
+            <span class="pain-num">04</span>
+            <div><strong>Imposible demostrar resultados</strong><p>Sin métricas ni SLA, el área de TI queda atrapada en la percepción: "arreglan computadores" en lugar de prestar un servicio.</p></div>
+          </div>
+          <div class="pain-row">
+            <span class="pain-num">05</span>
+            <div><strong>Problemas recurrentes que nadie ve</strong><p>Los mismos errores se repiten mes a mes, pero no hay forma de detectarlos como patrón organizacional.</p></div>
+          </div>
+          <div class="pain-row">
+            <span class="pain-num">06</span>
+            <div><strong>Prioridad definida a ojo</strong><p>Todo parece urgente. No existe un criterio compartido y objetivo para decidir qué se atiende primero.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="channels-chaos reveal reveal-delay-2">
+      <div class="channels-chaos-label">Lo que llega hoy a soporte, sin orden</div>
+      <div class="chaos-stream">
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">WhatsApp</div>
+          hola, no me anda el correo, ¿me ayudas?
+        </div>
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">Email</div>
+          Estimado, favor reiniciar mi clave de acceso al sistema de rendiciones.
+        </div>
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">Teams</div>
+          @soporte, el scanner no responde, tenemos entrega hoy.
+        </div>
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">En persona</div>
+          oye, ¿puedes venir un minuto? no puedo imprimir.
+        </div>
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">WhatsApp</div>
+          +56 9... "se cayó el sistema"
+        </div>
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">Email</div>
+          Solicito apoyo urgente con configuración de notebook nuevo.
+        </div>
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">Llamada</div>
+          "soy de regiones, no puedo entrar a la VPN"
+        </div>
+        <div class="chaos-bubble">
+          <div class="chaos-bubble-source">Teams</div>
+          recordatorio: 3 usuarios nuevos para onboarding.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 03 · LA OPORTUNIDAD                                         -->
+<!-- ============================================================ -->
+<section class="slide" id="oportunidad">
+  <div class="container-narrow">
+    <div class="eyebrow reveal">03 · La oportunidad</div>
+    <h2 class="reveal reveal-delay-1">Convertir la presión diaria en información útil para la organización.</h2>
+    <p class="lead reveal reveal-delay-2" style="margin-top: 24px;">
+      El verdadero cambio no es comprar un "sistema de tickets". Es transformar la operación de soporte: pasar de <strong>recibir y apagar incendios</strong> a <strong>medir, aprender y mejorar</strong>.
+    </p>
+
+    <div class="grid grid-2" style="margin-top: 56px;">
+      <div class="card card-lg reveal">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom: 12px;">Hoy</div>
+        <h3 style="margin-bottom: 14px;">Soporte reactivo</h3>
+        <p style="color: var(--muted); font-size: 15px;">
+          Se atiende lo que llega. Lo urgente gana. No hay tiempo para mirar atrás ni para demostrar valor. El conocimiento se pierde con cada ticket cerrado en la cabeza del técnico.
+        </p>
+      </div>
+      <div class="card card-lg reveal reveal-delay-1" style="border-color: var(--primary); background: linear-gradient(180deg, #ffffff 0%, #f0f7f5 100%);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--primary); letter-spacing:0.1em; text-transform:uppercase; margin-bottom: 12px;">Con DeskWork</div>
+        <h3 style="margin-bottom: 14px;">Servicio medible y mejorable</h3>
+        <p style="color: var(--ink-2); font-size: 15px;">
+          Cada solicitud queda registrada, priorizada y medida. El tiempo se desglosa. Los patrones se hacen visibles. Las mejoras se ejecutan y se comprueban con datos.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 04 · LA PROPUESTA                                           -->
+<!-- ============================================================ -->
+<section class="slide" id="propuesta">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">04 · La propuesta</div>
+      <h2 class="reveal reveal-delay-1">DeskWork es una plataforma de gestión,<br>no un simple sistema de tickets.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        Comienza siendo una mesa de ayuda simple y rápida. Evoluciona hasta convertirse en un asistente que ayuda al área a mejorar su propio servicio. Empezamos por el problema concreto, no por una plataforma gigante.
+      </p>
+    </div>
+
+    <div class="grid grid-4" style="margin-top: 56px;">
+      <div class="card reveal">
+        <div style="width:36px; height:36px; background: var(--primary-soft); color: var(--primary); border-radius: 9px; display:grid; place-items:center; margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 style="font-size: 16px; margin-bottom: 8px;">Centraliza</h3>
+        <p style="font-size: 14px; color: var(--muted);">Todas las solicitudes de soporte —vengan de donde vengan— terminan en un único registro ordenado.</p>
+      </div>
+      <div class="card reveal reveal-delay-1">
+        <div style="width:36px; height:36px; background: var(--primary-soft); color: var(--primary); border-radius: 9px; display:grid; place-items:center; margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <h3 style="font-size: 16px; margin-bottom: 8px;">Mide</h3>
+        <p style="font-size: 14px; color: var(--muted);">Timer por ticket, SLA, KPI por persona, área y período. Lo que no se mide, no se puede mejorar.</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <div style="width:36px; height:36px; background: var(--primary-soft); color: var(--primary); border-radius: 9px; display:grid; place-items:center; margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        </div>
+        <h3 style="font-size: 16px; margin-bottom: 8px;">Aprende</h3>
+        <p style="font-size: 14px; color: var(--muted);">Cada resolución alimenta una base de conocimiento. Los problemas recurrentes dejan de ser ruido y se vuelven información.</p>
+      </div>
+      <div class="card reveal reveal-delay-3">
+        <div style="width:36px; height:36px; background: var(--primary-soft); color: var(--primary); border-radius: 9px; display:grid; place-items:center; margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M12 8v4l2 2"/></svg>
+        </div>
+        <h3 style="font-size: 16px; margin-bottom: 8px;">Mejora</h3>
+        <p style="font-size: 14px; color: var(--muted);">Los patrones detectados se convierten en proyectos. Las mejoras se ejecutan y se miden con los mismos datos del sistema.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 05 · ¿CÓMO FUNCIONA? — 6 pasos                              -->
+<!-- ============================================================ -->
+<section class="slide" id="como-funciona">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">05 · Cómo funciona</div>
+      <h2 class="reveal reveal-delay-1">Para el usuario, seis pasos.<br>Para el área, el control total.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        Quien solicita no debe entender conceptos técnicos. El sistema se encarga de todo lo demás: identificar al usuario, registrar la solicitud, calcular la prioridad y notificar.
+      </p>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
+        </div>
+        <div class="step-num">Paso 01</div>
+        <div class="step-title">Entrar</div>
+        <div class="step-desc">Acceso al portal de soporte de la organización.</div>
+      </div>
+      <div class="step reveal reveal-delay-1">
+        <div class="step-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+        </div>
+        <div class="step-num">Paso 02</div>
+        <div class="step-title">Identificarse</div>
+        <div class="step-desc">Correo institucional. El sistema ya sabe quién es, su cargo, área y jefatura.</div>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <div class="step-num">Paso 03</div>
+        <div class="step-title">Indicar tipo</div>
+        <div class="step-desc">Computador, correo, internet, accesos, software, etc. Solo una elección.</div>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/></svg>
+        </div>
+        <div class="step-num">Paso 04</div>
+        <div class="step-title">Describir</div>
+        <div class="step-desc">Un campo libre. El sistema usa este texto para entender el contexto.</div>
+      </div>
+      <div class="step reveal reveal-delay-4">
+        <div class="step-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="step-num">Paso 05</div>
+        <div class="step-title">Adjuntar</div>
+        <div class="step-desc">Una imagen, opcional, si ayuda a mostrar el problema.</div>
+      </div>
+      <div class="step reveal reveal-delay-5" style="background: var(--primary); border-color: var(--primary);">
+        <div class="step-icon" style="background: rgba(255,255,255,0.15); color: white;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </div>
+        <div class="step-num" style="color: #6ee7df;">Paso 06</div>
+        <div class="step-title" style="color: white;">Enviar</div>
+        <div class="step-desc" style="color: rgba(255,255,255,0.7);">Listo. DeskWork se encarga del resto: prioridad, técnico, tiempo y notificaciones.</div>
+      </div>
+    </div>
+
+    <p class="reveal reveal-delay-3" style="text-align: center; margin-top: 40px; color: var(--muted); font-size: 14px;">
+      El usuario <strong style="color: var(--ink);">no</strong> define prioridad, SLA, técnico, fecha ni estado. Todo eso lo gestiona el sistema.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 06 · EXPERIENCIA DEL USUARIO                                -->
+<!-- ============================================================ -->
+<section class="slide" id="experiencia">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">06 · Experiencia del usuario</div>
+      <h2 class="reveal reveal-delay-1">Una pantalla limpia. La información justa.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        El usuario final nunca debería ver un formulario ITIL ni decenas de campos. Solo ve su nombre, sus últimas solicitudes y un botón claro para pedir ayuda.
+      </p>
+    </div>
+
+    <div class="mockup-wrap">
+      <div class="reveal">
+        <div class="mockup">
+          <div class="mockup-topbar">
+            <span class="mockup-dot"></span>
+            <span class="mockup-dot"></span>
+            <span class="mockup-dot"></span>
+            <span class="mockup-url">soporte.techo.cl</span>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-greet">Hola, María</div>
+            <div class="mockup-profile">
+              <span><strong>Administración</strong> · Sucursal Santiago</span>
+              <span>Jefatura: Juan Pérez</span>
+            </div>
+
+            <div class="mockup-section-label">Mis solicitudes</div>
+            <div class="ticket-list">
+              <div class="ticket-row">
+                <span class="ticket-id">#00152</span>
+                <div class="ticket-info">
+                  <span class="ticket-title">Problema correo</span>
+                  <span class="ticket-meta">Respuesta estimada · 1h 30m</span>
+                </div>
+                <span class="ticket-status status-process"><span class="status-dot"></span>En proceso</span>
+              </div>
+              <div class="ticket-row">
+                <span class="ticket-id">#00148</span>
+                <div class="ticket-info">
+                  <span class="ticket-title">Acceso plataforma</span>
+                  <span class="ticket-meta">Cerrado ayer</span>
+                </div>
+                <span class="ticket-status status-resolved"><span class="status-dot"></span>Resuelto</span>
+              </div>
+              <div class="ticket-row">
+                <span class="ticket-id">#00143</span>
+                <div class="ticket-info">
+                  <span class="ticket-title">Configuración notebook</span>
+                  <span class="ticket-meta">Cerrado el lunes</span>
+                </div>
+                <span class="ticket-status status-closed"><span class="status-dot"></span>Cerrado</span>
+              </div>
+            </div>
+
+            <button class="new-request-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Crear nueva solicitud
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-2">
+        <h3 style="margin-bottom: 18px;">Diseñado para que el usuario haga muy poco.</h3>
+        <p style="margin-bottom: 24px;">
+          Esta es prácticamente toda la pantalla principal. Lo que ve la persona al ingresar.
+        </p>
+        <div class="grid" style="gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 12px; padding-top: 2px;">01</span>
+            <div><strong>Identidad automática.</strong> El sistema ya sabe nombre, cargo, área, jefatura y sucursal. El usuario no rellena formularios.</div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 12px; padding-top: 2px;">02</span>
+            <div><strong>Historial mínimo.</strong> Sus últimos 3–5 tickets, con estado y actualización. Suficiente para que la persona se ubique.</div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 12px; padding-top: 2px;">03</span>
+            <div><strong>Una sola acción visible.</strong> "Crear nueva solicitud" siempre a la vista. Sin menús, sin capas.</div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 12px; padding-top: 2px;">04</span>
+            <div><strong>Notificaciones pasivas.</strong> Email o WhatsApp mantienen al usuario al tanto sin que tenga que volver a la plataforma.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 07 · NIVELES DE USUARIO                                     -->
+<!-- ============================================================ -->
+<section class="slide" id="niveles">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">07 · Niveles de usuario</div>
+      <h2 class="reveal reveal-delay-1">Cinco perfiles, una sola plataforma.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        Cada nivel ve la información y ejecuta las acciones que corresponden a su rol. Lo que se muestra —y lo que se oculta— se define por configuración, no por código.
+      </p>
+    </div>
+
+    <div class="levels">
+      <div class="level reveal" style="background: var(--primary); color: white; border-color: var(--primary);">
+        <div class="level-num" style="color: #6ee7df;">Nivel 0</div>
+        <div class="level-name" style="color: white;">Soporte TI</div>
+        <div class="level-role" style="color: rgba(255,255,255,0.6);">Operación</div>
+        <ul class="level-list" style="color: rgba(255,255,255,0.85);">
+          <li>Recibe y gestiona tickets</li>
+          <li>Cambia estados, asigna, escala</li>
+          <li>Consulta historial y KPI</li>
+          <li>Usa asistente IA</li>
+          <li>Genera reportes</li>
+        </ul>
+      </div>
+      <div class="level reveal reveal-delay-1">
+        <div class="level-num">Nivel 1</div>
+        <div class="level-name">Gerente / Director</div>
+        <div class="level-role">Visión institucional</div>
+        <ul class="level-list">
+          <li>Solicitudes globales</li>
+          <li>Estadísticas y SLA</li>
+          <li>Tickets críticos</li>
+          <li>Reportes ejecutivos</li>
+          <li>Acciones administrativas</li>
+        </ul>
+      </div>
+      <div class="level reveal reveal-delay-2">
+        <div class="level-num">Nivel 2</div>
+        <div class="level-name">Jefatura</div>
+        <div class="level-role">Gestión de equipo</div>
+        <ul class="level-list">
+          <li>Ve solicitudes de su equipo</li>
+          <li>Eleva o crea tickets para otros</li>
+          <li>Solicitudes departamentales</li>
+          <li>Seguimiento del área</li>
+          <li>Reuniones y reportes</li>
+        </ul>
+      </div>
+      <div class="level reveal reveal-delay-3">
+        <div class="level-num">Nivel 3</div>
+        <div class="level-name">Administrativo</div>
+        <div class="level-role">Perfil completo</div>
+        <ul class="level-list">
+          <li>Crea solicitudes</li>
+          <li>Consulta estado y tiempo</li>
+          <li>Historial propio</li>
+          <li>Recibe notificaciones</li>
+          <li>Hace seguimiento</li>
+        </ul>
+      </div>
+      <div class="level reveal reveal-delay-4">
+        <div class="level-num">Nivel 4</div>
+        <div class="level-name">Voluntario</div>
+        <div class="level-role">Acceso esencial</div>
+        <ul class="level-list">
+          <li>Crea solicitudes simples</li>
+          <li>Realiza propuestas</li>
+          <li>Consulta estado</li>
+          <li>Tiempo estimado</li>
+          <li>Últimos requerimientos</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="reveal reveal-delay-2" style="text-align: center; margin-top: 36px; color: var(--muted); font-size: 14px;">
+      <strong style="color: var(--ink);">Nivel jerárquico ≠ permiso técnico.</strong> El nivel define qué se ve y qué se puede hacer, no si alguien sabe más de tecnología.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 08 · PRIORIZACIÓN INTELIGENTE                               -->
+<!-- ============================================================ -->
+<section class="slide" id="prioridad">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">08 · Priorización inteligente</div>
+      <h2 class="reveal reveal-delay-1">La prioridad la calcula el sistema, no la pide el usuario.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        Un director pidiendo un cambio menor de firma no debería superar a un administrativo reportando la caída de un sistema usado por todo un departamento. DeskWork pondera el contexto, no los apellidos.
+      </p>
+    </div>
+
+    <div class="motor reveal">
+      <div class="motor-flow">
+        <div class="motor-input">
+          <div class="motor-input-row">
+            <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></span>
+            <span>Cargo y nivel</span>
+          </div>
+          <div class="motor-input-row">
+            <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+            <span>Tipo de incidencia</span>
+          </div>
+          <div class="motor-input-row">
+            <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/></svg></span>
+            <span>Descripción</span>
+          </div>
+          <div class="motor-input-row">
+            <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span>
+            <span>Alcance / impacto</span>
+          </div>
+        </div>
+
+        <div class="motor-arrow">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+
+        <div class="motor-engine">
+          <div class="motor-engine-title">Motor DeskWork</div>
+          <div class="motor-engine-name">Priorización</div>
+          <div class="motor-engine-sub">Reglas + IA + historial</div>
+        </div>
+
+        <div class="motor-arrow">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+
+        <div class="motor-output">
+          <div class="priority-pill p1"><span>Crítica</span><span class="p-pill">P1</span></div>
+          <div class="priority-pill p2"><span>Alta</span><span class="p-pill">P2</span></div>
+          <div class="priority-pill p3"><span>Normal</span><span class="p-pill">P3</span></div>
+          <div class="priority-pill p4"><span>Baja</span><span class="p-pill">P4</span></div>
+        </div>
+      </div>
+
+      <div class="motor-example">
+        <div class="motor-example-block">
+          <div class="motor-example-label">Caso A · lo que parece</div>
+          <div class="motor-example-text">Director pide cambiar la firma de su correo.</div>
+          <div class="motor-example-verdict" style="color: var(--muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg>
+            Cargo alto, pero alcance mínimo. No debería ser P1.
+          </div>
+        </div>
+        <div class="motor-example-block" style="border-color: var(--primary); background: #f0f7f5;">
+          <div class="motor-example-label" style="color: var(--primary);">Caso B · la realidad</div>
+          <div class="motor-example-text">Administrativo reporta que el sistema de remuneraciones está caído para toda la oficina.</div>
+          <div class="motor-example-verdict" style="color: var(--critical);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 22h20L12 2z"/><path d="M12 9v5M12 17v0.5"/></svg>
+            Impacto institucional alto. Probablemente P1, sin importar el cargo.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="reveal reveal-delay-2" style="text-align: center; margin-top: 24px; color: var(--muted); font-size: 14px; max-width: 640px; margin-left: auto; margin-right: auto;">
+      En el MVP el motor opera con <strong style="color: var(--ink);">reglas ponderadas</strong>. A medida que acumula tickets,DeskWork evoluciona a <strong style="color: var(--ink);">prioridad dinámica</strong> con aprendizaje histórico.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 09 · PANEL DEL TÉCNICO                                      -->
+<!-- ============================================================ -->
+<section class="slide" id="backend">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">09 · Panel del técnico</div>
+      <h2 class="reveal reveal-delay-1">Una sola persona puede ver todo lo que importa.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        El panel del técnico está diseñado para que un equipo pequeño —incluso de una sola persona— sepa siempre qué atender primero, qué está detenido y qué se está saliendo de tiempo.
+      </p>
+    </div>
+
+    <div class="backend-mockup reveal">
+      <div class="backend-top">
+        <div class="backend-title"><strong>DESKWORK</strong> · SOPORTE TI</div>
+        <div class="backend-status"><span class="live-dot"></span>En vivo</div>
+      </div>
+
+      <div class="backend-kpis">
+        <div class="backend-kpi">
+          <div class="backend-kpi-label">Abiertos</div>
+          <div class="backend-kpi-value">12</div>
+        </div>
+        <div class="backend-kpi">
+          <div class="backend-kpi-label">En proceso</div>
+          <div class="backend-kpi-value">4</div>
+        </div>
+        <div class="backend-kpi">
+          <div class="backend-kpi-label">Esperando</div>
+          <div class="backend-kpi-value">3</div>
+        </div>
+        <div class="backend-kpi">
+          <div class="backend-kpi-label">Escalados</div>
+          <div class="backend-kpi-value">1</div>
+        </div>
+        <div class="backend-kpi alert">
+          <div class="backend-kpi-label">Vencidos</div>
+          <div class="backend-kpi-value">2</div>
+        </div>
+      </div>
+
+      <div class="backend-table">
+        <div class="backend-thead">
+          <div>Ticket</div>
+          <div>Usuario</div>
+          <div>Incidencia</div>
+          <div>Prio</div>
+          <div style="text-align:right;">Timer</div>
+        </div>
+        <div class="backend-row">
+          <div class="backend-id">#00125</div>
+          <div class="backend-user">Director X<span>Dirección · Santiago</span></div>
+          <div class="backend-inc">Correo</div>
+          <div class="backend-prio" style="color: #fca5a5;">P1</div>
+          <div class="backend-timer">00:18:42</div>
+        </div>
+        <div class="backend-row">
+          <div class="backend-id">#00124</div>
+          <div class="backend-user">Ana Morales<span>Administración</span></div>
+          <div class="backend-inc">Notebook</div>
+          <div class="backend-prio" style="color: #fbbf24;">P2</div>
+          <div class="backend-timer">01:42:11</div>
+        </div>
+        <div class="backend-row">
+          <div class="backend-id">#00123</div>
+          <div class="backend-user">Pedro Soto<span>Operaciones</span></div>
+          <div class="backend-inc">Impresora</div>
+          <div class="backend-prio" style="color: #fde047;">P3</div>
+          <div class="backend-timer normal">04:16:38</div>
+        </div>
+        <div class="backend-row">
+          <div class="backend-id">#00122</div>
+          <div class="backend-user">María López<span>Finanzas</span></div>
+          <div class="backend-inc">Consulta</div>
+          <div class="backend-prio" style="color: #6ee7df;">P4</div>
+          <div class="backend-timer ok">01:31:09</div>
+        </div>
+        <div class="backend-row">
+          <div class="backend-id">#00121</div>
+          <div class="backend-user">Voluntario R.<span>Región Biobío</span></div>
+          <div class="backend-inc">Acceso</div>
+          <div class="backend-prio" style="color: #fde047;">P3</div>
+          <div class="backend-timer normal">02:08:51</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="reveal reveal-delay-1" style="text-align: center; margin-top: 24px; color: var(--muted); font-size: 14px;">
+      Cada solicitud tiene su propio cronómetro. <strong style="color: var(--ink);">El tiempo es la unidad más honesta</strong> para medir el desempeño del soporte.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 10 · TIMER + KPI                                            -->
+<!-- ============================================================ -->
+<section class="slide" id="kpi">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">10 · Timer + KPI</div>
+      <h2 class="reveal reveal-delay-1">Medir para gestionar. Gestionar para mejorar.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        DeskWork desglosa el tiempo en partes útiles y convierte la operación en indicadores claros, comparables y accionables.
+      </p>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card reveal">
+        <div class="kpi-label">Solicitudes recibidas</div>
+        <div class="kpi-value">147</div>
+        <div class="kpi-sub">Mes actual</div>
+      </div>
+      <div class="kpi-card reveal reveal-delay-1">
+        <div class="kpi-label">Resueltas</div>
+        <div class="kpi-value">132</div>
+        <div class="kpi-sub">89,8% de cierre</div>
+      </div>
+      <div class="kpi-card reveal reveal-delay-2">
+        <div class="kpi-label">Pendientes</div>
+        <div class="kpi-value">15</div>
+        <div class="kpi-sub">En gestión activa</div>
+      </div>
+      <div class="kpi-card highlight reveal reveal-delay-3">
+        <div class="kpi-label">SLA cumplido</div>
+        <div class="kpi-value">94%</div>
+        <div class="kpi-sub">Objetivo institucional</div>
+      </div>
+      <div class="kpi-card reveal">
+        <div class="kpi-label">Primera respuesta</div>
+        <div class="kpi-value">18m</div>
+        <div class="kpi-sub">Promedio mensual</div>
+      </div>
+      <div class="kpi-card reveal reveal-delay-1">
+        <div class="kpi-label">Tiempo de resolución</div>
+        <div class="kpi-value">3h 42m</div>
+        <div class="kpi-sub">Promedio general</div>
+      </div>
+      <div class="kpi-card reveal reveal-delay-2">
+        <div class="kpi-label">Tickets vencidos</div>
+        <div class="kpi-value">3</div>
+        <div class="kpi-sub">Fuera de SLA</div>
+      </div>
+      <div class="kpi-card reveal reveal-delay-3">
+        <div class="kpi-label">Incidencia frecuente</div>
+        <div class="kpi-value" style="font-size: 20px;">Correo</div>
+        <div class="kpi-sub">31% del total</div>
+      </div>
+    </div>
+
+    <h3 class="reveal reveal-delay-2" style="margin-top: 64px; font-size: 18px;">El timer mide seis momentos distintos.</h3>
+    <div class="timer-types">
+      <div class="timer-type reveal">
+        <span class="timer-type-dot"></span>
+        <div class="timer-type-text"><strong>Tiempo desde creación</strong><span>Cuándo llegó la solicitud</span></div>
+      </div>
+      <div class="timer-type reveal reveal-delay-1">
+        <span class="timer-type-dot"></span>
+        <div class="timer-type-text"><strong>Primera respuesta</strong><span>Cuánto tardó TI en hacerse cargo</span></div>
+      </div>
+      <div class="timer-type reveal reveal-delay-2">
+        <span class="timer-type-dot"></span>
+        <div class="timer-type-text"><strong>Tiempo efectivo</strong><span>Trabajo real sobre el ticket</span></div>
+      </div>
+      <div class="timer-type reveal reveal-delay-3">
+        <span class="timer-type-dot"></span>
+        <div class="timer-type-text"><strong>Esperando usuario</strong><span>Tiempo bloqueado por información faltante</span></div>
+      </div>
+      <div class="timer-type reveal">
+        <span class="timer-type-dot"></span>
+        <div class="timer-type-text"><strong>Tiempo de resolución</strong><span>Desde la primera respuesta hasta el cierre</span></div>
+      </div>
+      <div class="timer-type reveal reveal-delay-1">
+        <span class="timer-type-dot"></span>
+        <div class="timer-type-text"><strong>Cumplimiento de SLA</strong><span>Si el ticket se resolvió dentro del objetivo</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 11 · DASHBOARD EJECUTIVO                                    -->
+<!-- ============================================================ -->
+<section class="slide" id="dashboard">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">11 · Dashboard ejecutivo</div>
+      <h2 class="reveal reveal-delay-1">La dirección necesita otra lente, no más datos.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        El ejecutivo no quiere ver cada ticket. Quiere saber cómo está funcionando el servicio, dónde están los problemas y qué se está mejorando.
+      </p>
+    </div>
+
+    <div class="exec-grid">
+      <div class="exec-mock reveal">
+        <div class="exec-head">
+          <div class="exec-head-title"><strong>Servicio de soporte</strong> · vista institucional</div>
+          <span class="exec-head-pill">Marzo 2026</span>
+        </div>
+
+        <div class="exec-mega">
+          <div class="exec-mega-cell">
+            <div class="exec-mega-label">Solicitudes</div>
+            <div class="exec-mega-value">347</div>
+          </div>
+          <div class="exec-mega-cell">
+            <div class="exec-mega-label">Resueltas</div>
+            <div class="exec-mega-value" style="color: var(--low);">312</div>
+          </div>
+          <div class="exec-mega-cell">
+            <div class="exec-mega-label">Pendientes</div>
+            <div class="exec-mega-value" style="color: var(--high);">35</div>
+          </div>
+          <div class="exec-mega-cell">
+            <div class="exec-mega-label">SLA</div>
+            <div class="exec-mega-value">94,2%</div>
+            <div class="exec-mega-bar"><div class="exec-mega-bar-fill" style="width: 94%;"></div></div>
+          </div>
+        </div>
+
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 14px; letter-spacing: 0.05em; text-transform: uppercase;">Distribución por categoría</div>
+        <div class="exec-bars">
+          <div class="exec-bar-row">
+            <span class="exec-bar-label">Correo</span>
+            <div class="exec-bar-track"><div class="exec-bar-fill" style="width: 31%;"></div></div>
+            <span class="exec-bar-value">31%</span>
+          </div>
+          <div class="exec-bar-row">
+            <span class="exec-bar-label">Accesos</span>
+            <div class="exec-bar-track"><div class="exec-bar-fill" style="width: 24%;"></div></div>
+            <span class="exec-bar-value">24%</span>
+          </div>
+          <div class="exec-bar-row">
+            <span class="exec-bar-label">Hardware</span>
+            <div class="exec-bar-track"><div class="exec-bar-fill" style="width: 18%;"></div></div>
+            <span class="exec-bar-value">18%</span>
+          </div>
+          <div class="exec-bar-row">
+            <span class="exec-bar-label">Software</span>
+            <div class="exec-bar-track"><div class="exec-bar-fill" style="width: 14%;"></div></div>
+            <span class="exec-bar-value">14%</span>
+          </div>
+          <div class="exec-bar-row">
+            <span class="exec-bar-label">Conectividad</span>
+            <div class="exec-bar-track"><div class="exec-bar-fill" style="width: 9%;"></div></div>
+            <span class="exec-bar-value">9%</span>
+          </div>
+          <div class="exec-bar-row">
+            <span class="exec-bar-label">Otros</span>
+            <div class="exec-bar-track"><div class="exec-bar-fill" style="width: 4%;"></div></div>
+            <span class="exec-bar-value">4%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-1">
+        <h3 style="margin-bottom: 18px; font-size: 18px;">La diferencia con el panel técnico.</h3>
+        <p style="margin-bottom: 24px; color: var(--ink-2); font-size: 15px;">
+          El técnico ve el árbol. El ejecutivo ve el bosque. DeskWork adapta la información al nivel de quien la necesita.
+        </p>
+        <div class="grid" style="gap: 12px;">
+          <div style="padding: 14px 16px; background: var(--bg-elev); border: 1px solid var(--line); border-radius: 10px; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 11px; padding-top: 2px;">01</span>
+            <div style="font-size: 14px;"><strong>Volumen y cierre</strong><br><span style="color: var(--muted); font-size: 13px;">Cuántas solicitudes se reciben y cuántas se cierran en el período.</span></div>
+          </div>
+          <div style="padding: 14px 16px; background: var(--bg-elev); border: 1px solid var(--line); border-radius: 10px; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 11px; padding-top: 2px;">02</span>
+            <div style="font-size: 14px;"><strong>SLA y tiempo promedio</strong><br><span style="color: var(--muted); font-size: 13px;">Cumplimiento del acuerdo de servicio y velocidad general.</span></div>
+          </div>
+          <div style="padding: 14px 16px; background: var(--bg-elev); border: 1px solid var(--line); border-radius: 10px; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 11px; padding-top: 2px;">03</span>
+            <div style="font-size: 14px;"><strong>Por área y categoría</strong><br><span style="color: var(--muted); font-size: 13px;">Dónde se concentra la demanda y qué tipo de problemas dominan.</span></div>
+          </div>
+          <div style="padding: 14px 16px; background: var(--bg-elev); border: 1px solid var(--line); border-radius: 10px; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-family:'JetBrains Mono', monospace; color: var(--primary); font-size: 11px; padding-top: 2px;">04</span>
+            <div style="font-size: 14px;"><strong>Tendencias y críticos</strong><br><span style="color: var(--muted); font-size: 13px;">Evolución mensual, tickets críticos, situaciones que requieren atención.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 12 · WHATSAPP + CANALES                                     -->
+<!-- ============================================================ -->
+<section class="slide" id="canales">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">12 · WhatsApp y otros canales</div>
+      <h2 class="reveal reveal-delay-1">Varios canales. Un solo sistema. Un mismo ticket.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        WhatsApp no es un sistema paralelo. Es una puerta de entrada más a DeskWork. Lo que llega por chat se convierte en el mismo ticket, con el mismo número y el mismo seguimiento.
+      </p>
+    </div>
+
+    <div class="channel-flow reveal">
+      <div style="display: grid; gap: 16px;">
+        <div class="channel-in">
+          <div class="channel-in-head"><span class="channel-in-icon ci-web"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></span> Web</div>
+          <div class="channel-bubble">María abre soporte.techo.cl y completa el formulario.</div>
+        </div>
+        <div class="channel-in">
+          <div class="channel-in-head"><span class="channel-in-icon ci-email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span> Email</div>
+          <div class="channel-bubble">soporte@techo.cl — solicitud con adjuntos.</div>
+        </div>
+        <div class="channel-in">
+          <div class="channel-in-head"><span class="channel-in-icon ci-wa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg></span> WhatsApp</div>
+          <div class="channel-bubble">"Hola, no puedo entrar al correo."<small>+56 9... · usuario vinculado</small></div>
+        </div>
+      </div>
+
+      <div class="channel-center">
+        <div class="channel-center-mark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+        </div>
+        <div class="channel-center-name">DeskWork</div>
+        <div class="channel-center-sub">Motor central de tickets</div>
+        <div class="channel-center-ticket">TK-00153</div>
+      </div>
+
+      <div class="channel-out">
+        <div class="channel-out-title">Notificaciones salientes</div>
+        <div class="channel-msg"><span class="channel-msg-mark cm-received"></span><div>Hemos recibido tu solicitud #00153.</div></div>
+        <div class="channel-msg"><span class="channel-msg-mark cm-process"></span><div>Tu solicitud está en proceso.</div></div>
+        <div class="channel-msg"><span class="channel-msg-mark cm-resolved"></span><div>Tu solicitud #00153 fue resuelta.</div></div>
+        <p style="font-size: 12px; color: var(--muted); margin-top: 14px; line-height: 1.5;">
+          El usuario no tiene que entrar a la plataforma para todo. Recibe las actualizaciones en el canal donde ya está.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 13 · DESKWORK AI                                            -->
+<!-- ============================================================ -->
+<section class="slide" id="ai">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">13 · DeskWork AI</div>
+      <h2 class="reveal reveal-delay-1">La inteligencia artificial llega después, sobre datos reales.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        DeskWork no se vende como una "plataforma con IA" desde el primer día. La IA aparece cuando ya hay historial suficiente. Entonces, se vuelve un asistente que ayuda al área, no que la reemplaza.
+      </p>
+    </div>
+
+    <div class="ai-grid">
+      <div class="ai-card reveal">
+        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+        <div class="ai-card-title">Antes de resolver</div>
+        <div class="ai-card-desc">Sugiere prioridad, encuentra tickets similares, propone causas probables y procedimientos recomendados.</div>
+        <span class="ai-stage-label">Etapa 3 · IA</span>
+      </div>
+      <div class="ai-card reveal reveal-delay-1">
+        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <div class="ai-card-title">Durante la resolución</div>
+        <div class="ai-card-desc">Busca en historial, resume conversaciones, sugiere soluciones anteriores y redacta borradores de respuesta.</div>
+        <span class="ai-stage-label">Etapa 3 · IA</span>
+      </div>
+      <div class="ai-card reveal reveal-delay-2">
+        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></div>
+        <div class="ai-card-title">Después de resolver</div>
+        <div class="ai-card-desc">Documenta automáticamente la resolución, alimenta la base de conocimiento y conecta con proyectos de mejora.</div>
+        <span class="ai-stage-label">Etapa 3 · IA</span>
+      </div>
+      <div class="ai-card reveal reveal-delay-3">
+        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 4 5-5"/></svg></div>
+        <div class="ai-card-title">Detectar patrones</div>
+        <div class="ai-card-desc">Identifica problemas recurrentes, anomalías en la demanda y oportunidades de mejora que nadie había notado.</div>
+        <span class="ai-stage-label">Etapa 3 · IA</span>
+      </div>
+      <div class="ai-card reveal reveal-delay-4">
+        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div class="ai-card-title">Apoyar proyectos</div>
+        <div class="ai-card-desc">Vincula tickets a proyectos, mide avances, sugiere hitos y reporta resultados a la dirección.</div>
+        <span class="ai-stage-label">Etapa 4 · Mejora continua</span>
+      </div>
+      <div class="ai-card reveal reveal-delay-5">
+        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></div>
+        <div class="ai-card-title">Inteligencia operacional</div>
+        <div class="ai-card-desc">Con el tiempo, DeskWork no solo mide: anticipa. Sugiere acciones preventivas y proyecta la demanda.</div>
+        <span class="ai-stage-label">Visión futura</span>
+      </div>
+    </div>
+
+    <div class="ai-cycle reveal">
+      <h3 style="font-size: 18px; margin-bottom: 6px;">El ciclo de aprendizaje de DeskWork</h3>
+      <p style="font-size: 14px; color: var(--muted);">Cada ticket resuelto alimenta el siguiente. La plataforma mejora con el uso.</p>
+      <div class="ai-cycle-flow">
+        <span class="ai-cycle-step cur">Solicitud</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Atención</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Resolución</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Registro</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Análisis</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Conocimiento</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Patrones</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Mejora</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Proyecto</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step">Medición</span><span class="ai-cycle-arrow">›</span>
+        <span class="ai-cycle-step cur">Nuevo conocimiento</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 14 · DE SOPORTE A MEJORA CONTINUA                           -->
+<!-- ============================================================ -->
+<section class="slide" id="transformacion">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">14 · De soporte a mejora continua</div>
+      <h2 class="reveal reveal-delay-1">El área TI deja de "arreglar computadores"<br>y pasa a gestionar un servicio.</h2>
+    </div>
+
+    <div class="contrast reveal">
+      <div class="contrast-block contrast-before">
+        <span class="contrast-tag">Antes · soporte reactivo</span>
+        <ul class="contrast-list">
+          <li>"Se rompió un computador."</li>
+          <li>"Hay problemas con el correo."</li>
+          <li>"Alguien necesita ayuda."</li>
+          <li>"TI está ocupado."</li>
+          <li>Difícil medir. Difícil demostrar. Difícil mejorar.</li>
+        </ul>
+      </div>
+      <div class="contrast-block contrast-after">
+        <span class="contrast-tag">Con DeskWork</span>
+        <ul class="contrast-list">
+          <li>147 solicitudes recibidas, 132 resueltas.</li>
+          <li>94% dentro de SLA. 18 minutos de primera respuesta.</li>
+          <li>31% relacionadas con correo. 24% con accesos.</li>
+          <li>Existe un patrón recurrente: se propone una mejora.</li>
+          <li>La mejora se ejecutó. La incidencia cayó 62%.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="contrast-quote reveal reveal-delay-1">
+      <p class="contrast-quote-text">
+        "Dejamos de preguntar <em style="color: var(--muted); font-style: italic;">¿qué se rompió hoy?</em> y empezamos a preguntar <em style="color: var(--primary); font-style: normal; font-weight: 600;">¿qué está fallando en la organización que podemos arreglar esta vez?</em>"
+      </p>
+      <p class="contrast-quote-cite">El cambio que propone DeskWork</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 15 · GESTIÓN DE PROYECTOS                                   -->
+<!-- ============================================================ -->
+<section class="slide" id="proyectos">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">15 · De los tickets a los proyectos</div>
+      <h2 class="reveal reveal-delay-1">Cuando un problema se repite, DeskWork lo convierte en iniciativa.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        Los mismos tickets sobre el mismo tema, en el mismo lugar, durante meses: ya no son ruido. Son la evidencia de un problema que merece un proyecto.
+      </p>
+    </div>
+
+    <div class="project-example reveal">
+      <div class="project-head">
+        <div class="project-title-block">
+          <span class="project-tag">Proyecto generado por DeskWork</span>
+          <div class="project-title">Mejora de conectividad — Sucursal Santiago</div>
+          <div class="project-meta">Responsable: TI · Inicio: 01/09/2026 · Tickets asociados: 47</div>
+        </div>
+        <div class="project-result">
+          <div class="project-result-label">Resultado final</div>
+          <div class="project-result-value">−62%</div>
+          <div class="project-meta" style="text-align: right;">Incidencias reducidas</div>
+        </div>
+      </div>
+
+      <div class="project-flow">
+        <div class="project-step">
+          <div class="project-step-num">01 · Señal</div>
+          <div class="project-step-title">47 tickets</div>
+          <div class="project-step-desc">Tres meses seguidos con problemas de WiFi reportados desde la misma sede.</div>
+        </div>
+        <div class="project-step">
+          <div class="project-step-num">02 · Detección</div>
+          <div class="project-step-title">Patrón</div>
+          <div class="project-step-desc">DeskWork agrupa y muestra el patrón: Sucursal Santiago, conectividad.</div>
+        </div>
+        <div class="project-step">
+          <div class="project-step-num">03 · Propuesta</div>
+          <div class="project-step-title">Iniciativa</div>
+          <div class="project-step-desc">Se crea el proyecto con objetivo, responsable y fecha objetivo.</div>
+        </div>
+        <div class="project-step">
+          <div class="project-step-num">04 · Ejecución</div>
+          <div class="project-step-title">Implementación</div>
+          <div class="project-step-desc">Cambio de Access Points, segmentación, re-cableado, validación.</div>
+        </div>
+        <div class="project-step">
+          <div class="project-step-num">05 · Impacto</div>
+          <div class="project-step-title">Medición</div>
+          <div class="project-step-desc">Incidencias se reducen 62% en el trimestre siguiente.</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 28px;">
+        <div class="project-bar"><div class="project-bar-fill"></div></div>
+        <div class="project-bar-meta">
+          <span>Avance del proyecto</span>
+          <span>80%</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="reveal reveal-delay-1" style="text-align: center; margin-top: 32px; color: var(--muted); font-size: 14px; max-width: 640px; margin-left: auto; margin-right: auto;">
+      Esto es lo que cambia la conversación con la dirección: <strong style="color: var(--ink);">TI no solo resuelve tickets, ejecuta mejoras medibles.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 16 · ROADMAP                                                -->
+<!-- ============================================================ -->
+<section class="slide" id="roadmap">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">16 · Roadmap de producto</div>
+      <h2 class="reveal reveal-delay-1">Empezamos simple. Construimos sobre datos reales.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        DeskWork evoluciona por etapas. La primera implementación ya resuelve el problema crítico de TECHO. Las siguientes etapas se habilitan cuando la organización las necesite.
+      </p>
+    </div>
+
+    <div class="roadmap">
+      <div class="roadmap-stage cur reveal">
+        <div class="roadmap-cur-tag">HOY</div>
+        <div class="roadmap-stage-num">Etapa 1</div>
+        <div class="roadmap-stage-name">MVP TECHO</div>
+        <div class="roadmap-stage-sub">Funcional desde el día 1</div>
+        <ul>
+          <li>Login y perfiles</li>
+          <li>5 niveles de usuario</li>
+          <li>Creación de tickets</li>
+          <li>Prioridad automática</li>
+          <li>6 estados + Kanban</li>
+          <li>Timer por ticket</li>
+          <li>Dashboards técnico y ejecutivo</li>
+          <li>Notificaciones email</li>
+          <li>KPI esenciales</li>
+        </ul>
+      </div>
+      <div class="roadmap-stage reveal reveal-delay-1">
+        <div class="roadmap-stage-num">Etapa 2</div>
+        <div class="roadmap-stage-name">Gestión</div>
+        <div class="roadmap-stage-sub">Profundización</div>
+        <ul>
+          <li>WhatsApp (mismo ticket)</li>
+          <li>SLA configurables</li>
+          <li>KPI avanzados</li>
+          <li>Reportes</li>
+          <li>Base de conocimiento</li>
+          <li>Inventario de equipos</li>
+        </ul>
+      </div>
+      <div class="roadmap-stage reveal reveal-delay-2">
+        <div class="roadmap-stage-num">Etapa 3</div>
+        <div class="roadmap-stage-name">Inteligencia</div>
+        <div class="roadmap-stage-sub">DeskWork AI</div>
+        <ul>
+          <li>Asistente IA</li>
+          <li>Análisis de patrones</li>
+          <li>Recomendaciones</li>
+          <li>Reportes inteligentes</li>
+          <li>Clasificación asistida</li>
+        </ul>
+      </div>
+      <div class="roadmap-stage reveal reveal-delay-3">
+        <div class="roadmap-stage-num">Etapa 4</div>
+        <div class="roadmap-stage-name">Mejora continua</div>
+        <div class="roadmap-stage-sub">Proyectos + impacto</div>
+        <ul>
+          <li>Gestión de proyectos</li>
+          <li>Iniciativas</li>
+          <li>Medición de impacto</li>
+          <li>Benchmarking</li>
+          <li>Inteligencia operacional</li>
+        </ul>
+      </div>
+      <div class="roadmap-stage reveal reveal-delay-4">
+        <div class="roadmap-stage-num">Etapa 5</div>
+        <div class="roadmap-stage-name">SaaS</div>
+        <div class="roadmap-stage-sub">Multi-organización</div>
+        <ul>
+          <li>Múltiples tenants</li>
+          <li>Onboarding por organización</li>
+          <li>Configuración independiente</li>
+          <li>Billing por plan</li>
+          <li>Catálogo replicable</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="reveal" style="text-align: center; margin-top: 40px; color: var(--muted); font-size: 14px;">
+      La presentación diferencia visualmente <strong style="color: var(--primary);">HOY / MVP</strong> de <strong style="color: var(--ink);">FUTURO / ROADMAP</strong>. No se vende lo que aún no existe.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 17 · IMPLEMENTACIÓN TECHO                                   -->
+<!-- ============================================================ -->
+<section class="slide" id="implementacion">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow reveal">17 · Implementación propuesta · TECHO</div>
+      <h2 class="reveal reveal-delay-1">Una salida en semanas, no en meses.</h2>
+      <p class="lead reveal reveal-delay-2" style="margin-top: 18px;">
+        Una implementación progresiva, con pilotos controlados y ajustes sobre uso real. El objetivo es que DeskWork esté operativo rápidamente y crezca con la organización.
+      </p>
+    </div>
+
+    <div class="implementation reveal">
+      <div class="impl-phase">
+        <div class="impl-phase-num">Fase 01</div>
+        <div class="impl-phase-name">Levantamiento</div>
+        <div class="impl-phase-desc">Estructura, usuarios, departamentos, cargos, categorías y flujo actual.</div>
+      </div>
+      <div class="impl-phase">
+        <div class="impl-phase-num">Fase 02</div>
+        <div class="impl-phase-name">Configuración</div>
+        <div class="impl-phase-desc">Diseño funcional, configuración del producto y ajustes por mandante.</div>
+      </div>
+      <div class="impl-phase">
+        <div class="impl-phase-num">Fase 03</div>
+        <div class="impl-phase-name">MVP</div>
+        <div class="impl-phase-desc">Usuarios, tickets, prioridad, estados, timer, dashboards, notificaciones.</div>
+      </div>
+      <div class="impl-phase">
+        <div class="impl-phase-num">Fase 04</div>
+        <div class="impl-phase-name">Piloto</div>
+        <div class="impl-phase-desc">Grupo controlado. Medición. Ajustes sobre uso real antes de escalar.</div>
+      </div>
+      <div class="impl-phase">
+        <div class="impl-phase-num">Fase 05</div>
+        <div class="impl-phase-name">Implementación</div>
+        <div class="impl-phase-desc">Extensión al resto de la organización. Capacitación. Puesta en marcha.</div>
+      </div>
+      <div class="impl-phase">
+        <div class="impl-phase-num">Fase 06</div>
+        <div class="impl-phase-name">Evolución</div>
+        <div class="impl-phase-desc">Nuevas funcionalidades según necesidades reales detectadas por el sistema.</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top: 48px;">
+      <div class="card reveal">
+        <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary); margin-bottom: 10px; font-weight: 500;">Lo que se entrega</div>
+        <h3 style="font-size: 17px; margin-bottom: 10px;">Una plataforma funcional, no un demo</h3>
+        <p style="font-size: 14px; color: var(--ink-2);">
+          DeskWork se implementa con los datos reales de TECHO: usuarios, áreas, cargos, categorías y reglas de prioridad. El primer día ya está midiendo.
+        </p>
+      </div>
+      <div class="card reveal reveal-delay-1">
+        <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary); margin-bottom: 10px; font-weight: 500;">Lo que se evita</div>
+        <h3 style="font-size: 17px; margin-bottom: 10px;">Dependencia artificial del proveedor</h3>
+        <p style="font-size: 14px; color: var(--ink-2);">
+          La organización puede administrar su configuración y operar la plataforma. La evolución futura se cotiza por separado, sin obligar a nadie a pagar por algo que no necesita.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 18 · MODELO COMERCIAL + CIERRE                              -->
+<!-- ============================================================ -->
+<section class="slide closing" id="cierre">
+  <div class="container">
+    <div class="eyebrow eyebrow-light reveal">18 · Modelo de trabajo y cierre</div>
+    <h2 class="reveal reveal-delay-1">Pago por implementar.<br>Evolución cuando se necesite.</h2>
+    <p class="closing-lead reveal reveal-delay-2">
+      El modelo comercial es simple: la organización paga por poner en marcha DeskWork y después decide cuánto quiere que evolucione. No se crea dependencia, se construye sobre resultados.
+    </p>
+
+    <div class="commercial reveal">
+      <div class="commercial-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12);">
+        <div class="commercial-tag" style="color: #6ee7df;">Implementación</div>
+        <div class="commercial-title" style="color: white;">Pago único</div>
+        <ul class="commercial-list" style="color: rgba(255,255,255,0.85);">
+          <li>Levantamiento y diseño</li>
+          <li>Configuración del producto</li>
+          <li>Identidad visual de la organización</li>
+          <li>Creación de usuarios y permisos</li>
+          <li>Configuración de categorías, prioridades y SLA</li>
+          <li>Capacitación al equipo</li>
+          <li>Puesta en marcha</li>
+        </ul>
+      </div>
+      <div class="commercial-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12);">
+        <div class="commercial-tag" style="color: #6ee7df;">Evolución</div>
+        <div class="commercial-title" style="color: white;">Mensual opcional</div>
+        <ul class="commercial-list" style="color: rgba(255,255,255,0.85);">
+          <li>Correcciones y ajustes</li>
+          <li>Actualizaciones del producto</li>
+          <li>Pequeñas mejoras evolutivas</li>
+          <li>Monitoreo y respaldo</li>
+          <li>Soporte técnico del sistema</li>
+          <li>Reporte periódico de uso</li>
+        </ul>
+      </div>
+      <div class="commercial-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12);">
+        <div class="commercial-tag" style="color: #6ee7df;">Desarrollos especiales</div>
+        <div class="commercial-title" style="color: white;">Cotización aparte</div>
+        <ul class="commercial-list" style="color: rgba(255,255,255,0.85);">
+          <li>Integraciones específicas</li>
+          <li>Nuevas funcionalidades a medida</li>
+          <li>Módulos avanzados</li>
+          <li>Conectores con sistemas existentes</li>
+          <li>Proyectos de evolución mayor</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="closing-quote reveal reveal-delay-2">
+      <div class="closing-quote-main">
+        DeskWork comienza resolviendo solicitudes.<br>
+        Evoluciona aprendiendo de ellas.<br>
+        Y termina ayudando a la organización a mejorar.
+      </div>
+      <div class="closing-quote-flow">
+        <span>De soporte reactivo</span>
+        <em>›</em>
+        <span>A servicio medible</span>
+        <em>›</em>
+        <span>A mejora continua</span>
+      </div>
+    </div>
+
+    <div class="closing-cta reveal reveal-delay-3">
+      <a href="#cover" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        Volver al inicio
+      </a>
+      <a href="#experiencia" class="btn btn-ghost">Revisar experiencia de usuario</a>
+    </div>
+
+    <div style="margin-top: 80px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; font-size: 12px; color: rgba(255,255,255,0.5);">
+      <span>DeskWork · Dossier comercial v1.0</span>
+      <span>Caso inicial: Fundación TECHO-Chile</span>
+      <span>2026</span>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Reveal on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+  document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+  // Progress bar
+  const progressBar = document.getElementById('navProgress');
+  const updateProgress = () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = pct + '%';
+  };
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+</script>
+
+</body>
+</html>

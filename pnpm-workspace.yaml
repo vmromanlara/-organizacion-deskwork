@@ -1,0 +1,8 @@
+# DeskWork — pnpm workspace settings (pnpm v11+)
+# `allowBuilds` (pnpm v11) replaces the old `onlyBuiltDependencies` from earlier versions.
+# unrs-resolver is a N-API package that needs its postinstall script to fetch the native
+# binding (used by ESLint to resolve TypeScript paths). Without this, `pnpm install` and
+# every subsequent pnpm script fail with ERR_PNPM_IGNORED_BUILDS.
+# See: https://pnpm.io/settings#allowbuilds
+allowBuilds:
+  unrs-resolver: true

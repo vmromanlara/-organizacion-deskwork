@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeskWork — Manual de Marca v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-elev: #ffffff;
+    --ink: #14171e;
+    --ink-2: #3a4256;
+    --muted: #7c7a72;
+    --line: #e9e3d6;
+    --line-soft: #f0ebde;
+    --primary: #0d4f4a;
+    --primary-2: #0a3d39;
+    --primary-soft: #d9eae7;
+    --primary-fade: #f0f7f5;
+    --critical: #b3331f;
+    --high: #c2410c;
+    --normal: #a16207;
+    --low: #047857;
+    --info: #1d4ed8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 80px 56px;
+  }
+  section { margin-bottom: 80px; }
+  section:last-child { margin-bottom: 0; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 16px;
+  }
+  .eyebrow::before { content: ""; width: 24px; height: 1px; background: var(--primary); }
+
+  h1 { font-size: 56px; font-weight: 700; line-height: 1.05; letter-spacing: -0.025em; }
+  h2 { font-size: 36px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 12px; }
+  h3 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 10px; }
+  p { color: var(--ink-2); font-size: 16px; }
+  .lead { font-size: 18px; line-height: 1.55; color: var(--ink-2); max-width: 640px; }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(180deg, #0a3d39 0%, #0d4f4a 50%, #105853 100%);
+    color: white;
+    margin: -80px -56px 80px;
+    padding: 100px 56px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+  }
+  .cover-content { position: relative; }
+  .cover-mark { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+  .cover-mark-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 11px;
+    display: grid; place-items: center;
+  }
+  .cover-mark-text { font-weight: 600; font-size: 18px; }
+  .cover h1 { color: white; margin-bottom: 24px; max-width: 720px; }
+  .cover h1 .accent { color: #6ee7df; }
+  .cover-sub { color: rgba(255,255,255,0.75); font-size: 20px; line-height: 1.5; max-width: 640px; font-weight: 300; }
+  .cover-meta {
+    margin-top: 64px; padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    display: flex; gap: 56px; flex-wrap: wrap;
+  }
+  .cover-meta-block { display: flex; flex-direction: column; gap: 4px; }
+  .cover-meta-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+  .cover-meta-value { font-size: 14px; color: white; font-weight: 500; }
+
+  /* Cards & containers */
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .card-pad-sm { padding: 20px; }
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .grid-6 { grid-template-columns: repeat(6, 1fr); }
+  @media (max-width: 800px) {
+    .grid-2, .grid-3, .grid-4, .grid-5, .grid-6 { grid-template-columns: 1fr; }
+  }
+
+  /* Section header */
+  .sec-head { margin-bottom: 36px; max-width: 720px; }
+  .sec-head .lead { margin-top: 12px; }
+  .sec-num {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  /* Color swatches */
+  .swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px; }
+  @media (max-width: 800px) { .swatch-grid { grid-template-columns: repeat(2, 1fr); } }
+  .swatch {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+  }
+  .swatch-color {
+    height: 110px;
+    display: grid; place-items: end;
+    padding: 14px;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .swatch-color.light-text { color: var(--ink); }
+  .swatch-info { padding: 12px 14px; }
+  .swatch-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .swatch-hex { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .swatch-role { font-size: 11px; color: var(--ink-2); margin-top: 6px; }
+
+  /* Functional colors */
+  .fn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 24px; }
+  @media (max-width: 800px) { .fn-grid { grid-template-columns: repeat(2, 1fr); } }
+  .fn {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+  }
+  .fn-stripe { height: 10px; }
+  .fn-body { padding: 14px 16px; }
+  .fn-name { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+  .fn-prio { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .fn-hex { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-2); }
+  .fn-use { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  /* Type specimen */
+  .type-row {
+    display: grid; grid-template-columns: 200px 1fr;
+    gap: 24px; align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .type-row:last-child { border-bottom: 0; }
+  .type-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; }
+  .type-sample { color: var(--ink); }
+  .type-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* Logo variations */
+  .logo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px; }
+  .logo-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 140px;
+  }
+  .logo-card.dark { background: var(--ink); border-color: var(--ink); }
+  .logo-card.primary { background: var(--primary); border-color: var(--primary); }
+  .logo-card.cream { background: var(--bg-elev); }
+
+  /* Spacing scale */
+  .scale { display: grid; gap: 8px; margin-top: 24px; }
+  .scale-row {
+    display: grid; grid-template-columns: 80px 60px 1fr;
+    gap: 16px; align-items: center;
+    padding: 12px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .scale-token { font-family: 'JetBrains Mono', monospace; color: var(--primary); font-weight: 500; font-size: 12px; }
+  .scale-value { font-family: 'JetBrains Mono', monospace; color: var(--ink-2); font-size: 12px; }
+  .scale-bar { height: 8px; background: var(--primary); border-radius: 4px; }
+
+  /* Component examples */
+  .comp {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 16px;
+  }
+  .comp-label {
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    border: 0;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-ghost { background: white; border: 1px solid var(--line); color: var(--ink-2); }
+
+  /* Status pills */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+  }
+  .status-pill .d { width: 6px; height: 6px; border-radius: 50%; }
+  .sp-open { background: #e0f2fe; color: var(--info); }
+  .sp-open .d { background: var(--info); }
+  .sp-proc { background: #fef3c7; color: var(--normal); }
+  .sp-proc .d { background: var(--normal); }
+  .sp-wait { background: #fed7aa; color: var(--high); }
+  .sp-wait .d { background: var(--high); }
+  .sp-esc { background: #fecaca; color: var(--critical); }
+  .sp-esc .d { background: var(--critical); }
+  .sp-done { background: #d1fae5; color: var(--low); }
+  .sp-done .d { background: var(--low); }
+
+  /* Do / Don't */
+  .do-dont { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  @media (max-width: 800px) { .do-dont { grid-template-columns: 1fr; } }
+  .do, .dont {
+    border-radius: 12px;
+    padding: 22px 24px;
+    border: 1px solid;
+  }
+  .do { background: #f0faf6; border-color: #b8d8c8; }
+  .dont { background: #fef0ee; border-color: #e6b8b0; }
+  .do h4, .dont h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .do h4 { color: var(--low); }
+  .dont h4 { color: var(--critical); }
+  .do ul, .dont ul { list-style: none; display: grid; gap: 8px; }
+  .do li, .dont li { font-size: 13px; color: var(--ink-2); padding-left: 18px; position: relative; line-height: 1.5; }
+  .do li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--low); font-weight: 600; }
+  .dont li::before { content: "✕"; position: absolute; left: 0; top: 0; color: var(--critical); font-weight: 600; }
+
+  /* Tone */
+  .tone-row {
+    padding: 16px 20px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    font-size: 13px;
+    align-items: center;
+  }
+  .tone-row .yes { color: var(--low); }
+  .tone-row .no { color: var(--critical); text-decoration: line-through; opacity: 0.8; }
+  .tone-row .note { color: var(--muted); font-size: 12px; }
+
+  @media (max-width: 800px) {
+    .page { padding: 60px 28px; }
+    .cover { margin: -60px -28px 60px; padding: 80px 28px 60px; }
+    h1 { font-size: 40px; }
+    h2 { font-size: 28px; }
+    .tone-row { grid-template-columns: 1fr; gap: 8px; }
+    .type-row { grid-template-columns: 1fr; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- 01 · COVER -->
+  <section class="cover">
+    <div class="cover-content">
+      <div class="cover-mark">
+        <span class="cover-mark-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="14" rx="2"/>
+            <path d="M3 9h18"/>
+          </svg>
+        </span>
+        <span class="cover-mark-text">DeskWork</span>
+      </div>
+      <h1>Manual de <span class="accent">marca</span></h1>
+      <p class="cover-sub">Identidad visual, colorimetría, tipografía y sistema de diseño del producto DeskWork. La fuente de verdad para que cualquier diseñador, desarrollador o agencia reproduzca la marca con coherencia.</p>
+      <div class="cover-meta">
+        <div class="cover-meta-block">
+          <span class="cover-meta-label">Producto</span>
+          <span class="cover-meta-value">DeskWork · Mesa de ayuda inteligente</span>
+        </div>
+        <div class="cover-meta-block">
+          <span class="cover-meta-label">Versión</span>
+          <span class="cover-meta-value">Manual 1.0 · 2026</span>
+        </div>
+        <div class="cover-meta-block">
+          <span class="cover-meta-label">Tipo</span>
+          <span class="cover-meta-value">Brand book & design system</span>
+        </div>
+        <div class="cover-meta-block">
+          <span class="cover-meta-label">Caso piloto</span>
+          <span class="cover-meta-value">Fundación TECHO-Chile</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 · INTRODUCCIÓN -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">01 · Introducción</div>
+      <h2>Qué es DeskWork, en una idea.</h2>
+      <p class="lead">DeskWork es una plataforma SaaS de gestión inteligente de soporte interno. Comienza resolviendo solicitudes, evoluciona aprendiendo de ellas y termina ayudando a la organización a mejorar. La marca debe transmitir <strong>orden, eficiencia, inteligencia y simplicidad</strong>.</p>
+    </div>
+    <div class="card">
+      <h3>Idea central</h3>
+      <p style="font-size: 18px; line-height: 1.5; color: var(--ink); font-weight: 500;">"DeskWork comienza resolviendo solicitudes. Evoluciona aprendiendo de ellas. Y termina ayudando a la organización a mejorar."</p>
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line); display: flex; flex-wrap: wrap; gap: 14px;">
+        <span class="status-pill sp-done"><span class="d"></span>Orden</span>
+        <span class="status-pill sp-done"><span class="d"></span>Eficiencia</span>
+        <span class="status-pill sp-done"><span class="d"></span>Inteligencia</span>
+        <span class="status-pill sp-done"><span class="d"></span>Simplicidad</span>
+        <span class="status-pill sp-done"><span class="d"></span>Servicio medible</span>
+        <span class="status-pill sp-done"><span class="d"></span>Mejora continua</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · LOGOTIPO -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">02</div>
+      <h2>Logotipo</h2>
+      <p>El isotipo representa una mesa de trabajo con una línea de tickets. Construido con un cuadrado de bordes suaves, una línea divisoria y dos puntos que evocan las tarjetas en un tablero Kanban. Sólido, simple, memorable.</p>
+    </div>
+
+    <div class="logo-grid">
+      <div class="logo-card cream">
+        <svg width="200" height="56" viewBox="0 0 220 56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="14" width="36" height="36" rx="9" fill="#0d4f4a"/>
+          <g transform="translate(11, 23)" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="0" y="0" width="18" height="14" rx="2"/>
+            <path d="M0 5h18"/>
+            <circle cx="5" cy="9.5" r="0.6" fill="white" stroke="none"/>
+            <circle cx="9" cy="9.5" r="0.6" fill="white" stroke="none"/>
+            <circle cx="13" cy="9.5" r="0.6" fill="white" stroke="none"/>
+          </g>
+          <text x="48" y="36" font-family="Outfit" font-size="22" font-weight="700" fill="#14171e" letter-spacing="-0.5">DeskWork</text>
+        </svg>
+      </div>
+      <div class="logo-card dark">
+        <svg width="200" height="56" viewBox="0 0 220 56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="14" width="36" height="36" rx="9" fill="white"/>
+          <g transform="translate(11, 23)" stroke="#0d4f4a" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="0" y="0" width="18" height="14" rx="2"/>
+            <path d="M0 5h18"/>
+            <circle cx="5" cy="9.5" r="0.6" fill="#0d4f4a" stroke="none"/>
+            <circle cx="9" cy="9.5" r="0.6" fill="#0d4f4a" stroke="none"/>
+            <circle cx="13" cy="9.5" r="0.6" fill="#0d4f4a" stroke="none"/>
+          </g>
+          <text x="48" y="36" font-family="Outfit" font-size="22" font-weight="700" fill="white" letter-spacing="-0.5">DeskWork</text>
+        </svg>
+      </div>
+      <div class="logo-card primary">
+        <svg width="200" height="56" viewBox="0 0 220 56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="14" width="36" height="36" rx="9" fill="white" fill-opacity="0.12" stroke="white" stroke-opacity="0.3"/>
+          <g transform="translate(11, 23)" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="0" y="0" width="18" height="14" rx="2"/>
+            <path d="M0 5h18"/>
+            <circle cx="5" cy="9.5" r="0.6" fill="white" stroke="none"/>
+            <circle cx="9" cy="9.5" r="0.6" fill="white" stroke="none"/>
+            <circle cx="13" cy="9.5" r="0.6" fill="white" stroke="none"/>
+          </g>
+          <text x="48" y="36" font-family="Outfit" font-size="22" font-weight="700" fill="white" letter-spacing="-0.5">DeskWork</text>
+        </svg>
+      </div>
+      <div class="logo-card cream" style="background: var(--bg); display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center;">
+        <svg width="56" height="56" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="10" width="44" height="36" rx="10" fill="#0d4f4a"/>
+          <g transform="translate(15, 19)" stroke="white" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="0" y="0" width="26" height="20" rx="2.5"/>
+            <path d="M0 7h26"/>
+            <circle cx="7" cy="13" r="0.8" fill="white" stroke="none"/>
+            <circle cx="13" cy="13" r="0.8" fill="white" stroke="none"/>
+            <circle cx="19" cy="13" r="0.8" fill="white" stroke="none"/>
+          </g>
+        </svg>
+        <div style="font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;">Isotipo · uso independiente</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
+      <h3>Reglas del logotipo</h3>
+      <div class="grid grid-2" style="margin-top: 12px;">
+        <div>
+          <p style="font-size: 13px;"><strong>Tamaño mínimo</strong></p>
+          <p style="font-size: 13px; color: var(--muted);">Logo horizontal: 120 px de ancho. Isotipo: 28 px.</p>
+        </div>
+        <div>
+          <p style="font-size: 13px;"><strong>Espacio de respeto</strong></p>
+          <p style="font-size: 13px; color: var(--muted);">Equivalente a la altura del isotipo en todos los lados.</p>
+        </div>
+        <div>
+          <p style="font-size: 13px;"><strong>Versión principal</strong></p>
+          <p style="font-size: 13px; color: var(--muted);">Logo en fondo claro, isotipo en color primario.</p>
+        </div>
+        <div>
+          <p style="font-size: 13px;"><strong>Versión sobre oscuro</strong></p>
+          <p style="font-size: 13px; color: var(--muted);">Isotipo blanco con borde sutil. Wordmark blanco.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 · COLORIMETRÍA -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">03</div>
+      <h2>Colorimetría</h2>
+      <p>Una paleta sobria con un color principal fuerte y cuatro colores funcionales para los estados del sistema. Los acentos vibrantes (cyan, amarillo) se reservan para acentos de UI muy puntuales.</p>
+    </div>
+
+    <h3 style="margin-top: 32px;">Color principal</h3>
+    <p>DeskWork teal — transmite servicio, solidez institucional y modernidad sin estridencia.</p>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #0a3d39;">#0a3d39</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primary 800</div>
+          <div class="swatch-hex">Deep teal</div>
+          <div class="swatch-role">Fondo oscuro · títulos sobre oscuro</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #0d4f4a;">#0d4f4a</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primary 700</div>
+          <div class="swatch-hex">DeskWork teal</div>
+          <div class="swatch-role">Color principal de marca</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #d9eae7; color: var(--ink);">#d9eae7</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primary 200</div>
+          <div class="swatch-hex">Soft teal</div>
+          <div class="swatch-role">Fondos suaves · chips · acentos</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #6ee7df; color: var(--ink);">#6ee7df</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Accent 300</div>
+          <div class="swatch-hex">Mint highlight</div>
+          <div class="swatch-role">Acentos vivos · puntos de atención</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 48px;">Neutrales</h3>
+    <p>Base cálida con un toque crema que evita la frialdad del blanco puro.</p>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #fafaf7; color: var(--ink);">#fafaf7</div>
+        <div class="swatch-info">
+          <div class="swatch-name">BG Canvas</div>
+          <div class="swatch-hex">Warm off-white</div>
+          <div class="swatch-role">Fondo principal de la marca</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #ffffff; color: var(--ink);">#ffffff</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Surface</div>
+          <div class="swatch-hex">Pure white</div>
+          <div class="swatch-role">Tarjetas · modales</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #e9e3d6; color: var(--ink);">#e9e3d6</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Line</div>
+          <div class="swatch-hex">Sand</div>
+          <div class="swatch-role">Bordes · separadores</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #14171e;">#14171e</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Ink</div>
+          <div class="swatch-hex">Near-black</div>
+          <div class="swatch-role">Texto principal · fondo técnico</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 48px;">Colores funcionales · estados y prioridades</h3>
+    <p>Cinco estados. Cada uno con un color, un fondo suave y un uso claro. No se inventan estados adicionales.</p>
+    <div class="fn-grid">
+      <div class="fn">
+        <div class="fn-stripe" style="background: #b3331f;"></div>
+        <div class="fn-body">
+          <div class="fn-name">Crítico</div>
+          <div class="fn-prio">P1 · Atención inmediata</div>
+          <div class="fn-hex">#b3331f</div>
+          <div class="fn-use">Sistema caído · alcance masivo</div>
+        </div>
+      </div>
+      <div class="fn">
+        <div class="fn-stripe" style="background: #c2410c;"></div>
+        <div class="fn-body">
+          <div class="fn-name">Alto</div>
+          <div class="fn-prio">P2 · Atención prioritaria</div>
+          <div class="fn-hex">#c2410c</div>
+          <div class="fn-use">Usuario bloqueado · &lt; 4h</div>
+        </div>
+      </div>
+      <div class="fn">
+        <div class="fn-stripe" style="background: #a16207;"></div>
+        <div class="fn-body">
+          <div class="fn-name">Normal</div>
+          <div class="fn-prio">P3 · Atención estándar</div>
+          <div class="fn-hex">#a16207</div>
+          <div class="fn-use">Trabajo posible · &lt; 1 día</div>
+        </div>
+      </div>
+      <div class="fn">
+        <div class="fn-stripe" style="background: #047857;"></div>
+        <div class="fn-body">
+          <div class="fn-name">Bajo / Resuelto</div>
+          <div class="fn-prio">P4 · Programable</div>
+          <div class="fn-hex">#047857</div>
+          <div class="fn-use">Solicitudes · cierre exitoso</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 · TIPOGRAFÍA -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">04</div>
+      <h2>Tipografía</h2>
+      <p>Una sola familia sans-serif moderna para todo el sistema, más una monoespaciada para datos, identificadores y código. La jerarquía se construye con tamaño y peso, no con fuentes.</p>
+    </div>
+
+    <div class="card">
+      <div class="type-row">
+        <div>
+          <div class="type-label">Sans principal</div>
+          <div class="type-meta">Outfit · 6 pesos</div>
+        </div>
+        <div class="type-sample">
+          <div style="font-size: 32px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em;">Gestión inteligente del soporte interno.</div>
+          <div class="type-meta">Headline · 32 / 700 / -0.02em</div>
+        </div>
+      </div>
+      <div class="type-row">
+        <div>
+          <div class="type-label">Subtítulo / Lead</div>
+          <div class="type-meta">Outfit · 400</div>
+        </div>
+        <div class="type-sample">
+          <div style="font-size: 18px; font-weight: 400; line-height: 1.55; color: var(--ink-2);">Una plataforma que transforma las solicitudes de los usuarios en información operativa, métricas de desempeño y oportunidades de mejora continua.</div>
+          <div class="type-meta">Body lead · 18 / 400 / 1.55</div>
+        </div>
+      </div>
+      <div class="type-row">
+        <div>
+          <div class="type-label">Cuerpo</div>
+          <div class="type-meta">Outfit · 400 / 500</div>
+        </div>
+        <div class="type-sample">
+          <div style="font-size: 15px; line-height: 1.6; color: var(--ink-2);">El usuario no debe definir manualmente la prioridad, el SLA, el técnico ni el tiempo de resolución. Todo eso lo gestiona DeskWork en función del contexto de cada solicitud.</div>
+          <div class="type-meta">Body · 15 / 400 / 1.6</div>
+        </div>
+      </div>
+      <div class="type-row">
+        <div>
+          <div class="type-label">Microtexto · etiqueta</div>
+          <div class="type-meta">Outfit · 500 · uppercase</div>
+        </div>
+        <div class="type-sample">
+          <div style="font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);">Solicitudes recibidas · Marzo 2026</div>
+          <div class="type-meta">Eyebrow · 11 / 500 / 0.12em / uppercase</div>
+        </div>
+      </div>
+      <div class="type-row">
+        <div>
+          <div class="type-label">Mono · datos</div>
+          <div class="type-meta">JetBrains Mono</div>
+        </div>
+        <div class="type-sample">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--ink);">TK-00152 · 00:18:42 · 94,2%</div>
+          <div class="type-meta">Mono · 18 / 500 · IDs, timers, KPI</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 36px;">Pesos disponibles</h3>
+    <div class="card" style="padding: 24px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: baseline;">
+        <div><div style="font-size: 28px; font-weight: 300;">Outfit Light 300</div><div class="type-meta">Subtítulos suaves · cubiertas</div></div>
+        <div><div style="font-size: 28px; font-weight: 400;">Outfit Regular 400</div><div class="type-meta">Cuerpo de texto</div></div>
+        <div><div style="font-size: 28px; font-weight: 500;">Outfit Medium 500</div><div class="type-meta">Botones · subtítulos</div></div>
+        <div><div style="font-size: 28px; font-weight: 600;">Outfit Semibold 600</div><div class="type-meta">H2 · H3 · títulos de tarjetas</div></div>
+        <div><div style="font-size: 28px; font-weight: 700;">Outfit Bold 700</div><div class="type-meta">H1 · cubiertas</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 · ICONOGRAFÍA -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">05</div>
+      <h2>Iconografía</h2>
+      <p>Una sola librería: Lucide. Trazos de 2px, esquinas redondeadas, vista 24×24. Sin emoji, sin iconos decorativos, sin acentos de color sobre los iconos.</p>
+    </div>
+
+    <div class="card">
+      <div class="grid grid-6" style="text-align: center;">
+        <div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d4f4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto 8px;"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+          <div class="type-meta">Mesa</div>
+        </div>
+        <div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d4f4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto 8px;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <div class="type-meta">Timer</div>
+        </div>
+        <div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d4f4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto 8px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+          <div class="type-meta">Capas</div>
+        </div>
+        <div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d4f4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto 8px;"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+          <div class="type-meta">Usuario</div>
+        </div>
+        <div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d4f4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto 8px;"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 4 5-5"/></svg>
+          <div class="type-meta">Gráfico</div>
+        </div>
+        <div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d4f4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto 8px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+          <div class="type-meta">Documento</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 · ESPACIADO Y RADIOS -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">06</div>
+      <h2>Espaciado y radios</h2>
+      <p>Una escala de 4 px. Se usa por múltiplos. Los radios son generosos para suavizar, nunca afilados.</p>
+    </div>
+
+    <div class="grid grid-2">
+      <div>
+        <h3>Escala de espaciado</h3>
+        <div class="scale">
+          <div class="scale-row"><span class="scale-token">xs</span><span class="scale-value">4 px</span><div class="scale-bar" style="width: 4%;"></div></div>
+          <div class="scale-row"><span class="scale-token">sm</span><span class="scale-value">8 px</span><div class="scale-bar" style="width: 8%;"></div></div>
+          <div class="scale-row"><span class="scale-token">md</span><span class="scale-value">16 px</span><div class="scale-bar" style="width: 16%;"></div></div>
+          <div class="scale-row"><span class="scale-token">lg</span><span class="scale-value">24 px</span><div class="scale-bar" style="width: 24%;"></div></div>
+          <div class="scale-row"><span class="scale-token">xl</span><span class="scale-value">32 px</span><div class="scale-bar" style="width: 32%;"></div></div>
+          <div class="scale-row"><span class="scale-token">2xl</span><span class="scale-value">48 px</span><div class="scale-bar" style="width: 48%;"></div></div>
+          <div class="scale-row"><span class="scale-token">3xl</span><span class="scale-value">80 px</span><div class="scale-bar" style="width: 80%;"></div></div>
+        </div>
+      </div>
+      <div>
+        <h3>Radios y elevaciones</h3>
+        <div class="card card-pad-sm" style="margin-top: 16px;">
+          <div class="comp-label">Radios</div>
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div style="width: 50px; height: 50px; background: var(--primary); border-radius: 6px;"></div>
+            <div style="width: 50px; height: 50px; background: var(--primary); border-radius: 10px;"></div>
+            <div style="width: 50px; height: 50px; background: var(--primary); border-radius: 16px;"></div>
+            <div style="width: 50px; height: 50px; background: var(--primary); border-radius: 999px;"></div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted);">6 · 10 · 16 · pill</div>
+          </div>
+        </div>
+        <div class="card card-pad-sm" style="margin-top: 16px;">
+          <div class="comp-label">Sombras</div>
+          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <div style="width: 80px; height: 60px; background: white; border-radius: 10px; box-shadow: 0 1px 2px rgba(20,23,30,0.04); display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted);">sm</div>
+            <div style="width: 80px; height: 60px; background: white; border-radius: 10px; box-shadow: 0 4px 16px -2px rgba(20,23,30,0.06); display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted);">md</div>
+            <div style="width: 80px; height: 60px; background: white; border-radius: 10px; box-shadow: 0 12px 32px -4px rgba(20,23,30,0.08); display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted);">lg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 · COMPONENTES -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">07</div>
+      <h2>Componentes base</h2>
+      <p>Los bloques que se usan en todo el producto. Consistencia primero.</p>
+    </div>
+
+    <div class="grid grid-2">
+      <div>
+        <h3>Botones</h3>
+        <div class="comp">
+          <div class="comp-label">Primario</div>
+          <button class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+            Crear solicitud
+          </button>
+        </div>
+        <div class="comp">
+          <div class="comp-label">Secundario</div>
+          <button class="btn btn-ghost">Ver historial</button>
+        </div>
+      </div>
+      <div>
+        <h3>Pills de estado</h3>
+        <div class="comp" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="status-pill sp-open"><span class="d"></span>Abierto</span>
+          <span class="status-pill sp-proc"><span class="d"></span>En proceso</span>
+          <span class="status-pill sp-wait"><span class="d"></span>Esperando</span>
+          <span class="status-pill sp-esc"><span class="d"></span>Escalado</span>
+          <span class="status-pill sp-done"><span class="d"></span>Resuelto</span>
+        </div>
+
+        <h3 style="margin-top: 16px;">Pills de prioridad</h3>
+        <div class="comp" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="status-pill sp-esc"><span class="d"></span>P1</span>
+          <span class="status-pill sp-wait"><span class="d"></span>P2</span>
+          <span class="status-pill sp-proc"><span class="d"></span>P3</span>
+          <span class="status-pill sp-done"><span class="d"></span>P4</span>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 24px;">Tarjetas</h3>
+    <div class="grid grid-2">
+      <div class="card">
+        <div style="font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px;">KPI simple</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; color: var(--ink);">347</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Solicitudes · Marzo</div>
+      </div>
+      <div class="card" style="background: var(--primary); border-color: var(--primary);">
+        <div style="font-size: 11px; color: rgba(255,255,255,0.7); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px;">KPI destacado</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; color: white;">94,2%</div>
+        <div style="font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px;">SLA cumplido</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 · TONO DE VOZ -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">08</div>
+      <h2>Tono de voz</h2>
+      <p>DeskWork habla como un partner operativo: claro, directo, profesional. Nunca condescendiente, nunca marketinero.</p>
+    </div>
+
+    <div class="card">
+      <div class="tone-row">
+        <span class="yes">"Resolvimos el ticket en 3h 17m."</span>
+        <span class="no">"Hemos optimizado tu experiencia de soporte."</span>
+        <span class="note">Hechos > adjetivos</span>
+      </div>
+      <div class="tone-row">
+        <span class="yes">"El 24% de tus solicitudes son de accesos."</span>
+        <span class="no">"Detectamos un insight accionable."</span>
+        <span class="note">Concreto > abstracto</span>
+      </div>
+      <div class="tone-row">
+        <span class="yes">"Crea una solicitud en seis pasos."</span>
+        <span class="no">"Crea un ticket de forma seamless."</span>
+        <span class="note">Plano > grandilocuente</span>
+      </div>
+      <div class="tone-row">
+        <span class="yes">"Esto aún no está en el MVP."</span>
+        <span class="no">"Próximamente."</span>
+        <span class="note">Honesto > vago</span>
+      </div>
+      <div class="tone-row">
+        <span class="yes">"La incidencia se redujo 62%."</span>
+        <span class="no">"Logramos un impacto transformacional."</span>
+        <span class="note">Número > narrativa</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · DO / DON'T -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">09</div>
+      <h2>Lo que sí y lo que no.</h2>
+    </div>
+
+    <div class="do-dont">
+      <div class="do">
+        <h4>Sí · mantener</h4>
+        <ul>
+          <li>Mucho espacio en blanco</li>
+          <li>Un solo color principal visible por pantalla</li>
+          <li>Jerarquía clara con tamaño, no con colores</li>
+          <li>Mockups y diagramas, no fotos genéricas</li>
+          <li>Lenguaje directo, sin形容词 de marketing</li>
+          <li>Estados visuales sutiles (pills, no banners)</li>
+        </ul>
+      </div>
+      <div class="dont">
+        <h4>No · evitar</h4>
+        <ul>
+          <li>Gradientes de azul a púrpura estilo IA genérica</li>
+          <li>Emojis como íconos</li>
+          <li>ASCII art en diagramas</li>
+          <li>3 tarjetas idénticas lado a lado</li>
+          <li>Fotografías de personas con notebooks</li>
+          <li>Exceso de iconos decorativos</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · CIERRE -->
+  <section>
+    <div class="card" style="background: var(--primary); color: white; border-color: var(--primary); text-align: center; padding: 48px;">
+      <h3 style="color: white; font-size: 24px; margin-bottom: 12px;">Fin del manual · DeskWork v1.0</h3>
+      <p style="color: rgba(255,255,255,0.75); max-width: 520px; margin: 0 auto;">Cualquier duda o ampliación, contacta al equipo de producto. Este manual se actualiza con cada evolución significativa del producto.</p>
+      <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; font-size: 12px; color: rgba(255,255,255,0.6);">
+        <span>DeskWork · 2026</span>
+        <span>Brand book v1.0</span>
+        <span>Hecho con criterio, no con plantilla</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
