@@ -88,6 +88,20 @@ MIGRATION REPRODUCIBILITY:  PASS (6/6 migraciones, db reset idempotente)
 
 ---
 
+## Hallazgos de auditoría y remediaciones posteriores
+
+### PROV-003 — Provisioning Security Policy (2026-08-26)
+
+PROV-003 fue identificado en la auditoría adversarial de Foundation 3A (`DESKWORK_PHASE_3A_ADVERSARIAL_AUDIT.md`) como MEDIUM, indicando que `issue_provisioning_token` es invocable únicamente por `service_role` y que la custodia operativa de esta credencial es el único control contra creación arbitraria de tenants.
+
+La mitigación acordada para PROV-003 es **estrictamente documental**: no se modifican migrations, RLS, funciones SQL, ni el grant de `issue_provisioning_token`. La remediación se incorpora como control operativo en:
+
+- **`docs/SECURITY_PROVISIONING.md`** — política formal de custodia, no-commit/no-log, rotación y respuesta ante compromiso de `service_role` y equivalentes.
+
+Esta política complementa Foundation 3A sin alterar su superficie SQL. El cierre formal del hallazgo queda pendiente de cross-audit Mavis.
+
+---
+
 ## Alcance
 
 ```text
