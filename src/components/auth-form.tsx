@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { safeNext } from "@/shared/auth/safe-next";
 import { createSupabaseBrowserClient } from "@/shared/supabase/browser";
 
 type AuthMode = "login" | "register";
@@ -41,7 +42,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     }
 
     const next = searchParams.get("next");
-    router.replace(next?.startsWith("/") ? next : "/app");
+    router.replace(safeNext(next ?? undefined, "/app"));
     router.refresh();
   }
 
