@@ -4,7 +4,7 @@
 -- No DDL or DML outside the transaction block.
 
 begin;
-select plan(19);
+select plan(22);
 
 -- ============================================================
 -- Fixtures: tenants + users + memberships + categorías + tickets
@@ -51,10 +51,12 @@ insert into public.membership_scope_grants (
   ('4a000000-0000-0000-0000-000000000001', '4a000000-0000-0000-0000-00000000d004', 'institution', null, null, '4a000000-0000-0000-0000-00000000d004');
 
 -- Categorías por tenant.
-insert into public.ticket_categories (id, tenant_id, slug, label, display_order) values
-  ('4a000000-0000-0000-0000-00000000c001', '4a000000-0000-0000-0000-000000000001', 'computador', 'Computador', 10),
-  ('4a000000-0000-0000-0000-00000000c002', '4a000000-0000-0000-0000-000000000001', 'correo', 'Correo', 20),
-  ('4b000000-0000-0000-0000-00000000c001', '4b000000-0000-0000-0000-000000000001', 'otro', 'Otro', 90);
+-- F-09: incluimos 1 categoría inactiva (is_active=false) para validar la policy.
+insert into public.ticket_categories (id, tenant_id, slug, label, display_order, is_active) values
+  ('4a000000-0000-0000-0000-00000000c001', '4a000000-0000-0000-0000-000000000001', 'computador', 'Computador', 10, true),
+  ('4a000000-0000-0000-0000-00000000c002', '4a000000-0000-0000-0000-000000000001', 'correo', 'Correo', 20, true),
+  ('4a000000-0000-0000-0000-00000000c003', '4a000000-0000-0000-0000-000000000001', 'hardware-legacy', 'Hardware Legacy', 100, false),
+  ('4b000000-0000-0000-0000-00000000c001', '4b000000-0000-0000-0000-000000000001', 'otro', 'Otro', 90, true);
 
 -- Tickets: dos en Tenant A (uno con asignado) y uno en Tenant B.
 insert into public.tickets (id, tenant_id, requester_id, category_id, title, description, assigned_to) values
@@ -239,6 +241,41 @@ select throws_ok(
   '42501',
   null,
   'TEST-RLS-18: ticket_assignments INSERT denegado al agente (no tiene ticket.assignment.execute)'
+);
+
+-- ============================================================
+-- F-09 (PO 2026-08-27): categorías inactivas ocultas en SELECT
+-- ============================================================
+
+-- Volvemos al requester del Tenant A.
+select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-00000000a001', true);
+
+-- TEST-RLS-19 (F-09): el requester SÍ ve las categorías activas del tenant.
+select is(
+  (select count(*) from public.ticket_categories
+     where tenant_id = '4a000000-0000-0000-0000-000000000001'
+       and is_active = true),
+  2::bigint,
+  'TEST-RLS-19 (F-09): requester ve las 2 categorías activas del tenant (computador, correo)'
+);
+
+-- TEST-RLS-20 (F-09): el requester NO ve la categoría inactiva del tenant.
+select is(
+  (select count(*) from public.ticket_categories
+     where tenant_id = '4a000000-0000-0000-0000-000000000001'
+       and is_active = false),
+  0::bigint,
+  'TEST-RLS-20 (F-09): requester NO ve categorías inactivas (hardware-legacy oculta)'
+);
+
+-- TEST-RLS-21 (F-09): el requester NO ve categorías de otro tenant (multi-tenant preservado).
+-- Esta es la combinación de F-09 (is_active=true) + multi-tenant. La categoría
+-- de Tenant B está activa pero pertenece a otro tenant, así que debe ser invisible.
+select is(
+  (select count(*) from public.ticket_categories
+     where tenant_id = '4b000000-0000-0000-0000-000000000001'),
+  0::bigint,
+  'TEST-RLS-21 (F-09): requester NO ve categorías activas de OTRO tenant (multi-tenant preservado)'
 );
 
 reset role;
