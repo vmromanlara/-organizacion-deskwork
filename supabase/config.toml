@@ -2,10 +2,22 @@ project_id = "deskwork"
 
 [api]
 enabled = true
-port = 54321
+port = 5500
 schemas = ["public"]
 extra_search_path = ["public"]
 
 [db]
-port = 54322
+port = 5501
 major_version = 17
+
+[studio]
+port = 5502
+
+[inbucket]
+port = 5503
+smtp_port = 5504
+pop3_port = 5505
+
+[analytics]
+port = 5506
+vector_port = 5507

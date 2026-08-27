@@ -1,3 +1,7 @@
+-- TEST ISOLATION CONTRACT
+-- This file MUST be wrapped in begin; ... rollback;.
+-- All fixtures MUST use fixed UUIDs to enable deterministic re-runs.
+-- No DDL or DML outside the transaction block.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(32);
