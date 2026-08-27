@@ -97,7 +97,7 @@ create table if not exists public.ticket_attachments (
   storage_path text, -- NULL hasta TKT-014 (sin bucket físico).
   original_name text not null check (char_length(original_name) between 1 and 255),
   mime_type text not null check (char_length(mime_type) between 1 and 200),
-  size_bytes bigint not null check (size_bytes > 0),
+  size_bytes bigint not null check (size_bytes > 0), -- Validación provisional: el límite superior de 25 MB (26_214_400 bytes) se enforce en la capa de aplicación (src/modules/ticketing/attachments.ts) hasta que TKT-014 implemente Storage real con constraints nativos.
   sha256 text, -- NULL hasta TKT-014; en esa fase se vuelve NOT NULL.
   created_at timestamptz not null default now()
 );
