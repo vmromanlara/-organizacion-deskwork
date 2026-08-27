@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   INVALID_TRANSITIONS,
   VALID_TRANSITIONS,
+  canExecuteTransition,
+  canRequestTransition,
   canTransition,
 } from "./state-machine";
 import type { TicketActor, TicketSnapshot } from "./types";
@@ -11,6 +13,7 @@ const USER_REQ = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const USER_AGENT = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 const USER_LEAD = "cccccccc-cccc-cccc-cccc-cccccccccccc";
 const USER_DIRECTOR = "dddddddd-dddd-dddd-dddd-dddddddddddd";
+const USER_SUP = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
 
 function baseTicket(overrides: Partial<TicketSnapshot> = {}): TicketSnapshot {
   return {
@@ -51,6 +54,8 @@ describe("FSM v3 — Terminal", () => {
     ] as const) {
       const result = canTransition("CERRADO", target, actor("director", USER_DIRECTOR), ticket);
       expect(result.valid).toBe(false);
+      expect(result.canRequest).toBe(false);
+      expect(result.canExecute).toBe(false);
       expect(result.reason).toMatch(/terminal/i);
     }
   });
@@ -66,6 +71,8 @@ describe("FSM v3 — Transiciones inválidas explícitas", () => {
       ticket,
     );
     expect(result.valid).toBe(false);
+    expect(result.canRequest).toBe(false);
+    expect(result.canExecute).toBe(false);
   });
   it("ABIERTO → RESUELTO es inválida", () => {
     const ticket = baseTicket();
@@ -92,12 +99,12 @@ describe("FSM v3 — Transiciones inválidas explícitas", () => {
   });
 });
 
-describe("FSM v3 — Transiciones válidas por rol", () => {
+describe("FSM v3 — Transiciones operativas (canExecute=true para el actor correcto)", () => {
   it("declara exactamente 14 transiciones válidas", () => {
     expect(VALID_TRANSITIONS).toHaveLength(14);
   });
 
-  it("ABIERTO → EN_PROCESO requiere asignado", () => {
+  it("ABIERTO → EN_PROCESO: agente asignado ejecuta", () => {
     const sinAsignar = baseTicket({ state: "ABIERTO", assignedTo: null });
     const r1 = canTransition(
       "ABIERTO",
@@ -118,22 +125,10 @@ describe("FSM v3 — Transiciones válidas por rol", () => {
       asignado,
     );
     expect(r2.valid).toBe(true);
+    expect(r2.canExecute).toBe(true);
   });
 
-  it("ABIERTO → CERRADO: requester propio y lead/director", () => {
-    const ticket = baseTicket({ state: "ABIERTO" });
-    const rReq = canTransition("ABIERTO", "CERRADO", actor("requester", USER_REQ), ticket);
-    expect(rReq.valid).toBe(true);
-    const rLead = canTransition(
-      "ABIERTO",
-      "CERRADO",
-      actor("technical_lead", USER_LEAD),
-      ticket,
-    );
-    expect(rLead.valid).toBe(true);
-  });
-
-  it("EN_PROCESO → RESUELTO: agente asignado puede", () => {
+  it("EN_PROCESO → RESUELTO: agente asignado ejecuta", () => {
     const ticket = baseTicket({ state: "EN_PROCESO", assignedTo: USER_AGENT });
     const r = canTransition(
       "EN_PROCESO",
@@ -142,73 +137,230 @@ describe("FSM v3 — Transiciones válidas por rol", () => {
       ticket,
     );
     expect(r.valid).toBe(true);
+    expect(r.canExecute).toBe(true);
   });
 
-  it("EN_PROCESO → CERRADO: solo lead/director", () => {
+  it("EN_PROCESO → CERRADO: solo lead/director (no agente, no supervisor)", () => {
     const ticket = baseTicket({ state: "EN_PROCESO", assignedTo: USER_AGENT });
-    const rAgent = canTransition(
+    expect(
+      canTransition("EN_PROCESO", "CERRADO", actor("agent", USER_AGENT), ticket).valid,
+    ).toBe(false);
+    expect(
+      canTransition(
+        "EN_PROCESO",
+        "CERRADO",
+        actor("supervisor", USER_SUP),
+        ticket,
+      ).valid,
+    ).toBe(false);
+    expect(
+      canTransition(
+        "EN_PROCESO",
+        "CERRADO",
+        actor("technical_lead", USER_LEAD),
+        ticket,
+      ).valid,
+    ).toBe(true);
+    expect(
+      canTransition(
+        "EN_PROCESO",
+        "CERRADO",
+        actor("director", USER_DIRECTOR),
+        ticket,
+      ).valid,
+    ).toBe(true);
+  });
+
+  it("ESCALADO → EN_PROCESO: agente asignado retoma", () => {
+    const ticket = baseTicket({ state: "ESCALADO", assignedTo: USER_AGENT });
+    const r = canTransition(
+      "ESCALADO",
       "EN_PROCESO",
-      "CERRADO",
       actor("agent", USER_AGENT),
       ticket,
     );
-    expect(rAgent.valid).toBe(false);
+    expect(r.valid).toBe(true);
+  });
+
+  it("RESUELTO → CERRADO: system auto y lead/director ejecutan", () => {
+    const ticket = baseTicket({ state: "RESUELTO" });
+    expect(
+      canTransition("RESUELTO", "CERRADO", actor("system", null), ticket).valid,
+    ).toBe(true);
+    expect(
+      canTransition(
+        "RESUELTO",
+        "CERRADO",
+        actor("technical_lead", USER_LEAD),
+        ticket,
+      ).valid,
+    ).toBe(true);
+  });
+});
+
+describe("FSM v3 — Distinción SOLICITAR / EJECUTAR (remediación 2026-08-27)", () => {
+  it("ABIERTO → ESCALADO: agente asignado SOLICITA pero NO EJECUTA", () => {
+    const ticket = baseTicket({ state: "ABIERTO", assignedTo: USER_AGENT });
+    const r = canTransition(
+      "ABIERTO",
+      "ESCALADO",
+      actor("agent", USER_AGENT),
+      ticket,
+    );
+    expect(r.canRequest).toBe(true);
+    expect(r.canExecute).toBe(false);
+    expect(r.valid).toBe(false);
+    expect(r.reason).toMatch(/solicita|escalaci/i);
+  });
+
+  it("ABIERTO → ESCALADO: lead EJECUTA directamente", () => {
+    const ticket = baseTicket({ state: "ABIERTO", assignedTo: USER_AGENT });
+    const r = canTransition(
+      "ABIERTO",
+      "ESCALADO",
+      actor("technical_lead", USER_LEAD),
+      ticket,
+    );
+    expect(r.canRequest).toBe(true);
+    expect(r.canExecute).toBe(true);
+    expect(r.valid).toBe(true);
+  });
+
+  it("EN_PROCESO → ESCALADO: agente asignado SOLICITA pero NO EJECUTA", () => {
+    const ticket = baseTicket({ state: "EN_PROCESO", assignedTo: USER_AGENT });
+    const r = canTransition(
+      "EN_PROCESO",
+      "ESCALADO",
+      actor("agent", USER_AGENT),
+      ticket,
+    );
+    expect(r.canRequest).toBe(true);
+    expect(r.canExecute).toBe(false);
+    expect(r.valid).toBe(false);
+  });
+
+  it("EN_PROCESO → ABIERTO: agente asignado SOLICITA, lead EJECUTA", () => {
+    const ticket = baseTicket({ state: "EN_PROCESO", assignedTo: USER_AGENT });
+    const rAg = canTransition(
+      "EN_PROCESO",
+      "ABIERTO",
+      actor("agent", USER_AGENT),
+      ticket,
+    );
+    expect(rAg.canRequest).toBe(true);
+    expect(rAg.canExecute).toBe(false);
+
     const rLead = canTransition(
       "EN_PROCESO",
+      "ABIERTO",
+      actor("technical_lead", USER_LEAD),
+      ticket,
+    );
+    expect(rLead.canRequest).toBe(true);
+    expect(rLead.canExecute).toBe(true);
+  });
+
+  it("ABIERTO → CERRADO: requester SOLICITA, lead EJECUTA", () => {
+    const ticket = baseTicket({ state: "ABIERTO" });
+    const rReq = canTransition("ABIERTO", "CERRADO", actor("requester", USER_REQ), ticket);
+    expect(rReq.canRequest).toBe(true);
+    expect(rReq.canExecute).toBe(false);
+
+    const rLead = canTransition(
+      "ABIERTO",
       "CERRADO",
       actor("technical_lead", USER_LEAD),
       ticket,
     );
-    expect(rLead.valid).toBe(true);
+    expect(rLead.canExecute).toBe(true);
   });
 
-  it("RESUELTO → CERRADO: system auto y lead/director", () => {
+  it("RESUELTO → EN_PROCESO: requester SOLICITA reapertura, lead EJECUTA", () => {
     const ticket = baseTicket({ state: "RESUELTO" });
-    const rSystem = canTransition(
+    const rReq = canTransition(
       "RESUELTO",
-      "CERRADO",
-      actor("system", null),
+      "EN_PROCESO",
+      actor("requester", USER_REQ),
       ticket,
     );
-    expect(rSystem.valid).toBe(true);
+    expect(rReq.canRequest).toBe(true);
+    expect(rReq.canExecute).toBe(false);
+
     const rLead = canTransition(
       "RESUELTO",
-      "CERRADO",
+      "EN_PROCESO",
       actor("technical_lead", USER_LEAD),
       ticket,
     );
-    expect(rLead.valid).toBe(true);
+    expect(rLead.canExecute).toBe(true);
   });
 
-  it("ESPERANDO_USUARIO → EN_PROCESO: agente asignado retoma; requester confirma vía comment", () => {
+  it("ESPERANDO_USUARIO → EN_PROCESO: requester SOLICITA retomar, agente EJECUTA", () => {
     const ticket = baseTicket({
       state: "ESPERANDO_USUARIO",
       assignedTo: USER_AGENT,
     });
-    const rAgent = canTransition(
-      "ESPERANDO_USUARIO",
-      "EN_PROCESO",
-      actor("agent", USER_AGENT),
-      ticket,
-    );
-    expect(rAgent.valid).toBe(true);
-
     const rReq = canTransition(
       "ESPERANDO_USUARIO",
       "EN_PROCESO",
       actor("requester", USER_REQ),
       ticket,
     );
-    expect(rReq.valid).toBe(false);
-    expect(rReq.reason).toMatch(/confirma/i);
+    expect(rReq.canRequest).toBe(true);
+    expect(rReq.canExecute).toBe(false);
+
+    const rAg = canTransition(
+      "ESPERANDO_USUARIO",
+      "EN_PROCESO",
+      actor("agent", USER_AGENT),
+      ticket,
+    );
+    expect(rAg.canExecute).toBe(true);
+  });
+});
+
+describe("FSM v3 — Helpers canRequestTransition / canExecuteTransition", () => {
+  it("canRequestTransition refleja canRequest", () => {
+    const ticket = baseTicket({ state: "ABIERTO", assignedTo: USER_AGENT });
+    expect(
+      canRequestTransition(
+        "ABIERTO",
+        "ESCALADO",
+        actor("agent", USER_AGENT),
+        ticket,
+      ),
+    ).toBe(true);
+  });
+  it("canExecuteTransition refleja canExecute", () => {
+    const ticket = baseTicket({ state: "EN_PROCESO", assignedTo: USER_AGENT });
+    // Agente puede SOLICITAR pero NO EJECUTAR escalación.
+    expect(
+      canExecuteTransition(
+        "EN_PROCESO",
+        "ESCALADO",
+        actor("agent", USER_AGENT),
+        ticket,
+      ),
+    ).toBe(false);
+    // Lead puede EJECUTAR.
+    expect(
+      canExecuteTransition(
+        "EN_PROCESO",
+        "ESCALADO",
+        actor("technical_lead", USER_LEAD),
+        ticket,
+      ),
+    ).toBe(true);
   });
 });
 
 describe("FSM v3 — Actor no autenticado", () => {
-  it("rechaza toda transición si userId es null", () => {
+  it("rechaza toda transición si userId es null y kind != system", () => {
     const ticket = baseTicket();
-    const r = canTransition("ABIERTO", "CERRADO", actor("system", null), ticket);
-    expect(r.valid).toBe(false);
+    // system es la única excepción: userId puede ser null.
+    // Aquí comprobamos que un agente sin userId es rechazado.
+    const r2 = canTransition("ABIERTO", "CERRADO", actor("agent", null), ticket);
+    expect(r2.valid).toBe(false);
   });
 });
 
