@@ -33,7 +33,13 @@ create table if not exists public.ticket_categories (
   display_order integer not null default 0 check (display_order >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (tenant_id, slug)
+  unique (tenant_id, slug),
+  -- UNIQUE (tenant_id, id) es necesario para que la FK compuesta
+  -- tickets(tenant_id, category_id) → ticket_categories(tenant_id, id) creada
+  -- en la migration 20260827000760 pueda referenciar la tabla. Como id es PK
+  -- (única global), la combinación (tenant_id, id) es semánticamente redundante
+  -- pero técnicamente requerida por PostgreSQL para FKs compuestas.
+  unique (tenant_id, id)
 );
 
 create index if not exists ticket_categories_tenant_active_idx
@@ -70,7 +76,13 @@ create table if not exists public.tickets (
   check (state = 'CERRADO' or closed_at is null),
   -- FKs compuestas a Foundation (tenant_id + area_id/team_id).
   foreign key (tenant_id, area_id) references public.areas(tenant_id, id) on delete set null,
-  foreign key (tenant_id, team_id) references public.teams(tenant_id, id) on delete set null
+  foreign key (tenant_id, team_id) references public.teams(tenant_id, id) on delete set null,
+  -- UNIQUE (id, tenant_id) es necesario para que las FKs compuestas de las
+  -- tablas hijas (attachments, comments, events, assignments) creadas en la
+  -- migration 20260827000760 puedan referenciar (ticket_id, tenant_id) → (id,
+  -- tenant_id). Como id es PK (única global), la combinación es redundante
+  -- pero técnicamente requerida por PostgreSQL para FKs compuestas.
+  unique (id, tenant_id)
 );
 
 create index if not exists tickets_tenant_state_created_idx
