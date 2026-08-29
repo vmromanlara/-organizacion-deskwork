@@ -12,11 +12,13 @@
 
 import { describe, expect, it, vi } from "vitest";
 import {
+  applyAssign,
   applyCreateComment,
   applyTransition,
 } from "./supabase-repository";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  AssignTicketInput,
   CreateCommentInput,
   UpdateTicketStateInput,
 } from "./repository";
@@ -364,5 +366,132 @@ describe("applyCreateComment (TKT-013)", () => {
       "create_ticket_comment",
       expect.objectContaining({ p_is_internal: true }),
     );
+  });
+});
+
+// ===================================================================
+// TKT-012 — applyAssign
+// ===================================================================
+
+const baseAssign: AssignTicketInput = {
+  ticketId: "11111111-1111-1111-1111-111111111111",
+  assigneeId: "22222222-2222-2222-2222-222222222222",
+  assignedBy: "33333333-3333-3333-3333-333333333333",
+};
+
+describe("applyAssign (TKT-012)", () => {
+  it("rechaza ticketId no-UUID SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyAssign(mock, {
+      ...baseAssign,
+      ticketId: "not-a-uuid",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza assigneeId no-UUID SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyAssign(mock, {
+      ...baseAssign,
+      assigneeId: "nope",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("mapea error P0002 a kind=not_found", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "P0002", message: "ticket not found" },
+    });
+    const result = await applyAssign(mock, baseAssign);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("not_found");
+    }
+  });
+
+  it("mapea error 42501 a kind=forbidden", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "42501",
+        message: "actor not authorized to assign tickets in this tenant",
+      },
+    });
+    const result = await applyAssign(mock, baseAssign);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("forbidden");
+    }
+  });
+
+  it("mapea P0001 'not an active member' a kind=validation", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "P0001",
+        message: "assignee is not an active member of the ticket tenant",
+      },
+    });
+    const result = await applyAssign(mock, baseAssign);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+  });
+
+  it("mapea error desconocido a kind=db_error", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "XX999", message: "rare" },
+    });
+    const result = await applyAssign(mock, baseAssign);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("db_error");
+    }
+  });
+
+  it("mapea data=null a kind=db_error", async () => {
+    const { mock } = makeMockSupabase({ data: null, error: null });
+    const result = await applyAssign(mock, baseAssign);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("db_error");
+    }
+  });
+
+  it("en éxito: rpc llamado con p_ticket_id y p_assignee_id", async () => {
+    const assignmentRow = {
+      id: "as-1",
+      tenant_id: "t-1",
+      ticket_id: baseAssign.ticketId,
+      assignee_id: baseAssign.assigneeId,
+      assigned_by: baseAssign.assignedBy,
+      assigned_at: "2026-08-29T13:00:00Z",
+      unassigned_at: null,
+    };
+    const { mock, rpc } = makeMockSupabase({
+      data: assignmentRow,
+      error: null,
+    });
+    const result = await applyAssign(mock, baseAssign);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.assignment.assigneeId).toBe(baseAssign.assigneeId);
+      expect(result.assignment.unassignedAt).toBe(null);
+    }
+    expect(rpc).toHaveBeenCalledWith("assign_ticket", {
+      p_ticket_id: baseAssign.ticketId,
+      p_assignee_id: baseAssign.assigneeId,
+    });
   });
 });
