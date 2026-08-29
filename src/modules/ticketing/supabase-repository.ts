@@ -17,8 +17,10 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  CreateCommentInput,
   Ticket,
   TicketCategory,
+  TicketComment,
   TicketRepository,
   UpdateTicketStateInput,
 } from "./repository";
@@ -54,6 +56,17 @@ interface CategoryRow {
   display_order: number;
 }
 
+interface CommentRow {
+  id: string;
+  tenant_id: string;
+  ticket_id: string;
+  author_id: string;
+  body: string;
+  is_internal: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 function toTicket(row: TicketRow): Ticket {
   return {
     id: row.id,
@@ -85,6 +98,19 @@ function toCategory(row: CategoryRow): TicketCategory {
     description: row.description,
     isActive: row.is_active,
     displayOrder: row.display_order,
+  };
+}
+
+function toComment(row: CommentRow): TicketComment {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    ticketId: row.ticket_id,
+    authorId: row.author_id,
+    body: row.body,
+    isInternal: row.is_internal,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -225,6 +251,39 @@ export function createSupabaseTicketRepository(
         "unassignTicket: pendiente TKT-012 (Bloque 2 — UI de asignación)",
       );
     },
+
+    /**
+     * Crea un comentario vía SECURITY DEFINER `create_ticket_comment`.
+     * La app layer ya validó el payload con `validateCommentInput`.
+     * La función DB hace defense in depth.
+     */
+    async createComment(input) {
+      const result = await applyCreateComment(supabase, input);
+      if (!result.ok) {
+        const err = result.error;
+        const reason = "reason" in err ? err.reason : null;
+        throw new Error(
+          `createComment failed: ${err.kind} ${reason ?? ""}`,
+        );
+      }
+      return result.comment;
+    },
+
+    async listCommentsByTicket(ticketId) {
+      const { data, error } = await supabase
+        .from("ticket_comments")
+        .select(
+          "id, tenant_id, ticket_id, author_id, body, is_internal, created_at, updated_at",
+        )
+        .eq("ticket_id", ticketId)
+        .order("created_at", { ascending: true });
+      if (error) {
+        // PGRST116 = no rows; tratamos como lista vacía.
+        if (error.code === "PGRST116") return [];
+        throw new Error(`listCommentsByTicket: ${error.message}`);
+      }
+      return (data ?? []).map((row) => toComment(row as CommentRow));
+    },
   };
 }
 
@@ -284,7 +343,70 @@ export async function applyTransition(
   return { ok: true, ticket: toTicket(data as TicketRow) };
 }
 
-/** Helper público: snapshot mínimo para alimentar la FSM. */
+/** Error tipado de creación de comentario. */
+export type CommentError =
+  | { kind: "validation"; reason: string }
+  | { kind: "not_found" }
+  | { kind: "forbidden"; reason: string }
+  | { kind: "db_error"; reason: string };
+
+export type CommentResult =
+  | { ok: true; comment: TicketComment }
+  | { ok: false; error: CommentError };
+
+/**
+ * Crea un comentario vía SECURITY DEFINER `create_ticket_comment`.
+ * Devuelve un resultado tipado para que la ruta API mapee con precisión
+ * a HTTP status codes.
+ */
+export async function applyCreateComment(
+  supabase: SupabaseClient,
+  input: CreateCommentInput,
+): Promise<CommentResult> {
+  const bodyLen = input.body?.length ?? 0;
+  if (bodyLen < 1 || bodyLen > 10000) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        reason: `El cuerpo del comentario debe tener entre 1 y 10000 caracteres (recibido: ${bodyLen}).`,
+      },
+    };
+  }
+
+  const { data, error } = await supabase.rpc("create_ticket_comment", {
+    p_ticket_id: input.ticketId,
+    p_body: input.body,
+    p_is_internal: input.isInternal ?? false,
+  });
+
+  if (error) {
+    const code = error.code ?? "";
+    if (code === "P0002" || /ticket not found/i.test(error.message)) {
+      return { ok: false, error: { kind: "not_found" } };
+    }
+    if (
+      code === "42501" ||
+      /not authorized|not an active member|authentication required|not authorized to comment|not authorized to create internal/i.test(
+        error.message,
+      )
+    ) {
+      return { ok: false, error: { kind: "forbidden", reason: error.message } };
+    }
+    if (
+      code === "P0001" ||
+      /between 1 and 10000 characters/i.test(error.message)
+    ) {
+      return { ok: false, error: { kind: "validation", reason: error.message } };
+    }
+    return { ok: false, error: { kind: "db_error", reason: error.message } };
+  }
+
+  if (!data) {
+    return { ok: false, error: { kind: "db_error", reason: "RPC returned null" } };
+  }
+  return { ok: true, comment: toComment(data as CommentRow) };
+}
 
 /** Helper público: snapshot mínimo para alimentar la FSM. */
 export function toTicketSnapshot(ticket: Ticket): import("./types").TicketSnapshot {

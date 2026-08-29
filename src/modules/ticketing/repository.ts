@@ -116,6 +116,12 @@ export interface AssignTicketInput {
   assignedBy: string;
 }
 
+export interface CreateCommentInput {
+  ticketId: string;
+  body: string;
+  isInternal?: boolean;
+}
+
 /**
  * Contrato del repository. Las implementaciones concretas viven en TKT-006
  * (API routes), no en este archivo. Este módulo sólo garantiza tipos y firmas.
@@ -133,4 +139,7 @@ export interface TicketRepository {
 
   assignTicket(input: AssignTicketInput): Promise<TicketAssignment>;
   unassignTicket(ticketId: string, actorId: string): Promise<TicketAssignment>;
+
+  createComment(input: CreateCommentInput): Promise<TicketComment>;
+  listCommentsByTicket(ticketId: string): Promise<TicketComment[]>;
 }
