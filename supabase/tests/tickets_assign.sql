@@ -1,6 +1,6 @@
 -- TEST ISOLATION CONTRACT
 begin;
-select plan(12);
+select plan(14);
 
 -- ============================================================
 -- TKT-012: assign_ticket SECURITY DEFINER

@@ -387,19 +387,20 @@ export async function applyAssign(
     if (code === "P0002" || /ticket not found/i.test(error.message)) {
       return { ok: false, error: { kind: "not_found" } };
     }
-    if (
-      code === "42501" ||
-      /not authorized|not an active member|authentication required/i.test(
-        error.message,
-      )
-    ) {
-      return { ok: false, error: { kind: "forbidden", reason: error.message } };
-    }
+    // Input inválido: el assignee no es miembro del tenant. Lo detectamos
+    // ANTES del 42501 porque el mensaje contiene "not an active member",
+    // que también matchearía el regex de forbidden.
     if (
       code === "P0001" ||
-      /not an active member of the ticket tenant/i.test(error.message)
+      /assignee is not an active member/i.test(error.message)
     ) {
       return { ok: false, error: { kind: "validation", reason: error.message } };
+    }
+    if (
+      code === "42501" ||
+      /not authorized|authentication required/i.test(error.message)
+    ) {
+      return { ok: false, error: { kind: "forbidden", reason: error.message } };
     }
     return { ok: false, error: { kind: "db_error", reason: error.message } };
   }
