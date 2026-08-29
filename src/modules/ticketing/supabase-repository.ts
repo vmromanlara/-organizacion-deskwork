@@ -96,11 +96,9 @@ export type TransitionError =
   | { kind: "conflict"; reason: string }
   | { kind: "db_error"; reason: string };
 
-export interface TransitionResult {
-  ok: boolean;
-  ticket?: Ticket;
-  error?: TransitionError;
-}
+export type TransitionResult =
+  | { ok: true; ticket: Ticket }
+  | { ok: false; error: TransitionError };
 
 /**
  * Fábrica del repository concreto. La app layer recibe la instancia y la
@@ -192,6 +190,7 @@ export function createSupabaseTicketRepository(
       // TODO TKT-009: Bloque 3 — la app layer (mockup→real) ya no es acá.
       // Stub mínimo: por ahora delegamos en el service layer que se
       // materializará en Bloque 3. Lanzamos para no crear una regresión.
+      void input; // reservado para TKT-009; eslint no-unused-vars
       throw new Error(
         "createTicket: pendiente TKT-009 (Bloque 3 — service layer)",
       );
@@ -205,9 +204,11 @@ export function createSupabaseTicketRepository(
      */
     async updateTicketState(input) {
       const result = await applyTransition(supabase, input);
-      if (!result.ok || !result.ticket) {
+      if (!result.ok) {
+        const err = result.error;
+        const reason = "reason" in err ? err.reason : null;
         throw new Error(
-          `updateTicketState failed: ${result.error?.kind} ${result.error?.reason ?? ""}`,
+          `updateTicketState failed: ${err.kind} ${reason ?? ""}`,
         );
       }
       return result.ticket;
@@ -282,6 +283,8 @@ export async function applyTransition(
   }
   return { ok: true, ticket: toTicket(data as TicketRow) };
 }
+
+/** Helper público: snapshot mínimo para alimentar la FSM. */
 
 /** Helper público: snapshot mínimo para alimentar la FSM. */
 export function toTicketSnapshot(ticket: Ticket): import("./types").TicketSnapshot {

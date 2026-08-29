@@ -9,10 +9,6 @@ import { describe, expect, it, vi } from "vitest";
 import { makeTestActor, resolveActor } from "./actor";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type MaybeSingleResult =
-  | { data: unknown; error: null }
-  | { data: null; error: { message: string } };
-
 function makeMockSupabase(opts: {
   userId?: string | null;
   membership?: unknown;
