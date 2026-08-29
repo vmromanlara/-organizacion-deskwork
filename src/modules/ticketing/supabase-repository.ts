@@ -17,8 +17,10 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  AssignTicketInput,
   CreateCommentInput,
   Ticket,
+  TicketAssignment,
   TicketCategory,
   TicketComment,
   TicketRepository,
@@ -240,15 +242,21 @@ export function createSupabaseTicketRepository(
       return result.ticket;
     },
 
-    async assignTicket() {
-      throw new Error(
-        "assignTicket: pendiente TKT-012 (Bloque 2 — UI de asignación)",
-      );
+    async assignTicket(input) {
+      const result = await applyAssign(supabase, input);
+      if (!result.ok) {
+        const err = result.error;
+        const reason = "reason" in err ? err.reason : null;
+        throw new Error(
+          `assignTicket failed: ${err.kind} ${reason ?? ""}`,
+        );
+      }
+      return result.assignment;
     },
 
     async unassignTicket() {
       throw new Error(
-        "unassignTicket: pendiente TKT-012 (Bloque 2 — UI de asignación)",
+        "unassignTicket: pendiente (no parte de TKT-012)",
       );
     },
 
@@ -341,6 +349,93 @@ export async function applyTransition(
     return { ok: false, error: { kind: "db_error", reason: "RPC returned null" } };
   }
   return { ok: true, ticket: toTicket(data as TicketRow) };
+}
+
+/** Error tipado de creación de comentario. */
+export type AssignError =
+  | { kind: "validation"; reason: string }
+  | { kind: "not_found" }
+  | { kind: "forbidden"; reason: string }
+  | { kind: "db_error"; reason: string };
+
+export type AssignResult =
+  | { ok: true; assignment: TicketAssignment }
+  | { ok: false; error: AssignError };
+
+/**
+ * Crea una asignación vía SECURITY DEFINER `assign_ticket`.
+ * Devuelve un resultado tipado para mapear a HTTP status codes.
+ */
+export async function applyAssign(
+  supabase: SupabaseClient,
+  input: AssignTicketInput,
+): Promise<AssignResult> {
+  if (!isUuid(input.ticketId) || !isUuid(input.assigneeId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "ticketId y assigneeId deben ser UUIDs." },
+    };
+  }
+
+  const { data, error } = await supabase.rpc("assign_ticket", {
+    p_ticket_id: input.ticketId,
+    p_assignee_id: input.assigneeId,
+  });
+
+  if (error) {
+    const code = error.code ?? "";
+    if (code === "P0002" || /ticket not found/i.test(error.message)) {
+      return { ok: false, error: { kind: "not_found" } };
+    }
+    if (
+      code === "42501" ||
+      /not authorized|not an active member|authentication required/i.test(
+        error.message,
+      )
+    ) {
+      return { ok: false, error: { kind: "forbidden", reason: error.message } };
+    }
+    if (
+      code === "P0001" ||
+      /not an active member of the ticket tenant/i.test(error.message)
+    ) {
+      return { ok: false, error: { kind: "validation", reason: error.message } };
+    }
+    return { ok: false, error: { kind: "db_error", reason: error.message } };
+  }
+
+  if (!data) {
+    return { ok: false, error: { kind: "db_error", reason: "RPC returned null" } };
+  }
+  return { ok: true, assignment: toAssignment(data as AssignmentRow) };
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+interface AssignmentRow {
+  id: string;
+  tenant_id: string;
+  ticket_id: string;
+  assignee_id: string;
+  assigned_by: string;
+  assigned_at: string;
+  unassigned_at: string | null;
+}
+
+function toAssignment(row: AssignmentRow): TicketAssignment {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    ticketId: row.ticket_id,
+    assigneeId: row.assignee_id,
+    assignedBy: row.assigned_by,
+    assignedAt: row.assigned_at,
+    unassignedAt: row.unassigned_at,
+  };
 }
 
 /** Error tipado de creación de comentario. */
