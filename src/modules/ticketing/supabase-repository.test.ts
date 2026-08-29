@@ -11,9 +11,15 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { applyTransition } from "./supabase-repository";
+import {
+  applyCreateComment,
+  applyTransition,
+} from "./supabase-repository";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { UpdateTicketStateInput } from "./repository";
+import type {
+  CreateCommentInput,
+  UpdateTicketStateInput,
+} from "./repository";
 
 type RpcResult =
   | { data: unknown; error: null }
@@ -186,6 +192,177 @@ describe("applyTransition (TKT-006)", () => {
     expect(rpc).toHaveBeenCalledWith(
       "apply_ticket_transition",
       expect.objectContaining({ p_reason: null }),
+    );
+  });
+});
+
+// ===================================================================
+// TKT-013 — applyCreateComment
+// ===================================================================
+
+const baseComment: CreateCommentInput = {
+  ticketId: "11111111-1111-1111-1111-111111111111",
+  body: "Comentario de prueba con suficiente longitud.",
+  isInternal: false,
+};
+
+describe("applyCreateComment (TKT-013)", () => {
+  it("rechaza body vacío SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateComment(mock, { ...baseComment, body: "" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza body de más de 10000 caracteres SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateComment(mock, {
+      ...baseComment,
+      body: "x".repeat(10001),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("mapea error P0002 (ticket not found) a kind=not_found", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "P0002", message: "ticket not found" },
+    });
+    const result = await applyCreateComment(mock, baseComment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("not_found");
+    }
+  });
+
+  it("mapea error 42501 a kind=forbidden (comentario no autorizado)", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "42501",
+        message: "actor not authorized to comment on this ticket",
+      },
+    });
+    const result = await applyCreateComment(mock, baseComment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("forbidden");
+    }
+  });
+
+  it("mapea error 42501 'internal' a kind=forbidden", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "42501",
+        message: "actor not authorized to create internal comments",
+      },
+    });
+    const result = await applyCreateComment(mock, {
+      ...baseComment,
+      isInternal: true,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("forbidden");
+    }
+  });
+
+  it("mapea error P0001 (longitud) a kind=validation", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "P0001",
+        message: "comment body must be between 1 and 10000 characters",
+      },
+    });
+    const result = await applyCreateComment(mock, baseComment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+  });
+
+  it("mapea error desconocido a kind=db_error", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "XX999", message: "rare thing" },
+    });
+    const result = await applyCreateComment(mock, baseComment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("db_error");
+    }
+  });
+
+  it("mapea data=null sin error a kind=db_error", async () => {
+    const { mock } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateComment(mock, baseComment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("db_error");
+    }
+  });
+
+  it("en éxito: llama rpc con parámetros correctos y retorna comment", async () => {
+    const commentRow = {
+      id: "c-1",
+      tenant_id: "t-1",
+      ticket_id: baseComment.ticketId,
+      author_id: "u-1",
+      body: baseComment.body,
+      is_internal: false,
+      created_at: "2026-08-29T13:00:00Z",
+      updated_at: "2026-08-29T13:00:00Z",
+    };
+    const { mock, rpc } = makeMockSupabase({ data: commentRow, error: null });
+    const result = await applyCreateComment(mock, baseComment);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.comment.body).toBe(baseComment.body);
+      expect(result.comment.isInternal).toBe(false);
+      expect(result.comment.tenantId).toBe("t-1");
+    }
+    expect(rpc).toHaveBeenCalledWith("create_ticket_comment", {
+      p_ticket_id: baseComment.ticketId,
+      p_body: baseComment.body,
+      p_is_internal: false,
+    });
+  });
+
+  it("en éxito con isInternal=true: pasa p_is_internal=true", async () => {
+    const { mock, rpc } = makeMockSupabase({
+      data: {
+        id: "c-2",
+        tenant_id: "t-1",
+        ticket_id: baseComment.ticketId,
+        author_id: "u-1",
+        body: "nota interna",
+        is_internal: true,
+        created_at: "2026-08-29T13:00:00Z",
+        updated_at: "2026-08-29T13:00:00Z",
+      },
+      error: null,
+    });
+    const result = await applyCreateComment(mock, {
+      ...baseComment,
+      body: "nota interna",
+      isInternal: true,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.comment.isInternal).toBe(true);
+    }
+    expect(rpc).toHaveBeenCalledWith(
+      "create_ticket_comment",
+      expect.objectContaining({ p_is_internal: true }),
     );
   });
 });
