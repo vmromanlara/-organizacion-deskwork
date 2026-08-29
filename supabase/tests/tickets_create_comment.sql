@@ -4,7 +4,7 @@
 -- No DDL or DML outside the transaction block.
 
 begin;
-select plan(11);
+select plan(13);
 
 -- ============================================================
 -- TKT-013: create_ticket_comment SECURITY DEFINER
