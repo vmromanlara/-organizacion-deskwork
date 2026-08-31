@@ -131,6 +131,14 @@ export interface RegisterAttachmentInput {
   sha256?: string | null;
 }
 
+export interface TicketSearchFilters {
+  state?: TicketState;
+  priority?: TicketPriority;
+  assignedTo?: string;
+  requesterId?: string;
+  search?: string;
+}
+
 /**
  * Contrato del repository. Las implementaciones concretas viven en TKT-006
  * (API routes), no en este archivo. Este módulo sólo garantiza tipos y firmas.
@@ -140,9 +148,19 @@ export interface TicketRepository {
   getCategory(tenantId: string, slug: string): Promise<TicketCategory | null>;
 
   getTicket(ticketId: string): Promise<Ticket | null>;
-  listTicketsByTenant(tenantId: string, limit: number): Promise<Ticket[]>;
-  listTicketsByRequester(requesterId: string): Promise<Ticket[]>;
-  listTicketsByAssignee(assigneeId: string): Promise<Ticket[]>;
+  listTicketsByTenant(
+    tenantId: string,
+    limit: number,
+    filters?: TicketSearchFilters,
+  ): Promise<Ticket[]>;
+  listTicketsByRequester(
+    requesterId: string,
+    filters?: TicketSearchFilters,
+  ): Promise<Ticket[]>;
+  listTicketsByAssignee(
+    assigneeId: string,
+    filters?: TicketSearchFilters,
+  ): Promise<Ticket[]>;
   createTicket(input: CreateTicketInput): Promise<Ticket>;
   updateTicketState(input: UpdateTicketStateInput): Promise<Ticket>;
 

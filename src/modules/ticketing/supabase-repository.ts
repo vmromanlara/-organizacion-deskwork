@@ -26,6 +26,7 @@ import type {
   TicketCategory,
   TicketComment,
   TicketRepository,
+  TicketSearchFilters,
   UpdateTicketStateInput,
 } from "./repository";
 import { hasTicketState, type TicketState } from "./types";
@@ -207,37 +208,43 @@ export function createSupabaseTicketRepository(
       return data ? toTicket(data as TicketRow) : null;
     },
 
-    async listTicketsByTenant(tenantId, limit) {
-      const { data, error } = await supabase
+    async listTicketsByTenant(tenantId, limit, filters) {
+      let q = supabase
         .from("tickets")
         .select(TICKET_COLUMNS)
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .limit(Math.max(1, Math.min(limit, 200)));
+      q = applyFilters(q, filters);
+      const { data, error } = await q;
       if (error) {
         throw new Error(`listTicketsByTenant: ${error.message}`);
       }
       return (data ?? []).map((row) => toTicket(row as TicketRow));
     },
 
-    async listTicketsByRequester(requesterId) {
-      const { data, error } = await supabase
+    async listTicketsByRequester(requesterId, filters) {
+      let q = supabase
         .from("tickets")
         .select(TICKET_COLUMNS)
         .eq("requester_id", requesterId)
         .order("created_at", { ascending: false });
+      q = applyFilters(q, filters);
+      const { data, error } = await q;
       if (error) {
         throw new Error(`listTicketsByRequester: ${error.message}`);
       }
       return (data ?? []).map((row) => toTicket(row as TicketRow));
     },
 
-    async listTicketsByAssignee(assigneeId) {
-      const { data, error } = await supabase
+    async listTicketsByAssignee(assigneeId, filters) {
+      let q = supabase
         .from("tickets")
         .select(TICKET_COLUMNS)
         .eq("assigned_to", assigneeId)
         .order("created_at", { ascending: false });
+      q = applyFilters(q, filters);
+      const { data, error } = await q;
       if (error) {
         throw new Error(`listTicketsByAssignee: ${error.message}`);
       }
@@ -354,6 +361,42 @@ export function createSupabaseTicketRepository(
 
 const TICKET_COLUMNS =
   "id, tenant_id, requester_id, category_id, priority, state, title, description, assigned_to, area_id, team_id, first_response_at, resolved_at, closed_at, sla_status, created_at, updated_at";
+
+/**
+ * Aplica los filtros de búsqueda a una query de Supabase. Encadenable
+ * (devuelve la query para que el caller la consuma).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseQuery = any;
+
+function applyFilters(
+  q: SupabaseQuery,
+  filters: TicketSearchFilters | undefined,
+): SupabaseQuery {
+  if (!filters) return q;
+  if (filters.state) {
+    q = q.eq("state", filters.state);
+  }
+  if (filters.priority) {
+    q = q.eq("priority", filters.priority);
+  }
+  if (filters.assignedTo) {
+    q = q.eq("assigned_to", filters.assignedTo);
+  }
+  if (filters.requesterId) {
+    q = q.eq("requester_id", filters.requesterId);
+  }
+  if (filters.search && filters.search.length >= 3) {
+    // Full-text search sobre title + description (índice GIN
+    // tickets_fulltext_idx ya existe en la migration 00700).
+    // Usamos ilike como fallback compatible con el setup actual; el
+    // operador websearch_to_tsquery se activará cuando la DB lo soporte
+    // (TKT-022 v2: full-text real con websearch_to_tsvector).
+    const term = `%${filters.search.replace(/[%_]/g, "\\$&")}%`;
+    q = q.or(`title.ilike.${term},description.ilike.${term}`);
+  }
+  return q;
+}
 
 /**
  * Aplica la transición vía SECURITY DEFINER. Devuelve un resultado tipado
