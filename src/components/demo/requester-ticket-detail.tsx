@@ -1,50 +1,180 @@
 "use client";
 
 import Link from "next/link";
-import { getMockUser, mockCategories, mockPriorities, mockTicketStates, type MockTicket } from "@/mock/deskwork-data";
+import { useEffect, useState } from "react";
+import { mockPriorities, mockTicketStates } from "@/mock/deskwork-data";
 import { DemoLoadingState } from "./demo-feedback-state";
-import { useDemoState } from "./demo-state";
+import { getTicket, listTicketCategories } from "@/modules/ticketing/client-api";
+import type { Ticket, TicketCategory } from "@/modules/ticketing/repository";
+import type { TicketState, TicketPriority } from "@/modules/ticketing/types";
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Santiago" }).format(new Date(value));
 }
 
-function formatDuration(minutes: number | null): string {
-  if (minutes === null) return "Aún no disponible";
-  if (minutes === 0) return "0 min";
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return hours > 0 ? `${hours} h ${remainingMinutes} min` : `${remainingMinutes} min`;
+function getCategoryLabel(categories: TicketCategory[], categoryId: string): string {
+  return categories.find((c) => c.id === categoryId)?.label ?? "(sin categoría)";
 }
 
-function getCategoryLabel(categoryId: string): string {
-  return mockCategories.find((category) => category.id === categoryId)?.label ?? "Sin categoría";
+function getStateLabel(state: TicketState): string {
+  return mockTicketStates.find((s) => s.code === state)?.label ?? state;
 }
 
-function getPriority(ticket: MockTicket) {
-  return mockPriorities.find((priority) => priority.code === ticket.priority);
+function getStateTone(state: TicketState): string {
+  return mockTicketStates.find((s) => s.code === state)?.visualTone ?? "info";
 }
+
+function getPriorityTone(priority: TicketPriority): string {
+  return mockPriorities.find((p) => p.code === priority)?.visualTone ?? "info";
+}
+
+type Phase =
+  | { kind: "loading" }
+  | { kind: "error"; reason: string; kind_: string; status?: number }
+  | { kind: "ready"; ticket: Ticket; categories: TicketCategory[] };
 
 export function RequesterTicketDetail({ ticketId }: { ticketId: string }) {
-  const { events, isHydrated, tickets } = useDemoState();
-  if (!isHydrated) return <DemoLoadingState />;
-  const ticket = tickets.find((candidate) => candidate.id === ticketId);
+  const [phase, setPhase] = useState<Phase>({ kind: "loading" });
 
-  if (!ticket) {
-    return <div className="demo-page"><section className="demo-page-heading" aria-labelledby="ticket-not-found-title"><p className="demo-eyebrow">Solicitud</p><h1 id="ticket-not-found-title">No encontramos esta solicitud.</h1><p className="demo-page-description">La ruta no corresponde a una solicitud disponible en los datos mock locales.</p></section><Link className="demo-primary-link demo-ticket-not-found-action" href="/tickets">Volver a mi historial</Link></div>;
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [categoriesResult, ticketResult] = await Promise.all([
+        listTicketCategories(),
+        getTicket(ticketId),
+      ]);
+      if (cancelled) return;
+      if (!categoriesResult.ok) {
+        setPhase({ kind: "error", reason: categoriesResult.error.reason ?? "Error", kind_: categoriesResult.error.kind });
+        return;
+      }
+      if (!ticketResult.ok) {
+        setPhase({
+          kind: "error",
+          reason: ticketResult.error.reason ?? "Error",
+          kind_: ticketResult.error.kind,
+          status: ticketResult.error.kind === "http" ? ticketResult.error.status : undefined,
+        });
+        return;
+      }
+      setPhase({
+        kind: "ready",
+        ticket: ticketResult.data.ticket,
+        categories: categoriesResult.data.categories,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ticketId]);
+
+  if (phase.kind === "loading") return <DemoLoadingState />;
+
+  if (phase.kind === "error") {
+    if (phase.kind_ === "not_found" || phase.status === 404) {
+      return (
+        <div className="demo-page">
+          <section className="demo-page-heading" aria-labelledby="ticket-not-found-title">
+            <p className="demo-eyebrow">Solicitud</p>
+            <h1 id="ticket-not-found-title">No encontramos esta solicitud.</h1>
+            <p className="demo-page-description">El identificador no corresponde a una solicitud visible en tu cuenta o ya no existe.</p>
+          </section>
+          <Link className="demo-primary-link demo-ticket-not-found-action" href="/tickets">Volver a mi historial</Link>
+        </div>
+      );
+    }
+    if (phase.kind_ === "forbidden") {
+      return (
+        <div className="demo-page">
+          <section className="demo-page-heading" aria-labelledby="ticket-forbidden-title">
+            <p className="demo-eyebrow">Solicitud</p>
+            <h1 id="ticket-forbidden-title">Necesitás iniciar sesión.</h1>
+            <p className="demo-page-description">{phase.reason}</p>
+          </section>
+          <Link className="demo-primary-link demo-ticket-not-found-action" href="/login">Iniciar sesión</Link>
+        </div>
+      );
+    }
+    return (
+      <div className="demo-page">
+        <section className="demo-page-heading" aria-labelledby="ticket-error-title">
+          <p className="demo-eyebrow">Solicitud</p>
+          <h1 id="ticket-error-title">No pudimos cargar esta solicitud.</h1>
+          <p className="demo-page-description">{phase.reason}</p>
+        </section>
+        <Link className="demo-primary-link demo-ticket-not-found-action" href="/tickets">Volver a mi historial</Link>
+      </div>
+    );
   }
 
-  const requester = getMockUser(ticket.requesterId);
-  const technician = ticket.technicianId ? getMockUser(ticket.technicianId) : undefined;
-  const history = events.filter((event) => event.ticketId === ticket.id).sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
-  const priority = getPriority(ticket);
-  const state = mockTicketStates.find((definition) => definition.code === ticket.state);
-  const hasAttachment = history.some((event) => event.type === "attachment_added");
+  const ticket = phase.ticket;
+  const category = phase.categories.find((c) => c.id === ticket.categoryId);
+  const stateLabel = getStateLabel(ticket.state);
+  const stateTone = getStateTone(ticket.state);
+  const priorityTone = getPriorityTone(ticket.priority);
 
-  return <div className="demo-ticket-detail">
-    <section className="demo-ticket-detail-heading" aria-labelledby="ticket-title"><div><p className="demo-eyebrow">{ticket.id} · Solicitud</p><h1 id="ticket-title">{ticket.title}</h1><p>{ticket.description}</p></div><div className="demo-ticket-detail-badges"><span className={`demo-priority-marker demo-priority-marker-${priority?.visualTone ?? "info"}`} aria-label={`Prioridad ${ticket.priority}`}>{ticket.priority}</span><span className={`demo-state-pill demo-state-pill-${state?.visualTone ?? "info"}`}><span aria-hidden="true" />{state?.label ?? ticket.state}</span></div></section>
-    <section className="demo-ticket-detail-grid" aria-label="Información de la solicitud"><article className="demo-ticket-detail-card"><p className="demo-section-label">Contexto</p><dl className="demo-ticket-facts"><div><dt>Categoría</dt><dd>{getCategoryLabel(ticket.categoryId)}</dd></div><div><dt>Solicitante</dt><dd>{requester?.name ?? "Usuario no disponible"}</dd></div><div><dt>Área</dt><dd>{requester?.department ?? "No disponible"}</dd></div><div><dt>Técnico</dt><dd>{technician?.name ?? "Sin asignar"}</dd></div><div><dt>Creada</dt><dd><time dateTime={ticket.createdAt}>{formatDate(ticket.createdAt)}</time></dd></div><div><dt>Última actualización</dt><dd><time dateTime={ticket.updatedAt}>{formatDate(ticket.updatedAt)}</time></dd></div></dl></article><article className="demo-ticket-detail-card demo-timer-card"><p className="demo-section-label">Tiempo de atención</p><strong>{formatDuration(ticket.timing.totalMinutes)}</strong><span>Tiempo total desde la creación</span><dl className="demo-timing-breakdown"><div><dt>Primera respuesta</dt><dd>{formatDuration(ticket.timing.firstResponseMinutes)}</dd></div><div><dt>Trabajo efectivo</dt><dd>{formatDuration(ticket.timing.effectiveWorkMinutes)}</dd></div><div><dt>Esperando usuario</dt><dd>{formatDuration(ticket.timing.awaitingUserMinutes)}</dd></div><div><dt>Resolución</dt><dd>{formatDuration(ticket.timing.resolutionMinutes)}</dd></div></dl></article></section>
-    <section className="demo-ticket-detail-secondary-grid"><article className="demo-ticket-detail-card"><p className="demo-section-label">Adjuntos</p><h2>{hasAttachment ? "Evidencia disponible" : "Sin adjuntos"}</h2><p>{hasAttachment ? "La maqueta registra una imagen de evidencia asociada a esta solicitud." : "No hay archivos asociados a esta solicitud mock."}</p></article><article className="demo-ticket-detail-card"><p className="demo-section-label">SLA simulado</p><h2>{ticket.timing.slaStatus === "overdue" ? "Vencida" : ticket.timing.slaStatus === "at_risk" ? "En riesgo" : ticket.timing.slaStatus === "met" ? "Cumplida" : "En curso"}</h2><p>Indicador visual local; no existe motor de SLA ni cálculo productivo en esta maqueta.</p></article></section>
-    <section className="demo-ticket-history-card" aria-labelledby="ticket-history-title"><div className="demo-ticket-history-heading"><div><p className="demo-section-label">Seguimiento</p><h2 id="ticket-history-title">Historial</h2></div><span>{history.length} eventos</span></div>{history.length ? <ol className="demo-ticket-history-list">{history.map((event) => <li key={event.id}><span aria-hidden="true" /><div><p>{event.summary}</p><time dateTime={event.occurredAt}>{formatDate(event.occurredAt)} · {getMockUser(event.actorId)?.name ?? "Sistema local"}</time></div></li>)}</ol> : <div className="demo-ticket-history-empty">La solicitud simulada aún no tiene eventos adicionales.</div>}</section>
-  </div>;
+  return (
+    <div className="demo-ticket-detail">
+      <section className="demo-ticket-detail-heading" aria-labelledby="ticket-title">
+        <div>
+          <p className="demo-eyebrow">{ticket.id.slice(0, 8)}… · Solicitud</p>
+          <h1 id="ticket-title">{ticket.title}</h1>
+          <p>{ticket.description}</p>
+        </div>
+        <div className="demo-ticket-detail-badges">
+          <span className={`demo-priority-marker demo-priority-marker-${priorityTone}`} aria-label={`Prioridad ${ticket.priority}`}>
+            {ticket.priority}
+          </span>
+          <span className={`demo-state-pill demo-state-pill-${stateTone}`}>
+            <span aria-hidden="true" />{stateLabel}
+          </span>
+        </div>
+      </section>
+
+      <section className="demo-ticket-detail-grid" aria-label="Información de la solicitud">
+        <article className="demo-ticket-detail-card">
+          <p className="demo-section-label">Contexto</p>
+          <dl className="demo-ticket-facts">
+            <div><dt>Categoría</dt><dd>{getCategoryLabel(phase.categories, ticket.categoryId)}</dd></div>
+            <div><dt>ID</dt><dd>{ticket.id}</dd></div>
+            <div><dt>Estado</dt><dd>{stateLabel}</dd></div>
+            <div><dt>Creada</dt><dd><time dateTime={ticket.createdAt}>{formatDate(ticket.createdAt)}</time></dd></div>
+            <div><dt>Última actualización</dt><dd><time dateTime={ticket.updatedAt}>{formatDate(ticket.updatedAt)}</time></dd></div>
+            {category?.description ? <div><dt>Descripción categoría</dt><dd>{category.description}</dd></div> : null}
+          </dl>
+        </article>
+        <article className="demo-ticket-detail-card demo-timer-card">
+          <p className="demo-section-label">Asignación</p>
+          <strong>{ticket.assignedTo ? "Asignado" : "Sin asignar"}</strong>
+          <span>{ticket.assignedTo ?? "Pendiente de asignación por el equipo técnico."}</span>
+        </article>
+      </section>
+
+      <section className="demo-ticket-history-card" aria-labelledby="ticket-meta-title">
+        <div className="demo-ticket-history-heading">
+          <div>
+            <p className="demo-section-label">Trazabilidad</p>
+            <h2 id="ticket-meta-title">Datos persistidos</h2>
+          </div>
+          <span>Tenant {ticket.tenantId.slice(0, 8)}…</span>
+        </div>
+        <ol className="demo-ticket-history-list">
+          <li>
+            <span aria-hidden="true" />
+            <div>
+              <p>Esta solicitud se recupera directamente desde Supabase mediante <code>GET /api/tickets/{ticket.id}</code>.</p>
+              <time>priority={ticket.priority} · state={ticket.state} · sla_status={ticket.slaStatus}</time>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true" />
+            <div>
+              <p>El cambio de prioridad contractual queda pendiente hasta que PO defina TKT-007. La asignación y transición están operativas mediante <code>POST /api/tickets/{ticket.id}/assignments</code> y <code>/transitions</code>.</p>
+              <time>Foundation 3A + Ticketing Core (TKT-006/009/010/012/013/014/019)</time>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </div>
+  );
 }
