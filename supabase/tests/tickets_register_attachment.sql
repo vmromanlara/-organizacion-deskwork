@@ -1,6 +1,6 @@
 -- TEST ISOLATION CONTRACT
 begin;
-select plan(12);
+select plan(14);
 
 -- ============================================================
 -- TKT-014: register_ticket_attachment SECURITY DEFINER
