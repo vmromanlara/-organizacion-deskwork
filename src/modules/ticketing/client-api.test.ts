@@ -22,10 +22,12 @@ import {
   createComment,
   createTicket,
   getTicket,
+  listAttachments,
   listComments,
   listTicketCategories,
   listTickets,
   listTenantMembers,
+  registerAttachment,
   transitionTicket,
 } from "./client-api";
 
@@ -64,7 +66,9 @@ type AnyClientResult =
   | Awaited<ReturnType<typeof listComments>>
   | Awaited<ReturnType<typeof createComment>>
   | Awaited<ReturnType<typeof listTenantMembers>>
-  | Awaited<ReturnType<typeof assignTicket>>;
+  | Awaited<ReturnType<typeof assignTicket>>
+  | Awaited<ReturnType<typeof listAttachments>>
+  | Awaited<ReturnType<typeof registerAttachment>>;
 
 function expectErrorKind(result: AnyClientResult, kind: string) {
   expect(result.ok).toBe(false);
@@ -775,5 +779,128 @@ describe("client-api — Assignment (TKT-012)", () => {
     );
     const result = await assignTicket(TICKET_ID, "22222222-2222-2222-2222-222222222222");
     expectErrorKind(result, "not_found");
+  });
+});
+
+describe("client-api — Attachments (TKT-014 v1)", () => {
+  it("listAttachments happy path: devuelve la metadata de adjuntos", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          attachments: [
+            {
+              id: "at-1",
+              tenantId: TENANT_ID,
+              ticketId: TICKET_ID,
+              uploadedBy: USER_ID,
+              storagePath: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/captura.png`,
+              originalName: "captura.png",
+              mimeType: "image/png",
+              sizeBytes: 1024,
+              sha256: null,
+              createdAt: "2026-08-31T12:20:00Z",
+            },
+          ],
+          meta: { total: 1 },
+        },
+      }),
+    );
+    const result = await listAttachments(TICKET_ID);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.attachments).toHaveLength(1);
+      expect(result.data.attachments[0]?.originalName).toBe("captura.png");
+    }
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`/api/tickets/${TICKET_ID}/attachments`);
+  });
+
+  it("listAttachments 404 ticket inexistente: kind=not_found", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 404, body: { error: "ticket_not_found" } }),
+    );
+    const result = await listAttachments(TICKET_ID);
+    expectErrorKind(result, "not_found");
+  });
+
+  it("registerAttachment happy path: envía payload correcto y devuelve attachment", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          attachment: {
+            id: "at-new",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            uploadedBy: USER_ID,
+            storagePath: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/log.txt`,
+            originalName: "log.txt",
+            mimeType: "text/plain",
+            sizeBytes: 2048,
+            sha256: null,
+            createdAt: "2026-08-31T12:21:00Z",
+          },
+          by: USER_ID,
+        },
+      }),
+    );
+    const result = await registerAttachment(TICKET_ID, {
+      originalName: "log.txt",
+      mimeType: "text/plain",
+      sizeBytes: 2048,
+      storagePath: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/log.txt`,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.attachment.id).toBe("at-new");
+      expect(result.data.attachment.sizeBytes).toBe(2048);
+    }
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`/api/tickets/${TICKET_ID}/attachments`);
+    expect(JSON.parse(init.body)).toEqual({
+      originalName: "log.txt",
+      mimeType: "text/plain",
+      sizeBytes: 2048,
+      storagePath: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/log.txt`,
+    });
+  });
+
+  it("registerAttachment 400 storage_path no coincide: kind=validation", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 400,
+        body: {
+          error: "validation",
+          reason: "storage_path no sigue la convención del tenant/ticket",
+        },
+      }),
+    );
+    const result = await registerAttachment(TICKET_ID, {
+      originalName: "log.txt",
+      mimeType: "text/plain",
+      sizeBytes: 2048,
+      storagePath: "wrong/path/log.txt",
+    });
+    expectErrorKind(result, "validation");
+  });
+
+  it("registerAttachment 403 sin permiso: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 403,
+        body: {
+          error: "forbidden",
+          reason: "actor not authorized to attach files to this ticket",
+        },
+      }),
+    );
+    const result = await registerAttachment(TICKET_ID, {
+      originalName: "log.txt",
+      mimeType: "text/plain",
+      sizeBytes: 2048,
+      storagePath: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/log.txt`,
+    });
+    expectErrorKind(result, "forbidden");
   });
 });

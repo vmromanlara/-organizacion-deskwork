@@ -143,3 +143,44 @@ export async function POST(request: NextRequest, context: RouteContext) {
     { status: 201 },
   );
 }
+
+/**
+ * GET /api/tickets/[id]/attachments
+ * Lista la metadata de los adjuntos visibles para el actor.
+ * La RLS ya filtra segun can_read_ticket; si el actor no puede ver
+ * el ticket -> 404.
+ */
+export async function GET(_request: NextRequest, context: RouteContext) {
+  const { id: ticketId } = await context.params;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "authentication_required" },
+      { status: 401 },
+    );
+  }
+
+  const repo = createSupabaseTicketRepository(supabase);
+  const ticket = await repo.getTicket(ticketId);
+  if (!ticket) {
+    return NextResponse.json({ error: "ticket_not_found" }, { status: 404 });
+  }
+
+  let attachments;
+  try {
+    attachments = await repo.listAttachmentsByTicket(ticket.id);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { error: "db_error", reason },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json(
+    { attachments, meta: { total: attachments.length } },
+    { status: 200 },
+  );
+}

@@ -8,6 +8,7 @@ import { getTicket, listTicketCategories } from "@/modules/ticketing/client-api"
 import type { Ticket, TicketCategory } from "@/modules/ticketing/repository";
 import type { TicketState, TicketPriority } from "@/modules/ticketing/types";
 import { CommentsThread } from "./comments-thread";
+import { AttachmentsList } from "./attachments-list";
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Santiago" }).format(new Date(value));
@@ -178,6 +179,7 @@ export function RequesterTicketDetail({ ticketId }: { ticketId: string }) {
       </section>
 
       <CommentsThread ticketId={ticket.id} allowInternal={false} />
+      <AttachmentsList ticketId={ticket.id} tenantId={ticket.tenantId} />
     </div>
   );
 }

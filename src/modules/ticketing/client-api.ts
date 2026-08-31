@@ -11,7 +11,7 @@
  * mapear con precisión a loading/error/success.
  */
 
-import type { Ticket, TicketCategory, TicketComment } from "./repository";
+import type { Ticket, TicketAttachment, TicketCategory, TicketComment } from "./repository";
 import type { TicketState } from "./types";
 
 export type ClientApiError =
@@ -202,4 +202,32 @@ export function assignTicket(
       body: JSON.stringify({ assigneeId }),
     },
   );
+}
+
+// =====================================================================
+// Attachments (TKT-014 v1 — metadata only)
+// =====================================================================
+
+export interface CreateAttachmentPayload {
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  sha256?: string | null;
+}
+
+export function listAttachments(
+  ticketId: string,
+): Promise<ClientResult<{ attachments: TicketAttachment[]; meta: { total: number } }>> {
+  return request(`/api/tickets/${encodeURIComponent(ticketId)}/attachments`);
+}
+
+export function registerAttachment(
+  ticketId: string,
+  payload: CreateAttachmentPayload,
+): Promise<ClientResult<{ attachment: TicketAttachment; by: string }>> {
+  return request(`/api/tickets/${encodeURIComponent(ticketId)}/attachments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
