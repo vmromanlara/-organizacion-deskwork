@@ -19,8 +19,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AssignTicketInput,
   CreateCommentInput,
+  RegisterAttachmentInput,
   Ticket,
   TicketAssignment,
+  TicketAttachment,
   TicketCategory,
   TicketComment,
   TicketRepository,
@@ -69,6 +71,19 @@ interface CommentRow {
   updated_at: string;
 }
 
+interface AttachmentRow {
+  id: string;
+  tenant_id: string;
+  ticket_id: string;
+  uploaded_by: string;
+  storage_path: string | null;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  sha256: string | null;
+  created_at: string;
+}
+
 function toTicket(row: TicketRow): Ticket {
   return {
     id: row.id,
@@ -113,6 +128,21 @@ function toComment(row: CommentRow): TicketComment {
     isInternal: row.is_internal,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function toAttachment(row: AttachmentRow): TicketAttachment {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    ticketId: row.ticket_id,
+    uploadedBy: row.uploaded_by,
+    storagePath: row.storage_path,
+    originalName: row.original_name,
+    mimeType: row.mime_type,
+    sizeBytes: row.size_bytes,
+    sha256: row.sha256,
+    createdAt: row.created_at,
   };
 }
 
@@ -291,6 +321,33 @@ export function createSupabaseTicketRepository(
         throw new Error(`listCommentsByTicket: ${error.message}`);
       }
       return (data ?? []).map((row) => toComment(row as CommentRow));
+    },
+
+    async registerAttachment(input) {
+      const result = await applyRegisterAttachment(supabase, input);
+      if (!result.ok) {
+        const err = result.error;
+        const reason = "reason" in err ? err.reason : null;
+        throw new Error(
+          `registerAttachment failed: ${err.kind} ${reason ?? ""}`,
+        );
+      }
+      return result.attachment;
+    },
+
+    async listAttachmentsByTicket(ticketId) {
+      const { data, error } = await supabase
+        .from("ticket_attachments")
+        .select(
+          "id, tenant_id, ticket_id, uploaded_by, storage_path, original_name, mime_type, size_bytes, sha256, created_at",
+        )
+        .eq("ticket_id", ticketId)
+        .order("created_at", { ascending: true });
+      if (error) {
+        if (error.code === "PGRST116") return [];
+        throw new Error(`listAttachmentsByTicket: ${error.message}`);
+      }
+      return (data ?? []).map((row) => toAttachment(row as AttachmentRow));
     },
   };
 }
@@ -502,6 +559,104 @@ export async function applyCreateComment(
     return { ok: false, error: { kind: "db_error", reason: "RPC returned null" } };
   }
   return { ok: true, comment: toComment(data as CommentRow) };
+}
+
+/** Error tipado de registro de adjunto. */
+export type AttachmentError =
+  | { kind: "validation"; reason: string }
+  | { kind: "not_found" }
+  | { kind: "forbidden"; reason: string }
+  | { kind: "db_error"; reason: string };
+
+export type AttachmentResult =
+  | { ok: true; attachment: TicketAttachment }
+  | { ok: false; error: AttachmentError };
+
+/**
+ * Registra metadata de un adjunto vía SECURITY DEFINER `register_ticket_attachment`.
+ * Devuelve un resultado tipado para mapear a HTTP status codes.
+ */
+export async function applyRegisterAttachment(
+  supabase: SupabaseClient,
+  input: RegisterAttachmentInput,
+): Promise<AttachmentResult> {
+  // Validaciones de payload (replicadas en DB; defense in depth)
+  const nameLen = input.originalName?.length ?? 0;
+  if (nameLen < 1 || nameLen > 255) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        reason: `originalName debe tener entre 1 y 255 caracteres (recibido: ${nameLen}).`,
+      },
+    };
+  }
+  const mimeLen = input.mimeType?.length ?? 0;
+  if (mimeLen < 1 || mimeLen > 200) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "mimeType fuera de rango (1..200)." },
+    };
+  }
+  if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0 || input.sizeBytes > 26_214_400) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        reason: `sizeBytes debe estar en (0, 26214400] (recibido: ${input.sizeBytes}).`,
+      },
+    };
+  }
+  if (!input.storagePath || input.storagePath.length === 0) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "storagePath requerido." },
+    };
+  }
+  if (!isUuid(input.ticketId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "ticketId debe ser UUID." },
+    };
+  }
+
+  const { data, error } = await supabase.rpc("register_ticket_attachment", {
+    p_ticket_id: input.ticketId,
+    p_original_name: input.originalName,
+    p_mime_type: input.mimeType,
+    p_size_bytes: input.sizeBytes,
+    p_storage_path: input.storagePath,
+    p_sha256: input.sha256 ?? null,
+  });
+
+  if (error) {
+    const code = error.code ?? "";
+    if (code === "P0002" || /ticket not found/i.test(error.message)) {
+      return { ok: false, error: { kind: "not_found" } };
+    }
+    if (
+      code === "P0001" ||
+      /original_name|mime_type|size_bytes|storage_path|storage_path no sigue/i.test(
+        error.message,
+      )
+    ) {
+      return { ok: false, error: { kind: "validation", reason: error.message } };
+    }
+    if (
+      code === "42501" ||
+      /not authorized|not an active member|authentication required/i.test(
+        error.message,
+      )
+    ) {
+      return { ok: false, error: { kind: "forbidden", reason: error.message } };
+    }
+    return { ok: false, error: { kind: "db_error", reason: error.message } };
+  }
+
+  if (!data) {
+    return { ok: false, error: { kind: "db_error", reason: "RPC returned null" } };
+  }
+  return { ok: true, attachment: toAttachment(data as AttachmentRow) };
 }
 
 /** Helper público: snapshot mínimo para alimentar la FSM. */

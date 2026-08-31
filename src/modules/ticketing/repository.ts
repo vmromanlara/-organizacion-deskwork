@@ -122,6 +122,15 @@ export interface CreateCommentInput {
   isInternal?: boolean;
 }
 
+export interface RegisterAttachmentInput {
+  ticketId: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  sha256?: string | null;
+}
+
 /**
  * Contrato del repository. Las implementaciones concretas viven en TKT-006
  * (API routes), no en este archivo. Este módulo sólo garantiza tipos y firmas.
@@ -142,4 +151,9 @@ export interface TicketRepository {
 
   createComment(input: CreateCommentInput): Promise<TicketComment>;
   listCommentsByTicket(ticketId: string): Promise<TicketComment[]>;
+
+  registerAttachment(
+    input: RegisterAttachmentInput,
+  ): Promise<TicketAttachment>;
+  listAttachmentsByTicket(ticketId: string): Promise<TicketAttachment[]>;
 }
