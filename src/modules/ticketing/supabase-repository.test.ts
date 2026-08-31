@@ -14,12 +14,14 @@ import { describe, expect, it, vi } from "vitest";
 import {
   applyAssign,
   applyCreateComment,
+  applyRegisterAttachment,
   applyTransition,
 } from "./supabase-repository";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AssignTicketInput,
   CreateCommentInput,
+  RegisterAttachmentInput,
   UpdateTicketStateInput,
 } from "./repository";
 
@@ -493,5 +495,197 @@ describe("applyAssign (TKT-012)", () => {
       p_ticket_id: baseAssign.ticketId,
       p_assignee_id: baseAssign.assigneeId,
     });
+  });
+});
+
+// ===================================================================
+// TKT-014 — applyRegisterAttachment
+// ===================================================================
+
+const baseAttachment: RegisterAttachmentInput = {
+  ticketId: "11111111-1111-1111-1111-111111111111",
+  originalName: "captura.png",
+  mimeType: "image/png",
+  sizeBytes: 1024,
+  storagePath:
+    "ticket-attachments/22222222-2222-2222-2222-222222222222/11111111-1111-1111-1111-111111111111/captura.png",
+  sha256: "a".repeat(64),
+};
+
+describe("applyRegisterAttachment (TKT-014)", () => {
+  it("rechaza originalName vacío SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyRegisterAttachment(mock, {
+      ...baseAttachment,
+      originalName: "",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza originalName > 255 SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyRegisterAttachment(mock, {
+      ...baseAttachment,
+      originalName: "x".repeat(256),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza sizeBytes > 25MB SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyRegisterAttachment(mock, {
+      ...baseAttachment,
+      sizeBytes: 26_214_401,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza ticketId no-UUID SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyRegisterAttachment(mock, {
+      ...baseAttachment,
+      ticketId: "nope",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza mimeType fuera de rango SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyRegisterAttachment(mock, {
+      ...baseAttachment,
+      mimeType: "",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("mapea error P0002 a kind=not_found", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "P0002", message: "ticket not found" },
+    });
+    const result = await applyRegisterAttachment(mock, baseAttachment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("not_found");
+    }
+  });
+
+  it("mapea error P0001 (storage_path no sigue) a kind=validation", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "P0001",
+        message: "storage_path no sigue la convención del tenant/ticket",
+      },
+    });
+    const result = await applyRegisterAttachment(mock, baseAttachment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+  });
+
+  it("mapea error 42501 a kind=forbidden", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "42501",
+        message: "actor not authorized to attach files to this ticket",
+      },
+    });
+    const result = await applyRegisterAttachment(mock, baseAttachment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("forbidden");
+    }
+  });
+
+  it("mapea data=null a kind=db_error", async () => {
+    const { mock } = makeMockSupabase({ data: null, error: null });
+    const result = await applyRegisterAttachment(mock, baseAttachment);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("db_error");
+    }
+  });
+
+  it("en éxito: rpc llamado con todos los parámetros", async () => {
+    const attachmentRow = {
+      id: "at-1",
+      tenant_id: "t-1",
+      ticket_id: baseAttachment.ticketId,
+      uploaded_by: "u-1",
+      storage_path: baseAttachment.storagePath,
+      original_name: baseAttachment.originalName,
+      mime_type: baseAttachment.mimeType,
+      size_bytes: baseAttachment.sizeBytes,
+      sha256: baseAttachment.sha256,
+      created_at: "2026-08-31T10:00:00Z",
+    };
+    const { mock, rpc } = makeMockSupabase({
+      data: attachmentRow,
+      error: null,
+    });
+    const result = await applyRegisterAttachment(mock, baseAttachment);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.attachment.originalName).toBe("captura.png");
+      expect(result.attachment.sha256).toBe(baseAttachment.sha256);
+    }
+    expect(rpc).toHaveBeenCalledWith("register_ticket_attachment", {
+      p_ticket_id: baseAttachment.ticketId,
+      p_original_name: baseAttachment.originalName,
+      p_mime_type: baseAttachment.mimeType,
+      p_size_bytes: baseAttachment.sizeBytes,
+      p_storage_path: baseAttachment.storagePath,
+      p_sha256: baseAttachment.sha256,
+    });
+  });
+
+  it("en éxito sin sha256: pasa p_sha256=null", async () => {
+    const { mock, rpc } = makeMockSupabase({
+      data: {
+        id: "at-2",
+        tenant_id: "t-1",
+        ticket_id: baseAttachment.ticketId,
+        uploaded_by: "u-1",
+        storage_path: baseAttachment.storagePath,
+        original_name: baseAttachment.originalName,
+        mime_type: baseAttachment.mimeType,
+        size_bytes: baseAttachment.sizeBytes,
+        sha256: null,
+        created_at: "2026-08-31T10:00:00Z",
+      },
+      error: null,
+    });
+    const result = await applyRegisterAttachment(mock, {
+      ...baseAttachment,
+      sha256: null,
+    });
+    expect(result.ok).toBe(true);
+    expect(rpc).toHaveBeenCalledWith(
+      "register_ticket_attachment",
+      expect.objectContaining({ p_sha256: null }),
+    );
   });
 });
