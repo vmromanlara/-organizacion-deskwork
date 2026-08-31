@@ -55,14 +55,22 @@ async function request<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<ClientResult<T>> {
+  // Si el body es FormData, dejar que el browser setee el boundary
+  // del multipart en Content-Type. Forzar application/json rompería
+  // el upload.
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
+  const headers = isFormData
+    ? (init.headers ?? {})
+    : {
+        "Content-Type": "application/json",
+        ...(init.headers ?? {}),
+      };
+
   let response: Response;
   try {
     response = await fetch(path, {
       ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init.headers ?? {}),
-      },
+      headers,
       credentials: "same-origin",
     });
   } catch (err) {
@@ -205,7 +213,7 @@ export function assignTicket(
 }
 
 // =====================================================================
-// Attachments (TKT-014 v1 — metadata only)
+// Attachments (TKT-014 v1 — metadata only; legacy JSON path)
 // =====================================================================
 
 export interface CreateAttachmentPayload {
@@ -230,4 +238,75 @@ export function registerAttachment(
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+// =====================================================================
+// Attachments (TKT-014 v2 — binary upload + signed URL)
+// =====================================================================
+
+export interface UploadAttachmentOptions {
+  /** Nombre lógico del archivo. Si no se pasa, usa file.name. */
+  originalName?: string;
+  /** MIME type. Si no se pasa, usa file.type. */
+  mimeType?: string;
+  /** SHA-256 hex de 64 chars (opcional). */
+  sha256?: string;
+}
+
+export interface UploadAttachmentResponse {
+  attachment: TicketAttachment;
+  by: string;
+  storage: { bucket: string; path: string };
+}
+
+/**
+ * Sube un archivo binario a Supabase Storage y registra la metadata.
+ * Server hace Storage upload + metadata registration atómicamente
+ * (con cleanup del objeto si la metadata falla).
+ */
+export function uploadAttachment(
+  ticketId: string,
+  file: File,
+  options: UploadAttachmentOptions = {},
+): Promise<ClientResult<UploadAttachmentResponse>> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (options.originalName) form.append("originalName", options.originalName);
+  if (options.mimeType) form.append("mimeType", options.mimeType);
+  if (options.sha256) form.append("sha256", options.sha256);
+
+  return request<UploadAttachmentResponse>(
+    `/api/tickets/${encodeURIComponent(ticketId)}/attachments`,
+    {
+      method: "POST",
+      body: form,
+      // El browser setea multipart/form-data con boundary automáticamente
+      // cuando pasamos FormData. NO fijar Content-Type manualmente.
+    },
+  );
+}
+
+export interface SignedUrlResponse {
+  url: string;
+  expiresAt: string;
+  expiresInSeconds: number;
+}
+
+/**
+ * Solicita una signed URL temporal para descargar/visualizar un adjunto.
+ * `expiresInSeconds` se clampea server-side a [60, 3600]; default 300.
+ */
+export function getAttachmentUrl(
+  ticketId: string,
+  attachmentId: string,
+  expiresInSeconds?: number,
+): Promise<ClientResult<SignedUrlResponse>> {
+  const params = new URLSearchParams();
+  if (typeof expiresInSeconds === "number") {
+    params.set("expiresInSeconds", String(expiresInSeconds));
+  }
+  const qs = params.toString();
+  return request<SignedUrlResponse>(
+    `/api/tickets/${encodeURIComponent(ticketId)}/attachments/${encodeURIComponent(attachmentId)}/url${qs ? `?${qs}` : ""}`,
+  );
 }

@@ -21,6 +21,7 @@ import {
   assignTicket,
   createComment,
   createTicket,
+  getAttachmentUrl,
   getTicket,
   listAttachments,
   listComments,
@@ -29,6 +30,7 @@ import {
   listTenantMembers,
   registerAttachment,
   transitionTicket,
+  uploadAttachment,
 } from "./client-api";
 
 const TICKET_ID = "11111111-1111-1111-1111-111111111111";
@@ -68,7 +70,9 @@ type AnyClientResult =
   | Awaited<ReturnType<typeof listTenantMembers>>
   | Awaited<ReturnType<typeof assignTicket>>
   | Awaited<ReturnType<typeof listAttachments>>
-  | Awaited<ReturnType<typeof registerAttachment>>;
+  | Awaited<ReturnType<typeof registerAttachment>>
+  | Awaited<ReturnType<typeof uploadAttachment>>
+  | Awaited<ReturnType<typeof getAttachmentUrl>>;
 
 function expectErrorKind(result: AnyClientResult, kind: string) {
   expect(result.ok).toBe(false);
@@ -902,5 +906,444 @@ describe("client-api — Attachments (TKT-014 v1)", () => {
       storagePath: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/log.txt`,
     });
     expectErrorKind(result, "forbidden");
+  });
+});
+
+// =====================================================================
+// TKT-014 v2 — Binary upload (multipart) + signed URL
+// =====================================================================
+
+/** Crea un File-like mínimo para los tests del wrapper. */
+function makeTestFile(
+  name: string,
+  content: string,
+  type = "text/plain",
+): File {
+  return new File([content], name, { type });
+}
+
+describe("client-api — TKT-014 v2 uploadAttachment (multipart)", () => {
+  it("happy path: envía FormData con file + devuelve attachment + storage path", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          attachment: {
+            id: "at-bin",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            uploadedBy: USER_ID,
+            storagePath: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/captura.png`,
+            originalName: "captura.png",
+            mimeType: "image/png",
+            sizeBytes: 1024,
+            sha256: null,
+            createdAt: "2026-08-31T13:00:00Z",
+          },
+          by: USER_ID,
+          storage: {
+            bucket: "ticket-attachments",
+            path: `ticket-attachments/${TENANT_ID}/${TICKET_ID}/captura.png`,
+          },
+        },
+      }),
+    );
+
+    const file = makeTestFile("captura.png", "fake-png-bytes", "image/png");
+    const result = await uploadAttachment(TICKET_ID, file, {
+      sha256: "a".repeat(64),
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.attachment.id).toBe("at-bin");
+      expect(result.data.attachment.storagePath).toMatch(/captura\.png$/);
+      expect(result.data.storage.bucket).toBe("ticket-attachments");
+      expect(result.data.by).toBe(USER_ID);
+    }
+
+    // El body debe ser FormData (multipart), NO JSON.
+    const [, init] = fetchMock.mock.calls[0]!;
+    expect(init.body).toBeInstanceOf(FormData);
+    // Content-Type NO debe fijarse manualmente: el browser setea el boundary.
+    const headers = (init.headers ?? {}) as Record<string, string>;
+    expect(headers["Content-Type"]).toBeUndefined();
+
+    const form = init.body as FormData;
+    expect(form.get("file")).toBeInstanceOf(File);
+    expect((form.get("file") as File).name).toBe("captura.png");
+    expect(form.get("sha256")).toBe("a".repeat(64));
+  });
+
+  it("usa file.name como originalName cuando no se pasa options.originalName", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          attachment: {
+            id: "at-auto",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            uploadedBy: USER_ID,
+            storagePath: "x",
+            originalName: "auto.txt",
+            mimeType: "text/plain",
+            sizeBytes: 5,
+            sha256: null,
+            createdAt: "2026-08-31T13:01:00Z",
+          },
+          by: USER_ID,
+          storage: { bucket: "ticket-attachments", path: "x" },
+        },
+      }),
+    );
+    const file = makeTestFile("auto.txt", "hello", "text/plain");
+    const result = await uploadAttachment(TICKET_ID, file);
+    expect(result.ok).toBe(true);
+    const [, init] = fetchMock.mock.calls[0]!;
+    const form = init.body as FormData;
+    expect(form.has("originalName")).toBe(false);
+  });
+
+  it("respeta options.originalName cuando se provee (override del nombre del File)", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          attachment: {
+            id: "at-ov",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            uploadedBy: USER_ID,
+            storagePath: "x",
+            originalName: "renombrado.png",
+            mimeType: "image/png",
+            sizeBytes: 10,
+            sha256: null,
+            createdAt: "2026-08-31T13:02:00Z",
+          },
+          by: USER_ID,
+          storage: { bucket: "ticket-attachments", path: "x" },
+        },
+      }),
+    );
+    const file = makeTestFile("original.png", "x", "image/png");
+    const result = await uploadAttachment(TICKET_ID, file, {
+      originalName: "renombrado.png",
+      mimeType: "image/png",
+    });
+    expect(result.ok).toBe(true);
+    const [, init] = fetchMock.mock.calls[0]!;
+    const form = init.body as FormData;
+    expect(form.get("originalName")).toBe("renombrado.png");
+    expect(form.get("mimeType")).toBe("image/png");
+  });
+
+  it("URL apunta al endpoint POST /api/tickets/[id]/attachments", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          attachment: {
+            id: "at-x",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            uploadedBy: USER_ID,
+            storagePath: "x",
+            originalName: "x",
+            mimeType: "text/plain",
+            sizeBytes: 1,
+            sha256: null,
+            createdAt: "2026-08-31T13:03:00Z",
+          },
+          by: USER_ID,
+          storage: { bucket: "ticket-attachments", path: "x" },
+        },
+      }),
+    );
+    await uploadAttachment(TICKET_ID, makeTestFile("x", "y"));
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`/api/tickets/${TICKET_ID}/attachments`);
+    expect(init.method).toBe("POST");
+  });
+
+  it("413 file_too_large: la UI recibe kind=http(413)", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 413,
+        body: { error: "file_too_large", max: 26_214_400, received: 30_000_000 },
+      }),
+    );
+    const result = await uploadAttachment(
+      TICKET_ID,
+      makeTestFile("big.bin", "x"),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("http");
+      expect((result.error as { status: number }).status).toBe(413);
+    }
+  });
+
+  it("415 expected_multipart: la UI recibe kind=http(415) y la razón del backend", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 415,
+        body: {
+          error: "expected_multipart",
+          hint: "TKT-014 v2: enviar multipart/form-data con campo 'file'.",
+        },
+      }),
+    );
+    const result = await uploadAttachment(
+      TICKET_ID,
+      makeTestFile("x", "y"),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("http");
+      expect((result.error as { status: number }).status).toBe(415);
+    }
+  });
+
+  it("403 sin permiso: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 403,
+        body: { error: "forbidden", reason: "no_active_membership" },
+      }),
+    );
+    const result = await uploadAttachment(
+      TICKET_ID,
+      makeTestFile("x", "y"),
+    );
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("404 ticket no existe: kind=not_found", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 404, body: { error: "ticket_not_found" } }),
+    );
+    const result = await uploadAttachment(
+      TICKET_ID,
+      makeTestFile("x", "y"),
+    );
+    expectErrorKind(result, "not_found");
+  });
+
+  it("503 storage_disabled: la UI recibe kind=http(503)", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 503,
+        body: {
+          error: "storage_disabled",
+          reason: "Storage no configurado (SUPABASE_SERVICE_ROLE_KEY faltante).",
+        },
+      }),
+    );
+    const result = await uploadAttachment(
+      TICKET_ID,
+      makeTestFile("x", "y"),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("http");
+      expect((result.error as { status: number }).status).toBe(503);
+    }
+  });
+
+  it("error de red: kind=network", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("Failed to fetch")),
+    );
+    const result = await uploadAttachment(
+      TICKET_ID,
+      makeTestFile("x", "y"),
+    );
+    expectErrorKind(result, "network");
+  });
+});
+
+describe("client-api — TKT-014 v2 getAttachmentUrl (signed URL)", () => {
+  const ATTACHMENT_ID = "55555555-5555-5555-5555-555555555555";
+
+  it("happy path: devuelve URL temporal con expiresAt", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          url: "https://example.supabase.co/storage/v1/object/sign/ticket-attachments/tenant/ticket/captura.png?token=xxx",
+          expiresAt: "2026-08-31T13:10:00Z",
+          expiresInSeconds: 300,
+        },
+      }),
+    );
+
+    const result = await getAttachmentUrl(TICKET_ID, ATTACHMENT_ID);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.url).toMatch(/supabase\.co/);
+      expect(result.data.expiresInSeconds).toBe(300);
+      expect(result.data.expiresAt).toBe("2026-08-31T13:10:00Z");
+    }
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(
+      `/api/tickets/${TICKET_ID}/attachments/${ATTACHMENT_ID}/url`,
+    );
+  });
+
+  it("pasa expiresInSeconds como query string", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          url: "https://example.supabase.co/signed",
+          expiresAt: "2026-08-31T13:11:00Z",
+          expiresInSeconds: 600,
+        },
+      }),
+    );
+    await getAttachmentUrl(TICKET_ID, ATTACHMENT_ID, 600);
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toContain("expiresInSeconds=600");
+  });
+
+  it("404 attachment no existe: kind=not_found", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 404,
+        body: {
+          error: "not_found",
+          reason: "attachment no encontrado para el ticket.",
+        },
+      }),
+    );
+    const result = await getAttachmentUrl(TICKET_ID, ATTACHMENT_ID);
+    expectErrorKind(result, "not_found");
+  });
+
+  it("403 actor no es miembro del tenant del attachment: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 403,
+        body: {
+          error: "forbidden",
+          reason: "no es miembro del tenant del attachment.",
+        },
+      }),
+    );
+    const result = await getAttachmentUrl(TICKET_ID, ATTACHMENT_ID);
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("404 attachment sin storage_path (metadata-only legacy): kind=not_found", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 404,
+        body: {
+          error: "not_found",
+          reason: "attachment sin storage_path (metadata-only legacy).",
+        },
+      }),
+    );
+    const result = await getAttachmentUrl(TICKET_ID, ATTACHMENT_ID);
+    expectErrorKind(result, "not_found");
+  });
+
+  it("502 storage_error: kind=http(502) cuando falla createSignedUrl", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 502,
+        body: { error: "storage_error", reason: "object not found" },
+      }),
+    );
+    const result = await getAttachmentUrl(TICKET_ID, ATTACHMENT_ID);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("http");
+      expect((result.error as { status: number }).status).toBe(502);
+    }
+  });
+
+  it("400 invalid_expires: kind=validation si el cliente manda expires fuera de rango", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 400,
+        body: { error: "invalid_expires", min: 60, max: 3600, default: 300 },
+      }),
+    );
+    const result = await getAttachmentUrl(TICKET_ID, ATTACHMENT_ID, 30);
+    expectErrorKind(result, "validation");
+  });
+});
+
+describe("client-api — TKT-014 v2 request() omite Content-Type cuando body es FormData", () => {
+  it("JSON path: mantiene Content-Type: application/json y body es string", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          ticket: {
+            id: TICKET_ID,
+            tenantId: TENANT_ID,
+            requesterId: USER_ID,
+            categoryId: CATEGORY_ID,
+            priority: "P2",
+            state: "ABIERTO",
+            title: "Test JSON path",
+            description: "Descripción válida con suficiente longitud para pasar.",
+            assignedTo: null,
+            areaId: null,
+            teamId: null,
+            firstResponseAt: null,
+            resolvedAt: null,
+            closedAt: null,
+            slaStatus: "on_track",
+            createdAt: "2026-08-31T13:00:00Z",
+            updatedAt: "2026-08-31T13:00:00Z",
+          },
+          by: USER_ID,
+        },
+      }),
+    );
+    await createTicket({
+      categoryId: CATEGORY_ID,
+      title: "Test JSON path",
+      description: "Descripción válida con suficiente longitud para pasar.",
+    });
+    const [, init] = fetchMock.mock.calls[0]!;
+    const headers = (init.headers ?? {}) as Record<string, string>;
+    expect(headers["Content-Type"]).toBe("application/json");
+    expect(typeof init.body).toBe("string");
+  });
+
+  it("FormData path: NO fija Content-Type (browser setea boundary)", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          attachment: {
+            id: "at-noct",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            uploadedBy: USER_ID,
+            storagePath: "x",
+            originalName: "x",
+            mimeType: "text/plain",
+            sizeBytes: 1,
+            sha256: null,
+            createdAt: "2026-08-31T13:30:00Z",
+          },
+          by: USER_ID,
+          storage: { bucket: "ticket-attachments", path: "x" },
+        },
+      }),
+    );
+    await uploadAttachment(TICKET_ID, makeTestFile("x", "y"));
+    const [, init] = fetchMock.mock.calls[0]!;
+    const headers = (init.headers ?? {}) as Record<string, string>;
+    expect(headers["Content-Type"]).toBeUndefined();
+    expect(init.body).toBeInstanceOf(FormData);
   });
 });

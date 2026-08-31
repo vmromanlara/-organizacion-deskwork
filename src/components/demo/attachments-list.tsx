@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  getAttachmentUrl,
   listAttachments,
-  registerAttachment,
+  uploadAttachment,
 } from "@/modules/ticketing/client-api";
-import type { ClientApiError } from "@/modules/ticketing/client-api";
 import type { TicketAttachment } from "@/modules/ticketing/repository";
 
 const MAX_SIZE = 26_214_400; // 25 MB; mismo límite que el CHECK del schema.
-const NAME_MAX = 255;
-const MIME_MAX = 200;
+const ALLOWED_MIME = /^(image\/(png|jpe?g|gif|webp|svg\+xml)|application\/pdf|text\/plain)$/i;
 
 function formatBytes(value: number): string {
   if (value < 1024) return `${value} B`;
@@ -19,13 +18,24 @@ function formatBytes(value: number): string {
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Santiago" }).format(new Date(value));
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Santiago",
+  }).format(new Date(value));
 }
 
 type AttachmentsPhase =
   | { kind: "loading" }
-  | { kind: "error"; reason: string; kind_: ClientApiError["kind"] }
+  | { kind: "error"; reason: string }
   | { kind: "ready"; attachments: TicketAttachment[] };
+
+type UploadState =
+  | { kind: "idle" }
+  | { kind: "uploading"; fileName: string }
+  | { kind: "error"; reason: string };
 
 interface AttachmentsListProps {
   ticketId: string;
@@ -34,11 +44,10 @@ interface AttachmentsListProps {
 
 export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
   const [phase, setPhase] = useState<AttachmentsPhase>({ kind: "loading" });
-  const [name, setName] = useState("");
-  const [mime, setMime] = useState("application/octet-stream");
-  const [size, setSize] = useState<number>(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string>();
+  const [upload, setUpload] = useState<UploadState>({ kind: "idle" });
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,7 +55,10 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
       const result = await listAttachments(ticketId);
       if (cancelled) return;
       if (!result.ok) {
-        setPhase({ kind: "error", reason: result.error.reason ?? "Error", kind_: result.error.kind });
+        setPhase({
+          kind: "error",
+          reason: result.error.reason ?? "Error al cargar adjuntos.",
+        });
         return;
       }
       setPhase({ kind: "ready", attachments: result.data.attachments });
@@ -56,44 +68,71 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
     };
   }, [ticketId]);
 
-  function buildStoragePath(originalName: string): string {
-    return `ticket-attachments/${tenantId}/${ticketId}/${originalName}`;
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size <= 0) {
+      setUpload({ kind: "error", reason: "El archivo está vacío." });
+      event.target.value = "";
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setUpload({
+        kind: "error",
+        reason: `Archivo demasiado grande (${formatBytes(file.size)} > 25 MB).`,
+      });
+      event.target.value = "";
+      return;
+    }
+    if (file.type && !ALLOWED_MIME.test(file.type)) {
+      setUpload({
+        kind: "error",
+        reason: `Tipo no permitido: ${file.type}. Permitidos: imagen, PDF, texto.`,
+      });
+      event.target.value = "";
+      return;
+    }
+
+    setUpload({ kind: "uploading", fileName: file.name });
+    const result = await uploadAttachment(ticketId, file);
+    if (result.ok) {
+      setUpload({ kind: "idle" });
+      setPhase((current) =>
+        current.kind === "ready"
+          ? {
+              kind: "ready",
+              attachments: [...current.attachments, result.data.attachment],
+            }
+          : current,
+      );
+    } else {
+      setUpload({
+        kind: "error",
+        reason: result.error.reason ?? "Error al subir el archivo.",
+      });
+    }
+    // Reset input para permitir re-subir el mismo archivo después.
+    event.target.value = "";
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (submitting) return;
-    if (name.length < 1 || name.length > NAME_MAX) {
-      setSubmitError(`Nombre entre 1 y ${NAME_MAX} caracteres.`);
+  async function handleDownload(att: TicketAttachment) {
+    if (!att.storagePath) {
+      setDownloadError(
+        "Este adjunto es solo metadata (legacy). Sube el archivo nuevamente.",
+      );
       return;
     }
-    if (mime.length < 1 || mime.length > MIME_MAX) {
-      setSubmitError(`MIME entre 1 y ${MIME_MAX} caracteres.`);
-      return;
-    }
-    if (!Number.isInteger(size) || size <= 0 || size > MAX_SIZE) {
-      setSubmitError(`Tamaño inválido (1..${MAX_SIZE} bytes).`);
-      return;
-    }
-    setSubmitting(true);
-    setSubmitError(undefined);
-    const result = await registerAttachment(ticketId, {
-      originalName: name,
-      mimeType: mime,
-      sizeBytes: size,
-      storagePath: buildStoragePath(name),
-    });
-    setSubmitting(false);
+    setDownloadError(null);
+    setDownloadingId(att.id);
+    const result = await getAttachmentUrl(ticketId, att.id, 300);
+    setDownloadingId(null);
     if (!result.ok) {
-      setSubmitError(result.error.reason ?? "Error al registrar adjunto.");
+      setDownloadError(result.error.reason ?? "No se pudo generar la URL de descarga.");
       return;
     }
-    setName("");
-    setMime("application/octet-stream");
-    setSize(0);
-    setPhase((current) => (current.kind === "ready"
-      ? { kind: "ready", attachments: [...current.attachments, result.data.attachment] }
-      : current));
+    // Abrir en nueva pestaña; el browser gatilla la descarga por el header
+    // Content-Disposition que Supabase Storage agrega.
+    window.open(result.data.url, "_blank", "noopener,noreferrer");
   }
 
   if (phase.kind === "loading") {
@@ -109,18 +148,22 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
     return (
       <section className="demo-ticket-history-card" aria-label="Adjuntos">
         <p className="demo-section-label">Adjuntos</p>
-        <p className="demo-form-error" role="alert">No pudimos cargar los adjuntos: {phase.reason}</p>
+        <p className="demo-form-error" role="alert">
+          No pudimos cargar los adjuntos: {phase.reason}
+        </p>
       </section>
     );
   }
 
   const attachments = phase.attachments;
+  const isUploading = upload.kind === "uploading";
+
   return (
     <section className="demo-ticket-history-card" aria-labelledby="ticket-attachments-title">
       <div className="demo-ticket-history-heading">
         <div>
           <p className="demo-section-label">Adjuntos</p>
-          <h2 id="ticket-attachments-title">Metadata de archivos</h2>
+          <h2 id="ticket-attachments-title">Archivos del ticket</h2>
         </div>
         <span>{attachments.length} archivos</span>
       </div>
@@ -133,70 +176,74 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
               <div>
                 <p>
                   <strong>{att.originalName}</strong>{" "}
-                  <small>({att.mimeType}, {formatBytes(att.sizeBytes)})</small>
+                  <small>
+                    ({att.mimeType}, {formatBytes(att.sizeBytes)})
+                  </small>
                 </p>
                 <time dateTime={att.createdAt}>
                   {formatDate(att.createdAt)} · {att.uploadedBy.slice(0, 8)}…
                   {att.storagePath ? ` · ${att.storagePath}` : ""}
                 </time>
+                <div className="demo-request-actions" style={{ marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className="demo-secondary-button"
+                    onClick={() => {
+                      void handleDownload(att);
+                    }}
+                    disabled={downloadingId === att.id || !att.storagePath}
+                    aria-label={`Descargar ${att.originalName}`}
+                  >
+                    {downloadingId === att.id
+                      ? "Generando URL…"
+                      : att.storagePath
+                        ? "Descargar"
+                        : "Sin archivo"}
+                  </button>
+                </div>
               </div>
             </li>
           ))}
         </ol>
       ) : (
-        <div className="demo-ticket-history-empty">Aún no hay adjuntos registrados.</div>
+        <div className="demo-ticket-history-empty">Aún no hay adjuntos.</div>
       )}
 
-      <form className="demo-comment-form" onSubmit={handleSubmit} aria-label="Registrar metadata de adjunto">
-        <p className="demo-comment-note">
-          TKT-014 v1: sólo se registra metadata. La subida del binario a Storage
-          se conectará en una iteración posterior.
+      {downloadError ? (
+        <p className="demo-form-error" role="alert">
+          {downloadError}
         </p>
-        <label htmlFor="att-name">Nombre del archivo</label>
+      ) : null}
+
+      <div className="demo-comment-form" aria-label="Subir archivo al ticket">
+        <p className="demo-comment-note">
+          Sube un archivo real al ticket (imagen, PDF o texto). El binario se
+          almacena en Storage privado; la descarga se hace por URL temporal.
+        </p>
+        <label htmlFor="att-file">Seleccionar archivo</label>
         <input
-          id="att-name"
-          type="text"
-          maxLength={NAME_MAX}
-          placeholder="captura.png"
-          value={name}
+          ref={fileInputRef}
+          id="att-file"
+          type="file"
+          accept="image/*,application/pdf,text/plain"
           onChange={(event) => {
-            setName(event.target.value);
-            setSubmitError(undefined);
+            void handleFileChange(event);
           }}
-          disabled={submitting}
+          disabled={isUploading}
         />
-        <label htmlFor="att-mime">MIME</label>
-        <input
-          id="att-mime"
-          type="text"
-          maxLength={MIME_MAX}
-          placeholder="image/png"
-          value={mime}
-          onChange={(event) => setMime(event.target.value)}
-          disabled={submitting}
-        />
-        <label htmlFor="att-size">Tamaño (bytes)</label>
-        <input
-          id="att-size"
-          type="number"
-          min={1}
-          max={MAX_SIZE}
-          step={1}
-          value={size || ""}
-          onChange={(event) => setSize(Number.parseInt(event.target.value, 10) || 0)}
-          disabled={submitting}
-        />
-        {submitError ? <p className="demo-form-error" role="alert">{submitError}</p> : null}
-        <div className="demo-request-actions">
-          <button
-            type="submit"
-            className="demo-secondary-button"
-            disabled={submitting || name.length === 0 || size === 0}
-          >
-            {submitting ? "Registrando…" : "Registrar metadata"}
-          </button>
-        </div>
-      </form>
+        {upload.kind === "uploading" ? (
+          <p className="demo-comment-note">Subiendo {upload.fileName}…</p>
+        ) : null}
+        {upload.kind === "error" ? (
+          <p className="demo-form-error" role="alert">
+            {upload.reason}
+          </p>
+        ) : null}
+      </div>
+
+      <p className="demo-comment-note" aria-label="Tenant del adjunto">
+        Tenant: <code>{tenantId}</code>
+      </p>
     </section>
   );
 }

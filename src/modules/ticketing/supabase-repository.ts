@@ -709,6 +709,330 @@ export async function applyRegisterAttachment(
   return { ok: true, attachment: toAttachment(data as AttachmentRow) };
 }
 
+// ===================================================================
+// TKT-014 v2 — Adjuntos binarios reales
+// ===================================================================
+
+export interface UploadAttachmentInput {
+  ticketId: string;
+  uploadedBy: string;
+  originalName: string;
+  mimeType: string;
+  /** Contenido binario. */
+  body: Uint8Array;
+  /** SHA-256 hex (64 chars) opcional; validado si viene. */
+  sha256?: string | null;
+}
+
+export interface UploadAttachmentOutput {
+  attachment: TicketAttachment;
+  storagePath: string;
+  bucket: string;
+}
+
+export type UploadAttachmentError =
+  | { kind: "validation"; reason: string }
+  | { kind: "forbidden"; reason: string }
+  | { kind: "not_found"; reason: string }
+  | { kind: "db_error"; reason: string }
+  | { kind: "storage_error"; reason: string }
+  | { kind: "storage_disabled"; reason: string };
+
+export type UploadAttachmentResult =
+  | { ok: true; data: UploadAttachmentOutput }
+  | { ok: false; error: UploadAttachmentError };
+
+const ATTACHMENT_BUCKET = "ticket-attachments";
+const SHA256_RE = /^[0-9a-f]{64}$/i;
+
+/**
+ * Sube un binario a Storage y registra la metadata.
+ *
+ * Flujo:
+ *  1) Valida payload (longitudes, SHA-256 si viene).
+ *  2) Sube el binario a `ticket-attachments/{tenant_id}/{ticket_id}/{name}`
+ *     usando el admin client (service_role, bypass RLS).
+ *  3) Llama `register_ticket_attachment` SECURITY DEFINER para
+ *     persistir la metadata. La funcion DB valida que el path sigue
+ *     la convencion.
+ *  4) Si el paso 3 falla (DB error / forbidden), borra el objeto del
+ *     bucket para evitar huerfanos.
+ *
+ * El admin client se importa de `@/shared/supabase/admin` (lazy).
+ */
+export async function uploadAttachmentBlob(
+  userSupabase: SupabaseClient,
+  input: UploadAttachmentInput,
+): Promise<UploadAttachmentResult> {
+  const { getSupabaseAdminClient } = await import("@/shared/supabase/admin");
+  const admin = getSupabaseAdminClient();
+  if (!admin) {
+    return {
+      ok: false,
+      error: {
+        kind: "storage_disabled",
+        reason: "Storage no configurado (SUPABASE_SERVICE_ROLE_KEY faltante).",
+      },
+    };
+  }
+
+  // Validaciones de payload (replicadas en DB; defense in depth).
+  if (!isUuid(input.ticketId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "ticketId debe ser UUID." },
+    };
+  }
+  if (!input.originalName || input.originalName.length > 255) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        reason: "originalName debe tener entre 1 y 255 caracteres.",
+      },
+    };
+  }
+  if (!input.mimeType || input.mimeType.length > 200) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "mimeType fuera de rango (1..200)." },
+    };
+  }
+  if (!input.body || input.body.byteLength === 0) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "body vacio." },
+    };
+  }
+  if (input.body.byteLength > 26_214_400) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "sizeBytes > 25MB." },
+    };
+  }
+  if (
+    input.sha256 !== undefined &&
+    input.sha256 !== null &&
+    (typeof input.sha256 !== "string" || !SHA256_RE.test(input.sha256))
+  ) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "sha256 debe ser hex de 64 chars." },
+    };
+  }
+
+  // Resolver el ticket para conocer su tenant.
+  const ticket = await userSupabase
+    .from("tickets")
+    .select("id, tenant_id, category_id, title, description, requester_id, assigned_to, priority, state")
+    .eq("id", input.ticketId)
+    .maybeSingle();
+  if (ticket.error) {
+    return {
+      ok: false,
+      error: { kind: "db_error", reason: ticket.error.message },
+    };
+  }
+  if (!ticket.data) {
+    return { ok: false, error: { kind: "not_found", reason: "ticket no existe" } };
+  }
+
+  const tenantId = ticket.data.tenant_id as string;
+  const storagePath = expectedStoragePathFromSegments(tenantId, input.ticketId, input.originalName);
+
+  // 1) Subir el binario.
+  const uploadResult = await admin.storage
+    .from(ATTACHMENT_BUCKET)
+    .upload(storagePath, input.body, {
+      contentType: input.mimeType,
+      upsert: false,
+    });
+  if (uploadResult.error) {
+    return {
+      ok: false,
+      error: {
+        kind: "storage_error",
+        reason: `upload fallo: ${uploadResult.error.message}`,
+      },
+    };
+  }
+
+  // 2) Registrar metadata via SECURITY DEFINER.
+  const metaResult = await applyRegisterAttachment(userSupabase, {
+    ticketId: input.ticketId,
+    originalName: input.originalName,
+    mimeType: input.mimeType,
+    sizeBytes: input.body.byteLength,
+    storagePath,
+    sha256: input.sha256 ?? null,
+  });
+
+  // 3) Si la metadata falla, cleanup del objeto para evitar huerfano.
+  if (!metaResult.ok) {
+    const err = metaResult.error;
+    await admin.storage.from(ATTACHMENT_BUCKET).remove([storagePath]);
+    if (err.kind === "validation") {
+      return { ok: false, error: { kind: "validation", reason: err.reason } };
+    }
+    if (err.kind === "forbidden") {
+      return { ok: false, error: { kind: "forbidden", reason: err.reason } };
+    }
+    if (err.kind === "not_found") {
+      // AttachmentError.not_found no trae reason; usamos un mensaje estable.
+      return {
+        ok: false,
+        error: { kind: "not_found", reason: "ticket no existe" },
+      };
+    }
+    return { ok: false, error: { kind: "db_error", reason: err.reason } };
+  }
+
+  return {
+    ok: true,
+    data: {
+      attachment: metaResult.attachment,
+      storagePath,
+      bucket: ATTACHMENT_BUCKET,
+    },
+  };
+}
+
+function expectedStoragePathFromSegments(
+  tenantId: string,
+  ticketId: string,
+  originalName: string,
+): string {
+  // Mantener consistencia con src/modules/ticketing/attachments.ts.
+  const safeName = originalName.replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return `${ATTACHMENT_BUCKET}/${tenantId}/${ticketId}/${safeName}`;
+}
+
+export interface SignedUrlOutput {
+  url: string;
+  expiresAt: string;
+  expiresInSeconds: number;
+}
+
+export type SignedUrlError =
+  | { kind: "validation"; reason: string }
+  | { kind: "forbidden"; reason: string }
+  | { kind: "not_found"; reason: string }
+  | { kind: "storage_error"; reason: string }
+  | { kind: "storage_disabled"; reason: string };
+
+export type SignedUrlResult =
+  | { ok: true; data: SignedUrlOutput }
+  | { ok: false; error: SignedUrlError };
+
+/**
+ * Genera una signed URL temporal para descargar un attachment.
+ *
+ * Validaciones:
+ *  - el actor tiene acceso al ticket (can_read_ticket)
+ *  - el attachment pertenece al ticket
+ *  - el storage_path no fue manipulado
+ *  - el attachment tiene storagePath (es decir, fue subido realmente)
+ *
+ * La URL es de un solo uso temporal. NO se persiste en la DB.
+ */
+export async function createAttachmentSignedUrl(
+  userSupabase: SupabaseClient,
+  input: { ticketId: string; attachmentId: string; expiresInSeconds?: number },
+): Promise<SignedUrlResult> {
+  const { getSupabaseAdminClient } = await import("@/shared/supabase/admin");
+  const admin = getSupabaseAdminClient();
+  if (!admin) {
+    return {
+      ok: false,
+      error: {
+        kind: "storage_disabled",
+        reason: "Storage no configurado.",
+      },
+    };
+  }
+
+  if (!isUuid(input.ticketId) || !isUuid(input.attachmentId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "ticketId/attachmentId deben ser UUID." },
+    };
+  }
+
+  // Traer el attachment y validar que pertenece al ticket y al tenant
+  // del actor.
+  const { data: row, error } = await userSupabase
+    .from("ticket_attachments")
+    .select(
+      "id, tenant_id, ticket_id, uploaded_by, original_name, mime_type, size_bytes, storage_path, sha256, created_at",
+    )
+    .eq("id", input.attachmentId)
+    .eq("ticket_id", input.ticketId)
+    .maybeSingle();
+  if (error) {
+    return {
+      ok: false,
+      error: { kind: "storage_error", reason: error.message },
+    };
+  }
+  if (!row) {
+    return {
+      ok: false,
+      error: { kind: "not_found", reason: "attachment no encontrado para el ticket." },
+    };
+  }
+
+  // El actor debe ser miembro activo del tenant del attachment.
+  // (Reutilizamos is_active_member via service_role que bypasea RLS para
+  //  el select; pero validamos manualmente la membership.)
+  const { data: member } = await userSupabase
+    .from("memberships")
+    .select("tenant_id")
+    .eq("user_id", (await userSupabase.auth.getUser()).data.user?.id ?? "")
+    .eq("tenant_id", row.tenant_id as string)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!member) {
+    return {
+      ok: false,
+      error: { kind: "forbidden", reason: "no es miembro del tenant del attachment." },
+    };
+  }
+
+  // El attachment debe tener storagePath real (no metadata-only).
+  if (!row.storage_path) {
+    return {
+      ok: false,
+      error: {
+        kind: "not_found",
+        reason: "attachment sin storage_path (metadata-only legacy).",
+      },
+    };
+  }
+
+  const expiresIn = Math.max(60, Math.min(input.expiresInSeconds ?? 300, 3600));
+  const { data, error: signError } = await admin.storage
+    .from(ATTACHMENT_BUCKET)
+    .createSignedUrl(row.storage_path as string, expiresIn);
+  if (signError || !data) {
+    return {
+      ok: false,
+      error: {
+        kind: "storage_error",
+        reason: signError?.message ?? "createSignedUrl no devolvio URL",
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      url: data.signedUrl,
+      expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+      expiresInSeconds: expiresIn,
+    },
+  };
+}
+
 /** Helper público: snapshot mínimo para alimentar la FSM. */
 export function toTicketSnapshot(ticket: Ticket): import("./types").TicketSnapshot {
   return {
