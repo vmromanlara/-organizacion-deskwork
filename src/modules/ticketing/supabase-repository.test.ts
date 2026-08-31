@@ -14,6 +14,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   applyAssign,
   applyCreateComment,
+  applyCreateTicket,
   applyRegisterAttachment,
   applyTransition,
 } from "./supabase-repository";
@@ -21,6 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AssignTicketInput,
   CreateCommentInput,
+  CreateTicketInput,
   RegisterAttachmentInput,
   UpdateTicketStateInput,
 } from "./repository";
@@ -686,6 +688,304 @@ describe("applyRegisterAttachment (TKT-014)", () => {
     expect(rpc).toHaveBeenCalledWith(
       "register_ticket_attachment",
       expect.objectContaining({ p_sha256: null }),
+    );
+  });
+});
+
+// ===================================================================
+// TKT-009 — applyCreateTicket (Mockup→Real)
+// ===================================================================
+
+const baseCreate: CreateTicketInput = {
+  tenantId: "11111111-1111-1111-1111-111111111111",
+  categoryId: "22222222-2222-2222-2222-222222222222",
+  title: "No puedo acceder a la carpeta compartida",
+  description:
+    "El acceso fue solicitado para el cierre mensual y aparece denegado desde ayer.",
+  areaId: null,
+  teamId: null,
+};
+
+describe("applyCreateTicket (TKT-009)", () => {
+  it("rechaza tenantId no-UUID SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      tenantId: "not-a-uuid",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+      expect(result.error.reason).toMatch(/tenantId/);
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza categoryId no-UUID SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      categoryId: "nope",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+      expect(result.error.reason).toMatch(/categoryId/);
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza title < 5 chars SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      title: "cuer",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+      expect(result.error.reason).toMatch(/title/);
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza title > 200 chars SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      title: "x".repeat(201),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza description < 10 chars SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      description: "corto",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+      expect(result.error.reason).toMatch(/description/);
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza description > 5000 chars SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      description: "x".repeat(5001),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza areaId no-UUID SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      areaId: "not-a-uuid",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+      expect(result.error.reason).toMatch(/areaId/);
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza teamId no-UUID SIN llamar rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      teamId: "not-a-uuid",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+      expect(result.error.reason).toMatch(/teamId/);
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("mapea error P0001 (categoría no activa) a kind=validation", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "P0001", message: "category is not active" },
+    });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+      expect(result.error.reason).toMatch(/category is not active/);
+    }
+  });
+
+  it("mapea error P0001 (categoría no encontrada) a kind=validation", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "P0001",
+        message: "category not found in tenant",
+      },
+    });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("validation");
+    }
+  });
+
+  it("mapea error 42501 (no es miembro) a kind=forbidden", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "42501",
+        message: "actor is not an active member of the tenant",
+      },
+    });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("forbidden");
+    }
+  });
+
+  it("mapea error 42501 (sin permiso) a kind=forbidden", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: {
+        code: "42501",
+        message: "actor not authorized to create tickets in this tenant",
+      },
+    });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("forbidden");
+    }
+  });
+
+  it("mapea error 42501 (sin auth) a kind=forbidden", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "42501", message: "authentication required" },
+    });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("forbidden");
+    }
+  });
+
+  it("mapea error desconocido a kind=db_error", async () => {
+    const { mock } = makeMockSupabase({
+      data: null,
+      error: { code: "XX999", message: "rare thing" },
+    });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("db_error");
+    }
+  });
+
+  it("mapea data=null a kind=db_error", async () => {
+    const { mock } = makeMockSupabase({ data: null, error: null });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("db_error");
+    }
+  });
+
+  it("en éxito: rpc llamado con los parámetros correctos y retorna ticket", async () => {
+    const ticketRow = {
+      id: "tk-new",
+      tenant_id: baseCreate.tenantId,
+      requester_id: "u-authenticated",
+      category_id: baseCreate.categoryId,
+      priority: "P3",
+      state: "ABIERTO",
+      title: baseCreate.title,
+      description: baseCreate.description,
+      assigned_to: null,
+      area_id: null,
+      team_id: null,
+      first_response_at: null,
+      resolved_at: null,
+      closed_at: null,
+      sla_status: "on_track",
+      created_at: "2026-08-31T12:00:00Z",
+      updated_at: "2026-08-31T12:00:00Z",
+    };
+    const { mock, rpc } = makeMockSupabase({ data: ticketRow, error: null });
+    const result = await applyCreateTicket(mock, baseCreate);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.ticket.id).toBe("tk-new");
+      expect(result.ticket.state).toBe("ABIERTO");
+      expect(result.ticket.requesterId).toBe("u-authenticated");
+      expect(result.ticket.priority).toBe("P3");
+    }
+    expect(rpc).toHaveBeenCalledWith("create_ticket", {
+      p_tenant_id: baseCreate.tenantId,
+      p_category_id: baseCreate.categoryId,
+      p_title: baseCreate.title,
+      p_description: baseCreate.description,
+      p_area_id: null,
+      p_team_id: null,
+    });
+  });
+
+  it("en éxito con areaId y teamId: pasa ambos al rpc", async () => {
+    const { mock, rpc } = makeMockSupabase({
+      data: {
+        id: "tk-2",
+        tenant_id: baseCreate.tenantId,
+        requester_id: "u-1",
+        category_id: baseCreate.categoryId,
+        priority: "P2",
+        state: "ABIERTO",
+        title: baseCreate.title,
+        description: baseCreate.description,
+        assigned_to: null,
+        area_id: "33333333-3333-3333-3333-333333333333",
+        team_id: "44444444-4444-4444-4444-444444444444",
+        first_response_at: null,
+        resolved_at: null,
+        closed_at: null,
+        sla_status: "on_track",
+        created_at: "2026-08-31T12:00:00Z",
+        updated_at: "2026-08-31T12:00:00Z",
+      },
+      error: null,
+    });
+    const result = await applyCreateTicket(mock, {
+      ...baseCreate,
+      areaId: "33333333-3333-3333-3333-333333333333",
+      teamId: "44444444-4444-4444-4444-444444444444",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.ticket.areaId).toBe("33333333-3333-3333-3333-333333333333");
+      expect(result.ticket.teamId).toBe("44444444-4444-4444-4444-444444444444");
+    }
+    expect(rpc).toHaveBeenCalledWith(
+      "create_ticket",
+      expect.objectContaining({
+        p_area_id: "33333333-3333-3333-3333-333333333333",
+        p_team_id: "44444444-4444-4444-4444-444444444444",
+      }),
     );
   });
 });

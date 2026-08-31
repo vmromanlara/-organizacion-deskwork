@@ -1,6 +1,7 @@
 /**
- * DeskWork Ticketing Core / TKT-010.
- * GET /api/tickets
+ * DeskWork Ticketing Core / TKT-010 + TKT-009.
+ * GET /api/tickets   — lista con scope y filtros.
+ * POST /api/tickets  — crea un ticket real (TKT-009 Mockup→Real).
  *
  * Lista tickets visibles para el usuario autenticado. La RLS filtra
  * automáticamente (can_read_ticket se evalúa por fila). El usuario NO
@@ -18,7 +19,10 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/shared/supabase/server";
-import { createSupabaseTicketRepository } from "@/modules/ticketing/supabase-repository";
+import {
+  applyCreateTicket,
+  createSupabaseTicketRepository,
+} from "@/modules/ticketing/supabase-repository";
 import { resolveActor } from "@/modules/ticketing/actor";
 import {
   hasTicketPriority,
@@ -32,6 +36,11 @@ const VALID_SCOPES = new Set(["mine", "assigned", "tenant"]);
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const TITLE_MIN = 5;
+const TITLE_MAX = 200;
+const DESC_MIN = 10;
+const DESC_MAX = 5000;
 
 function parseLimit(raw: string | null): number {
   if (!raw) return DEFAULT_LIMIT;
@@ -91,6 +100,12 @@ function parseFilters(url: URL): {
   return { ok: true, filters };
 }
 
+function resolveActorTenantId(
+  memberships: ReadonlyArray<{ tenant_id: string | null }>,
+): string | null {
+  return memberships?.[0]?.tenant_id ?? null;
+}
+
 export async function GET(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -129,7 +144,7 @@ export async function GET(request: NextRequest) {
     .eq("user_id", user.id)
     .eq("status", "active")
     .limit(1);
-  const tenantId = memberships?.[0]?.tenant_id ?? null;
+  const tenantId = resolveActorTenantId(memberships ?? []);
   if (!tenantId) {
     return NextResponse.json(
       { error: "no_active_membership" },
@@ -174,5 +189,174 @@ export async function GET(request: NextRequest) {
       },
     },
     { status: 200 },
+  );
+}
+
+/**
+ * POST /api/tickets — TKT-009 Mockup→Real.
+ *
+ * Crea un ticket real mediante la SECURITY DEFINER `public.create_ticket`.
+ *
+ * Body esperado:
+ *   {
+ *     tenantId:     uuid (opcional; se resuelve desde memberships si falta)
+ *     categoryId:   uuid
+ *     title:        string [5, 200]
+ *     description:  string [10, 5000]
+ *     areaId?:      uuid
+ *     teamId?:      uuid
+ *   }
+ *
+ * NOTA: `requesterId` NO se acepta. La SECURITY DEFINER lo deriva de
+ * `auth.uid()`. Esto blinda contra impersonation.
+ *
+ * Flow:
+ *   1) auth.getUser -> 401
+ *   2) payload validation (longitudes, UUIDs) -> 400
+ *   3) resolver tenant del actor desde memberships -> 403 si no tiene
+ *   4) SECURITY DEFINER create_ticket re-valida + persiste atómicamente
+ */
+interface CreateRequestBody {
+  tenantId?: unknown;
+  categoryId?: unknown;
+  title?: unknown;
+  description?: unknown;
+  areaId?: unknown;
+  teamId?: unknown;
+}
+
+export async function POST(request: NextRequest) {
+  // 1) Autenticación
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "authentication_required" },
+      { status: 401 },
+    );
+  }
+
+  // 2) Body parsing
+  let body: CreateRequestBody;
+  try {
+    body = (await request.json()) as CreateRequestBody;
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  // 3) Validación de payload
+  if (typeof body.categoryId !== "string" || !UUID_RE.test(body.categoryId)) {
+    return NextResponse.json(
+      { error: "invalid_category_id" },
+      { status: 400 },
+    );
+  }
+  if (typeof body.title !== "string") {
+    return NextResponse.json(
+      { error: "invalid_title", received: typeof body.title },
+      { status: 400 },
+    );
+  }
+  const titleLen = body.title.length;
+  if (titleLen < TITLE_MIN || titleLen > TITLE_MAX) {
+    return NextResponse.json(
+      {
+        error: "invalid_title_length",
+        min: TITLE_MIN,
+        max: TITLE_MAX,
+        received: titleLen,
+      },
+      { status: 400 },
+    );
+  }
+  if (typeof body.description !== "string") {
+    return NextResponse.json(
+      { error: "invalid_description", received: typeof body.description },
+      { status: 400 },
+    );
+  }
+  const descLen = body.description.length;
+  if (descLen < DESC_MIN || descLen > DESC_MAX) {
+    return NextResponse.json(
+      {
+        error: "invalid_description_length",
+        min: DESC_MIN,
+        max: DESC_MAX,
+        received: descLen,
+      },
+      { status: 400 },
+    );
+  }
+  if (body.areaId !== undefined && body.areaId !== null) {
+    if (typeof body.areaId !== "string" || !UUID_RE.test(body.areaId)) {
+      return NextResponse.json(
+        { error: "invalid_area_id" },
+        { status: 400 },
+      );
+    }
+  }
+  if (body.teamId !== undefined && body.teamId !== null) {
+    if (typeof body.teamId !== "string" || !UUID_RE.test(body.teamId)) {
+      return NextResponse.json(
+        { error: "invalid_team_id" },
+        { status: 400 },
+      );
+    }
+  }
+
+  // 4) Resolver tenant del actor
+  const { data: memberships } = await supabase
+    .from("memberships")
+    .select("tenant_id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .limit(1);
+  const tenantId = resolveActorTenantId(memberships ?? []);
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "no_active_membership" },
+      { status: 403 },
+    );
+  }
+  // Si el body trae tenantId, debe coincidir (no se puede crear en otro tenant)
+  if (body.tenantId !== undefined && body.tenantId !== null) {
+    if (typeof body.tenantId !== "string" || body.tenantId !== tenantId) {
+      return NextResponse.json(
+        { error: "tenant_mismatch" },
+        { status: 400 },
+      );
+    }
+  }
+
+  // 5) Persistencia segura vía SECURITY DEFINER
+  const result = await applyCreateTicket(supabase, {
+    tenantId,
+    categoryId: body.categoryId,
+    title: body.title,
+    description: body.description,
+    areaId: (body.areaId as string | null | undefined) ?? null,
+    teamId: (body.teamId as string | null | undefined) ?? null,
+  });
+
+  if (!result.ok) {
+    const err = result.error;
+    const statusByKind: Record<typeof err.kind, number> = {
+      validation: 400,
+      forbidden: 403,
+      db_error: 500,
+    };
+    return NextResponse.json(
+      { error: err.kind, reason: "reason" in err ? err.reason : null },
+      { status: statusByKind[err.kind] ?? 500 },
+    );
+  }
+
+  // 6) OK — devolver el ticket creado
+  return NextResponse.json(
+    {
+      ticket: result.ticket,
+      by: user.id,
+    },
+    { status: 201 },
   );
 }

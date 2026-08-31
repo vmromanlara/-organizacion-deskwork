@@ -19,6 +19,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AssignTicketInput,
   CreateCommentInput,
+  CreateTicketInput,
   RegisterAttachmentInput,
   Ticket,
   TicketAssignment,
@@ -252,13 +253,19 @@ export function createSupabaseTicketRepository(
     },
 
     async createTicket(input) {
-      // TODO TKT-009: Bloque 3 — la app layer (mockup→real) ya no es acá.
-      // Stub mínimo: por ahora delegamos en el service layer que se
-      // materializará en Bloque 3. Lanzamos para no crear una regresión.
-      void input; // reservado para TKT-009; eslint no-unused-vars
-      throw new Error(
-        "createTicket: pendiente TKT-009 (Bloque 3 — service layer)",
-      );
+      // TKT-009 / Bloque 3: implementación real vía SECURITY DEFINER
+      // `public.create_ticket`. Defense in depth: la app layer ya
+      // validó el payload y la membresía del actor; la función DB
+      // re-valida auth + categoría + autorización antes de mutar.
+      const result = await applyCreateTicket(supabase, input);
+      if (!result.ok) {
+        const err = result.error;
+        const reason = "reason" in err ? err.reason : null;
+        throw new Error(
+          `createTicket failed: ${err.kind} ${reason ?? ""}`,
+        );
+      }
+      return result.ticket;
     },
 
     /**
@@ -719,4 +726,125 @@ export function toTicketSnapshot(ticket: Ticket): import("./types").TicketSnapsh
     closedAt: ticket.closedAt,
     slaStatus: ticket.slaStatus,
   };
+}
+
+// ===================================================================
+// TKT-009 — create_ticket
+// ===================================================================
+
+/** Error tipado de creación de ticket. */
+export type CreateTicketError =
+  | { kind: "validation"; reason: string }
+  | { kind: "forbidden"; reason: string }
+  | { kind: "db_error"; reason: string };
+
+export type CreateTicketResult =
+  | { ok: true; ticket: Ticket }
+  | { ok: false; error: CreateTicketError };
+
+const TITLE_MIN = 5;
+const TITLE_MAX = 200;
+const DESC_MIN = 10;
+const DESC_MAX = 5000;
+
+/**
+ * Crea un ticket vía SECURITY DEFINER `create_ticket`.
+ * Devuelve un resultado tipado para que la ruta API mapee con precisión
+ * a HTTP status codes.
+ *
+ * Reglas:
+ *  - tenantId, categoryId deben ser UUIDs.
+ *  - title length [5, 200] (replicado del CHECK del schema).
+ *  - description length [10, 5000] (replicado del CHECK del schema).
+ *  - areaId, teamId (si vienen) deben ser UUIDs.
+ *  - requesterId NO se pasa: lo deriva auth.uid() en la SECURITY DEFINER
+ *    (defense in depth contra impersonation).
+ */
+export async function applyCreateTicket(
+  supabase: SupabaseClient,
+  input: CreateTicketInput,
+): Promise<CreateTicketResult> {
+  // Validaciones de payload (replicadas en DB; defense in depth)
+  if (!isUuid(input.tenantId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "tenantId debe ser UUID." },
+    };
+  }
+  if (!isUuid(input.categoryId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "categoryId debe ser UUID." },
+    };
+  }
+  const titleLen = input.title?.length ?? 0;
+  if (titleLen < TITLE_MIN || titleLen > TITLE_MAX) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        reason: `title debe tener entre ${TITLE_MIN} y ${TITLE_MAX} caracteres (recibido: ${titleLen}).`,
+      },
+    };
+  }
+  const descLen = input.description?.length ?? 0;
+  if (descLen < DESC_MIN || descLen > DESC_MAX) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        reason: `description debe tener entre ${DESC_MIN} y ${DESC_MAX} caracteres (recibido: ${descLen}).`,
+      },
+    };
+  }
+  if (input.areaId !== undefined && input.areaId !== null && !isUuid(input.areaId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "areaId debe ser UUID." },
+    };
+  }
+  if (input.teamId !== undefined && input.teamId !== null && !isUuid(input.teamId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "teamId debe ser UUID." },
+    };
+  }
+
+  const { data, error } = await supabase.rpc("create_ticket", {
+    p_tenant_id: input.tenantId,
+    p_category_id: input.categoryId,
+    p_title: input.title,
+    p_description: input.description,
+    p_area_id: input.areaId ?? null,
+    p_team_id: input.teamId ?? null,
+  });
+
+  if (error) {
+    const code = error.code ?? "";
+    if (
+      code === "P0001" ||
+      /title|description|category|not active|not found in tenant|does not belong/i.test(
+        error.message,
+      )
+    ) {
+      return { ok: false, error: { kind: "validation", reason: error.message } };
+    }
+    if (
+      code === "42501" ||
+      /not authorized|not an active member|authentication required/i.test(
+        error.message,
+      )
+    ) {
+      return { ok: false, error: { kind: "forbidden", reason: error.message } };
+    }
+    return { ok: false, error: { kind: "db_error", reason: error.message } };
+  }
+
+  if (!data) {
+    return {
+      ok: false,
+      error: { kind: "db_error", reason: "RPC returned null" },
+    };
+  }
+  return { ok: true, ticket: toTicket(data as TicketRow) };
 }

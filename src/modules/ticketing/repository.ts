@@ -92,9 +92,15 @@ export interface TicketAssignment {
   unassignedAt: string | null;
 }
 
+/**
+ * Payload de creación de un ticket.
+ *
+ * NOTA: `requesterId` NO está en el input. Se deriva siempre de `auth.uid()`
+ * en la SECURITY DEFINER `public.create_ticket` (TKT-009). Esto blinda
+ * la API contra suplantación: nadie puede crear un ticket en nombre de otro.
+ */
 export interface CreateTicketInput {
   tenantId: string;
-  requesterId: string;
   categoryId: string;
   title: string;
   description: string;
