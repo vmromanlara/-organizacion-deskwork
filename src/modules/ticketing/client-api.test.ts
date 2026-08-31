@@ -18,12 +18,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  assignTicket,
   createComment,
   createTicket,
   getTicket,
   listComments,
   listTicketCategories,
   listTickets,
+  listTenantMembers,
   transitionTicket,
 } from "./client-api";
 
@@ -60,7 +62,9 @@ type AnyClientResult =
   | Awaited<ReturnType<typeof transitionTicket>>
   | Awaited<ReturnType<typeof listTicketCategories>>
   | Awaited<ReturnType<typeof listComments>>
-  | Awaited<ReturnType<typeof createComment>>;
+  | Awaited<ReturnType<typeof createComment>>
+  | Awaited<ReturnType<typeof listTenantMembers>>
+  | Awaited<ReturnType<typeof assignTicket>>;
 
 function expectErrorKind(result: AnyClientResult, kind: string) {
   expect(result.ok).toBe(false);
@@ -666,6 +670,110 @@ describe("client-api — Comments (TKT-013)", () => {
     const result = await createComment(TICKET_ID, {
       body: "comentario válido con suficiente longitud para pasar.",
     });
+    expectErrorKind(result, "not_found");
+  });
+});
+
+describe("client-api — Assignment (TKT-012)", () => {
+  it("listTenantMembers happy path: devuelve miembros del tenant", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          members: [
+            { user_id: USER_ID, functional_role: "operator" },
+            { user_id: "22222222-2222-2222-2222-222222222222", functional_role: "technical_lead" },
+          ],
+          meta: { tenantId: TENANT_ID, total: 2 },
+        },
+      }),
+    );
+    const result = await listTenantMembers();
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.members).toHaveLength(2);
+      expect(result.data.members[0]?.functional_role).toBe("operator");
+    }
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/api/tenant-members");
+  });
+
+  it("listTenantMembers 403 sin membership: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 403, body: { error: "no_active_membership" } }),
+    );
+    const result = await listTenantMembers();
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("assignTicket happy path: devuelve la asignación creada", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          assignment: {
+            id: "as-new",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            assigneeId: "22222222-2222-2222-2222-222222222222",
+            assignedBy: USER_ID,
+            assignedAt: "2026-08-31T12:10:00Z",
+            unassignedAt: null,
+          },
+          ticket: {
+            id: TICKET_ID,
+            assignedTo: "22222222-2222-2222-2222-222222222222",
+          },
+        },
+      }),
+    );
+    const result = await assignTicket(TICKET_ID, "22222222-2222-2222-2222-222222222222");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.assignment.id).toBe("as-new");
+      expect(result.data.assignment.assigneeId).toBe("22222222-2222-2222-2222-222222222222");
+      expect(result.data.ticket.assignedTo).toBe("22222222-2222-2222-2222-222222222222");
+    }
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`/api/tickets/${TICKET_ID}/assignments`);
+    expect(JSON.parse(init.body)).toEqual({
+      assigneeId: "22222222-2222-2222-2222-222222222222",
+    });
+  });
+
+  it("assignTicket 403 sin permiso de asignación: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 403,
+        body: {
+          error: "forbidden",
+          reason: "actor not authorized to assign tickets in this tenant",
+        },
+      }),
+    );
+    const result = await assignTicket(TICKET_ID, "22222222-2222-2222-2222-222222222222");
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("assignTicket 400 assignee no es miembro del tenant: kind=validation", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 400,
+        body: {
+          error: "validation",
+          reason: "assignee is not an active member of the ticket tenant",
+        },
+      }),
+    );
+    const result = await assignTicket(TICKET_ID, "99999999-9999-9999-9999-999999999999");
+    expectErrorKind(result, "validation");
+  });
+
+  it("assignTicket 404 ticket inexistente: kind=not_found", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 404, body: { error: "ticket_not_found" } }),
+    );
+    const result = await assignTicket(TICKET_ID, "22222222-2222-2222-2222-222222222222");
     expectErrorKind(result, "not_found");
   });
 });

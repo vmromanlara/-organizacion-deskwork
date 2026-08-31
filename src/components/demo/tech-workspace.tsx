@@ -6,10 +6,13 @@ import { mockPriorities, mockTicketStates } from "@/mock/deskwork-data";
 import { DemoEmptyState, DemoLoadingState } from "./demo-feedback-state";
 import { CommentsThread } from "./comments-thread";
 import {
+  assignTicket,
   getTicket,
   listTicketCategories,
   listTickets,
+  listTenantMembers,
   transitionTicket,
+  type TenantMember,
 } from "@/modules/ticketing/client-api";
 import type { ClientApiError } from "@/modules/ticketing/client-api";
 import type { Ticket, TicketCategory } from "@/modules/ticketing/repository";
@@ -347,18 +350,22 @@ const operations: readonly { state: TicketState; label: string }[] = [
 type TechDetailPhase =
   | { kind: "loading" }
   | { kind: "error"; reason: string; kind_: ClientApiError["kind"]; status?: number }
-  | { kind: "ready"; ticket: Ticket; categoryLabel: string };
+  | { kind: "ready"; ticket: Ticket; categoryLabel: string; members: TenantMember[] };
 
 export function TechTicketDetail({ ticketId }: { ticketId: string }) {
   const [phase, setPhase] = useState<TechDetailPhase>({ kind: "loading" });
   const [pending, setPending] = useState<TicketState | null>(null);
   const [transitionError, setTransitionError] = useState<string>();
+  const [assigneeId, setAssigneeId] = useState<string>("");
+  const [assigning, setAssigning] = useState(false);
+  const [assignError, setAssignError] = useState<string>();
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const [categoriesResult, ticketResult] = await Promise.all([
+      const [categoriesResult, membersResult, ticketResult] = await Promise.all([
         listTicketCategories(),
+        listTenantMembers(),
         getTicket(ticketId),
       ]);
       if (cancelled) return;
@@ -374,12 +381,29 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
       const categoryLabel = categoriesResult.ok
         ? categoriesResult.data.categories.find((c) => c.id === ticketResult.data.ticket.categoryId)?.label ?? "(sin categoría)"
         : "(sin categoría)";
-      setPhase({ kind: "ready", ticket: ticketResult.data.ticket, categoryLabel });
+      const members = membersResult.ok ? membersResult.data.members : [];
+      setPhase({ kind: "ready", ticket: ticketResult.data.ticket, categoryLabel, members });
+      setAssigneeId(ticketResult.data.ticket.assignedTo ?? "");
     })();
     return () => {
       cancelled = true;
     };
   }, [ticketId]);
+
+  async function applyAssign(target: string) {
+    if (assigning) return;
+    setAssigning(true);
+    setAssignError(undefined);
+    const result = await assignTicket(ticketId, target);
+    setAssigning(false);
+    if (!result.ok) {
+      setAssignError(result.error.reason ?? "Error al asignar");
+      return;
+    }
+    setPhase((current) => (current.kind === "ready"
+      ? { ...current, ticket: { ...current.ticket, assignedTo: target } }
+      : current));
+  }
 
   async function applyTransition(target: TicketState) {
     if (pending) return;
@@ -451,6 +475,33 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
             <div><dt>Asignado</dt><dd>{ticket.assignedTo ? ticket.assignedTo.slice(0, 8) + "…" : "Sin asignar"}</dd></div>
             <div><dt>SLA</dt><dd>{ticket.slaStatus}</dd></div>
           </dl>
+          <div className="demo-assign-block">
+            <label htmlFor="assign-select">Reasignar a</label>
+            <div className="demo-assign-controls">
+              <select
+                id="assign-select"
+                value={assigneeId}
+                onChange={(event) => setAssigneeId(event.target.value)}
+                disabled={assigning}
+              >
+                <option value="">Sin asignar</option>
+                {phase.members.map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.user_id.slice(0, 8)}… · {member.functional_role}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="demo-secondary-button"
+                disabled={assigning || !assigneeId || assigneeId === ticket.assignedTo}
+                onClick={() => void applyAssign(assigneeId)}
+              >
+                {assigning ? "Asignando…" : "Aplicar"}
+              </button>
+            </div>
+            {assignError ? <p className="demo-form-error" role="alert">{assignError}</p> : null}
+          </div>
         </article>
         <article className="demo-ticket-detail-card">
           <p className="demo-section-label">Acciones</p>

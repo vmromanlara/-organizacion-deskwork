@@ -177,3 +177,29 @@ export function createComment(
     body: JSON.stringify(payload),
   });
 }
+
+// =====================================================================
+// Assignment (TKT-012)
+// =====================================================================
+
+export interface TenantMember {
+  user_id: string;
+  functional_role: string;
+}
+
+export function listTenantMembers(): Promise<ClientResult<{ members: TenantMember[] }>> {
+  return request("/api/tenant-members");
+}
+
+export function assignTicket(
+  ticketId: string,
+  assigneeId: string,
+): Promise<ClientResult<{ assignment: { id: string; assigneeId: string }; ticket: { id: string; assignedTo: string } }>> {
+  return request(
+    `/api/tickets/${encodeURIComponent(ticketId)}/assignments`,
+    {
+      method: "POST",
+      body: JSON.stringify({ assigneeId }),
+    },
+  );
+}
