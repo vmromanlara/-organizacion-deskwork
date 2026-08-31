@@ -11,7 +11,7 @@
  * mapear con precisión a loading/error/success.
  */
 
-import type { Ticket, TicketCategory } from "./repository";
+import type { Ticket, TicketCategory, TicketComment } from "./repository";
 import type { TicketState } from "./types";
 
 export type ClientApiError =
@@ -151,4 +151,29 @@ export function transitionTicket(
       body: JSON.stringify({ toState, reason }),
     },
   );
+}
+
+// =====================================================================
+// Comments
+// =====================================================================
+
+export interface CreateCommentPayload {
+  body: string;
+  isInternal?: boolean;
+}
+
+export function listComments(
+  ticketId: string,
+): Promise<ClientResult<{ comments: TicketComment[]; meta: { total: number } }>> {
+  return request(`/api/tickets/${encodeURIComponent(ticketId)}/comments`);
+}
+
+export function createComment(
+  ticketId: string,
+  payload: CreateCommentPayload,
+): Promise<ClientResult<{ comment: TicketComment; by: string; isInternal: boolean }>> {
+  return request(`/api/tickets/${encodeURIComponent(ticketId)}/comments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }

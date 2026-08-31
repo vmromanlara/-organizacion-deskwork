@@ -1,6 +1,7 @@
 /**
  * DeskWork Ticketing Core / TKT-013.
- * POST /api/tickets/[id]/comments
+ * GET  /api/tickets/[id]/comments   (listado)
+ * POST /api/tickets/[id]/comments   (crear)
  *
  * Crea un comentario asociado a un ticket. La barrera de seguridad es:
  *
@@ -40,6 +41,49 @@ interface CreateCommentRequestBody {
 }
 
 const BODY_MAX = 10000;
+
+/**
+ * GET /api/tickets/[id]/comments
+ * Lista los comentarios visibles para el actor actual.
+ * La RLS ya filtra comentarios internos a usuarios no autorizados.
+ */
+export async function GET(_request: NextRequest, context: RouteContext) {
+  const { id: ticketId } = await context.params;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "authentication_required" },
+      { status: 401 },
+    );
+  }
+
+  // Cargar el ticket para obtener su tenant y verificar visibilidad.
+  const repo = createSupabaseTicketRepository(supabase);
+  const ticket = await repo.getTicket(ticketId);
+  if (!ticket) {
+    return NextResponse.json({ error: "ticket_not_found" }, { status: 404 });
+  }
+
+  // La RLS de comments + can_read_ticket hace el resto del filtrado.
+  // Si llegamos aquí, el actor puede ver el ticket.
+  let comments;
+  try {
+    comments = await repo.listCommentsByTicket(ticket.id);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { error: "db_error", reason },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json(
+    { comments, meta: { total: comments.length } },
+    { status: 200 },
+  );
+}
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const { id: ticketId } = await context.params;

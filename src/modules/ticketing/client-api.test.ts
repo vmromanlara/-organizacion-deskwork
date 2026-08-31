@@ -18,8 +18,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  createComment,
   createTicket,
   getTicket,
+  listComments,
   listTicketCategories,
   listTickets,
   transitionTicket,
@@ -56,7 +58,9 @@ type AnyClientResult =
   | Awaited<ReturnType<typeof listTickets>>
   | Awaited<ReturnType<typeof getTicket>>
   | Awaited<ReturnType<typeof transitionTicket>>
-  | Awaited<ReturnType<typeof listTicketCategories>>;
+  | Awaited<ReturnType<typeof listTicketCategories>>
+  | Awaited<ReturnType<typeof listComments>>
+  | Awaited<ReturnType<typeof createComment>>;
 
 function expectErrorKind(result: AnyClientResult, kind: string) {
   expect(result.ok).toBe(false);
@@ -505,5 +509,163 @@ describe("client-api — flujo end-to-end simulado (crear -> listar -> abrir)", 
     if (!getResult.ok) return;
     expect(getResult.data.ticket.id).toBe(createdId);
     expect(getResult.data.ticket.state).toBe("ABIERTO");
+  });
+});
+
+describe("client-api — Comments (TKT-013)", () => {
+  it("listComments happy path: devuelve la conversación del ticket", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          comments: [
+            {
+              id: "c-1",
+              tenantId: TENANT_ID,
+              ticketId: TICKET_ID,
+              authorId: USER_ID,
+              body: "Estoy revisando el caso.",
+              isInternal: false,
+              createdAt: "2026-08-31T12:01:00Z",
+              updatedAt: "2026-08-31T12:01:00Z",
+            },
+          ],
+          meta: { total: 1 },
+        },
+      }),
+    );
+
+    const result = await listComments(TICKET_ID);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.comments).toHaveLength(1);
+      expect(result.data.comments[0]?.body).toMatch(/revisando/);
+    }
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`/api/tickets/${TICKET_ID}/comments`);
+  });
+
+  it("listComments 404 cuando el ticket no existe", async () => {
+    mockFetchOnce(makeResponse({ status: 404, body: { error: "ticket_not_found" } }));
+    const result = await listComments(TICKET_ID);
+    expectErrorKind(result, "not_found");
+  });
+
+  it("listComments 403 sin permiso: kind=forbidden", async () => {
+    mockFetchOnce(makeResponse({ status: 403, body: { error: "no_active_membership" } }));
+    const result = await listComments(TICKET_ID);
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("createComment happy path: devuelve el comentario con isInternal correcto", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          comment: {
+            id: "c-new",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            authorId: USER_ID,
+            body: "Necesito el ticket en proceso, por favor.",
+            isInternal: false,
+            createdAt: "2026-08-31T12:02:00Z",
+            updatedAt: "2026-08-31T12:02:00Z",
+          },
+          by: USER_ID,
+          isInternal: false,
+        },
+      }),
+    );
+
+    const result = await createComment(TICKET_ID, {
+      body: "Necesito el ticket en proceso, por favor.",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.comment.id).toBe("c-new");
+      expect(result.data.comment.body).toMatch(/proceso/);
+      expect(result.data.comment.isInternal).toBe(false);
+      expect(result.data.by).toBe(USER_ID);
+    }
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`/api/tickets/${TICKET_ID}/comments`);
+    expect(JSON.parse(init.body)).toEqual({
+      body: "Necesito el ticket en proceso, por favor.",
+    });
+  });
+
+  it("createComment con isInternal=true: pasa el flag al payload", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 201,
+        body: {
+          comment: {
+            id: "c-int",
+            tenantId: TENANT_ID,
+            ticketId: TICKET_ID,
+            authorId: USER_ID,
+            body: "Nota interna de prueba.",
+            isInternal: true,
+            createdAt: "2026-08-31T12:03:00Z",
+            updatedAt: "2026-08-31T12:03:00Z",
+          },
+          by: USER_ID,
+          isInternal: true,
+        },
+      }),
+    );
+
+    const result = await createComment(TICKET_ID, {
+      body: "Nota interna de prueba.",
+      isInternal: true,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.comment.isInternal).toBe(true);
+    }
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
+      body: "Nota interna de prueba.",
+      isInternal: true,
+    });
+  });
+
+  it("createComment 400 validación: kind=validation con la razón", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 400,
+        body: { error: "validation_failed", reason: "body_too_long" },
+      }),
+    );
+    const result = await createComment(TICKET_ID, {
+      body: "x".repeat(10001),
+    });
+    expectErrorKind(result, "validation");
+  });
+
+  it("createComment 403 sin permiso para crear: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 403,
+        body: {
+          error: "forbidden",
+          reason: "actor not authorized to comment on this ticket",
+        },
+      }),
+    );
+    const result = await createComment(TICKET_ID, {
+      body: "comentario válido con suficiente longitud para pasar.",
+    });
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("createComment 404 ticket inexistente: kind=not_found", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 404, body: { error: "ticket_not_found" } }),
+    );
+    const result = await createComment(TICKET_ID, {
+      body: "comentario válido con suficiente longitud para pasar.",
+    });
+    expectErrorKind(result, "not_found");
   });
 });

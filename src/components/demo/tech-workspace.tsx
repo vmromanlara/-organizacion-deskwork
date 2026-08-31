@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { mockPriorities, mockTicketStates } from "@/mock/deskwork-data";
 import { DemoEmptyState, DemoLoadingState } from "./demo-feedback-state";
+import { CommentsThread } from "./comments-thread";
 import {
   getTicket,
   listTicketCategories,
@@ -471,6 +472,7 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
           </div>
         </article>
       </section>
+      <CommentsThread ticketId={ticket.id} allowInternal={true} />
     </div>
   );
 }
