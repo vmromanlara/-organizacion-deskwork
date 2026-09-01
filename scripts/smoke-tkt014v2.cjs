@@ -7,6 +7,8 @@
 //
 // Lee SUPABASE_SERVICE_ROLE_KEY y NEXT_PUBLIC_SUPABASE_URL del .env.local.
 
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 const path = require("path");
 const fs = require("fs");
 

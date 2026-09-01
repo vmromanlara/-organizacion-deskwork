@@ -23,6 +23,7 @@ import {
   createTicket,
   getAttachmentUrl,
   getTicket,
+  getTicketKpis,
   listAttachments,
   listComments,
   listTicketCategories,
@@ -72,7 +73,8 @@ type AnyClientResult =
   | Awaited<ReturnType<typeof listAttachments>>
   | Awaited<ReturnType<typeof registerAttachment>>
   | Awaited<ReturnType<typeof uploadAttachment>>
-  | Awaited<ReturnType<typeof getAttachmentUrl>>;
+  | Awaited<ReturnType<typeof getAttachmentUrl>>
+  | Awaited<ReturnType<typeof getTicketKpis>>;
 
 function expectErrorKind(result: AnyClientResult, kind: string) {
   expect(result.ok).toBe(false);
@@ -1345,5 +1347,208 @@ describe("client-api — TKT-014 v2 request() omite Content-Type cuando body es 
     const headers = (init.headers ?? {}) as Record<string, string>;
     expect(headers["Content-Type"]).toBeUndefined();
     expect(init.body).toBeInstanceOf(FormData);
+  });
+});
+
+// =====================================================================
+// TKT-021 — KPIs del supervisor dashboard
+// =====================================================================
+
+describe("client-api — TKT-021 getTicketKpis (KPIs supervisor dashboard)", () => {
+  it("happy path: devuelve totales, averages, dailyTrend y period", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          totals: {
+            total: 42,
+            active: 18,
+            unassigned: 5,
+            byState: [
+              { state: "ABIERTO", count: 12 },
+              { state: "EN_PROCESO", count: 4 },
+              { state: "ESCALADO", count: 2 },
+              { state: "RESUELTO", count: 22 },
+              { state: "CERRADO", count: 2 },
+            ],
+            byPriority: [
+              { priority: "P1", count: 3 },
+              { priority: "P2", count: 8 },
+              { priority: "P3", count: 20 },
+              { priority: "P4", count: 11 },
+            ],
+          },
+          operationalAverages: {
+            firstResponseMinutes: 47.5,
+            resolutionMinutes: 312.8,
+            firstResponseCount: 40,
+            resolvedCount: 22,
+          },
+          dailyTrend: [
+            { date: "2026-08-25", created: 5 },
+            { date: "2026-08-26", created: 7 },
+            { date: "2026-08-27", created: 4 },
+          ],
+          period: {
+            days: 30,
+            start: "2026-07-29",
+            end: "2026-08-27",
+          },
+          generatedAt: "2026-08-27T15:00:00Z",
+        },
+      }),
+    );
+
+    const result = await getTicketKpis(30);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.totals.total).toBe(42);
+      expect(result.data.totals.active).toBe(18);
+      expect(result.data.totals.unassigned).toBe(5);
+      expect(result.data.totals.byState).toHaveLength(5);
+      expect(result.data.totals.byPriority).toHaveLength(4);
+      expect(result.data.operationalAverages.firstResponseMinutes).toBe(47.5);
+      expect(result.data.operationalAverages.resolvedCount).toBe(22);
+      expect(result.data.dailyTrend).toHaveLength(3);
+      expect(result.data.period.days).toBe(30);
+    }
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/api/tickets/kpis?periodDays=30");
+  });
+
+  it("omite el query string cuando no se pasa periodDays", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          totals: { total: 0, active: 0, unassigned: 0, byState: [], byPriority: [] },
+          operationalAverages: {
+            firstResponseMinutes: 0,
+            resolutionMinutes: 0,
+            firstResponseCount: 0,
+            resolvedCount: 0,
+          },
+          dailyTrend: [],
+          period: { days: 30, start: "2026-07-29", end: "2026-08-27" },
+          generatedAt: "2026-08-27T15:00:00Z",
+        },
+      }),
+    );
+    await getTicketKpis();
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/api/tickets/kpis");
+  });
+
+  it("empty state: totales en 0, arrays vacíos", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          totals: { total: 0, active: 0, unassigned: 0, byState: [], byPriority: [] },
+          operationalAverages: {
+            firstResponseMinutes: 0,
+            resolutionMinutes: 0,
+            firstResponseCount: 0,
+            resolvedCount: 0,
+          },
+          dailyTrend: [],
+          period: { days: 30, start: "2026-07-29", end: "2026-08-27" },
+          generatedAt: "2026-08-27T15:00:00Z",
+        },
+      }),
+    );
+    const result = await getTicketKpis();
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.totals.total).toBe(0);
+      expect(result.data.totals.byState).toEqual([]);
+      expect(result.data.totals.byPriority).toEqual([]);
+      expect(result.data.dailyTrend).toEqual([]);
+    }
+  });
+
+  it("401 sin sesion: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 401, body: { error: "authentication_required" } }),
+    );
+    const result = await getTicketKpis();
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("403 sin membership activa: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 403, body: { error: "no_active_membership" } }),
+    );
+    const result = await getTicketKpis();
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("403 sin scope institution: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 403,
+        body: { error: "scope_institution_required" },
+      }),
+    );
+    const result = await getTicketKpis();
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("403 SECURITY DEFINER rechaza sin institution scope: kind=forbidden", async () => {
+    mockFetchOnce(
+      makeResponse({
+        status: 403,
+        body: {
+          error: "forbidden",
+          reason: "actor does not have institution scope in this tenant",
+        },
+      }),
+    );
+    const result = await getTicketKpis();
+    expectErrorKind(result, "forbidden");
+  });
+
+  it("500 db_error: kind=http(500)", async () => {
+    mockFetchOnce(
+      makeResponse({ status: 500, body: { error: "db_error", reason: "lost" } }),
+    );
+    const result = await getTicketKpis();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe("http");
+      expect((result.error as { status: number }).status).toBe(500);
+    }
+  });
+
+  it("error de red: kind=network", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("Failed to fetch")),
+    );
+    const result = await getTicketKpis();
+    expectErrorKind(result, "network");
+  });
+
+  it("URL acepta periodDays custom y lo pasa al query string", async () => {
+    const fetchMock = mockFetchOnce(
+      makeResponse({
+        status: 200,
+        body: {
+          totals: { total: 0, active: 0, unassigned: 0, byState: [], byPriority: [] },
+          operationalAverages: {
+            firstResponseMinutes: 0,
+            resolutionMinutes: 0,
+            firstResponseCount: 0,
+            resolvedCount: 0,
+          },
+          dailyTrend: [],
+          period: { days: 7, start: "2026-08-21", end: "2026-08-27" },
+          generatedAt: "2026-08-27T15:00:00Z",
+        },
+      }),
+    );
+    await getTicketKpis(7);
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toContain("periodDays=7");
   });
 });

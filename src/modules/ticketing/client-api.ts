@@ -310,3 +310,65 @@ export function getAttachmentUrl(
     `/api/tickets/${encodeURIComponent(ticketId)}/attachments/${encodeURIComponent(attachmentId)}/url${qs ? `?${qs}` : ""}`,
   );
 }
+
+// =====================================================================
+// KPIs (TKT-021) — supervisor dashboard
+// =====================================================================
+
+/** Item por estado devuelto por la API. */
+export interface KpiByState {
+  state: string;
+  count: number;
+}
+
+/** Item por prioridad devuelto por la API. */
+export interface KpiByPriority {
+  priority: "P1" | "P2" | "P3" | "P4";
+  count: number;
+}
+
+/** Punto de la tendencia diaria. */
+export interface KpiDailyPoint {
+  date: string;
+  created: number;
+}
+
+export interface KpisResponse {
+  totals: {
+    total: number;
+    active: number;
+    unassigned: number;
+    byState: KpiByState[];
+    byPriority: KpiByPriority[];
+  };
+  operationalAverages: {
+    firstResponseMinutes: number;
+    resolutionMinutes: number;
+    firstResponseCount: number;
+    resolvedCount: number;
+  };
+  dailyTrend: KpiDailyPoint[];
+  period: {
+    days: number;
+    start: string;
+    end: string;
+  };
+  generatedAt: string;
+}
+
+/**
+ * Trae los KPIs agregados del tenant del actor para el dashboard.
+ * `periodDays` clampea server-side a [1, 90]; default 30.
+ */
+export function getTicketKpis(
+  periodDays?: number,
+): Promise<ClientResult<KpisResponse>> {
+  const params = new URLSearchParams();
+  if (typeof periodDays === "number") {
+    params.set("periodDays", String(periodDays));
+  }
+  const qs = params.toString();
+  return request<KpisResponse>(
+    `/api/tickets/kpis${qs ? `?${qs}` : ""}`,
+  );
+}

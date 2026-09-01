@@ -1172,3 +1172,179 @@ export async function applyCreateTicket(
   }
   return { ok: true, ticket: toTicket(data as TicketRow) };
 }
+
+// ===================================================================
+// TKT-021 — KPIs agregados (dashboard supervisor)
+// ===================================================================
+
+/** Conteo por estado (resultado de la agregacion SQL). */
+export interface TicketKpiByState {
+  state: TicketState;
+  count: number;
+}
+
+/** Conteo por prioridad (resultado de la agregacion SQL). */
+export interface TicketKpiByPriority {
+  priority: Ticket["priority"];
+  count: number;
+}
+
+/** Punto de la tendencia diaria. */
+export interface TicketKpiDailyPoint {
+  date: string;
+  created: number;
+}
+
+export interface TicketKpis {
+  totals: {
+    total: number;
+    active: number;
+    unassigned: number;
+    byState: TicketKpiByState[];
+    byPriority: TicketKpiByPriority[];
+  };
+  operationalAverages: {
+    /** Minutos. Operacional, NO contractual. Promedio sobre tickets con
+     *  first_response_at no nulo. */
+    firstResponseMinutes: number;
+    /** Minutos. Operacional, NO contractual. Promedio sobre tickets con
+     *  resolved_at no nulo. */
+    resolutionMinutes: number;
+    firstResponseCount: number;
+    resolvedCount: number;
+  };
+  dailyTrend: TicketKpiDailyPoint[];
+  period: {
+    days: number;
+    start: string;
+    end: string;
+  };
+  generatedAt: string;
+}
+
+export type KpisError =
+  | { kind: "validation"; reason: string }
+  | { kind: "forbidden"; reason: string }
+  | { kind: "not_found"; reason: string }
+  | { kind: "db_error"; reason: string };
+
+export type KpisResult =
+  | { ok: true; data: TicketKpis }
+  | { ok: false; error: KpisError };
+
+/** Input del helper. */
+export interface GetKpisInput {
+  tenantId: string;
+  periodDays?: number;
+}
+
+const KPIS_PERIOD_MIN = 1;
+const KPIS_PERIOD_MAX = 90;
+const KPIS_PERIOD_DEFAULT = 30;
+
+/**
+ * Llama al SECURITY DEFINER `public.compute_ticket_kpis` y devuelve el
+ * resultado tipado. El helper re-valida membership y scope institucional
+ * a nivel de aplicacion (defense in depth).
+ */
+export async function getTicketKpis(
+  supabase: SupabaseClient,
+  input: GetKpisInput,
+): Promise<KpisResult> {
+  const uuidRe =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRe.test(input.tenantId)) {
+    return {
+      ok: false,
+      error: { kind: "validation", reason: "tenantId debe ser UUID." },
+    };
+  }
+  const period = input.periodDays ?? KPIS_PERIOD_DEFAULT;
+  if (
+    !Number.isInteger(period) ||
+    period < KPIS_PERIOD_MIN ||
+    period > KPIS_PERIOD_MAX
+  ) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        reason: `periodDays fuera de rango [${KPIS_PERIOD_MIN}, ${KPIS_PERIOD_MAX}].`,
+      },
+    };
+  }
+
+  const { data, error } = await supabase.rpc("compute_ticket_kpis", {
+    p_tenant_id: input.tenantId,
+    p_period_days: period,
+  });
+
+  if (error) {
+    const code = error.code ?? "";
+    if (
+      code === "42501" ||
+      /not authorized|not an active member|does not have institution scope|authentication required/i.test(
+        error.message,
+      )
+    ) {
+      return {
+        ok: false,
+        error: { kind: "forbidden", reason: error.message },
+      };
+    }
+    if (
+      code === "P0001" ||
+      /tenant_id is required/i.test(error.message)
+    ) {
+      return {
+        ok: false,
+        error: { kind: "validation", reason: error.message },
+      };
+    }
+    return {
+      ok: false,
+      error: { kind: "db_error", reason: error.message },
+    };
+  }
+
+  if (!data) {
+    return {
+      ok: false,
+      error: { kind: "db_error", reason: "RPC returned null" },
+    };
+  }
+
+  // El SECURITY DEFINER retorna jsonb con la forma que documenta la
+  // migration. Hacemos una normalizacion minima: asegurar que
+  // byState / byPriority / dailyTrend sean arrays aunque el backend
+  // retorne "[]" o null.
+  const raw = data as unknown as TicketKpis;
+  return {
+    ok: true,
+    data: {
+      totals: {
+        total: raw.totals?.total ?? 0,
+        active: raw.totals?.active ?? 0,
+        unassigned: raw.totals?.unassigned ?? 0,
+        byState: Array.isArray(raw.totals?.byState) ? raw.totals.byState : [],
+        byPriority: Array.isArray(raw.totals?.byPriority)
+          ? raw.totals.byPriority
+          : [],
+      },
+      operationalAverages: {
+        firstResponseMinutes:
+          raw.operationalAverages?.firstResponseMinutes ?? 0,
+        resolutionMinutes: raw.operationalAverages?.resolutionMinutes ?? 0,
+        firstResponseCount: raw.operationalAverages?.firstResponseCount ?? 0,
+        resolvedCount: raw.operationalAverages?.resolvedCount ?? 0,
+      },
+      dailyTrend: Array.isArray(raw.dailyTrend) ? raw.dailyTrend : [],
+      period: {
+        days: raw.period?.days ?? period,
+        start: raw.period?.start ?? "",
+        end: raw.period?.end ?? "",
+      },
+      generatedAt: raw.generatedAt ?? new Date().toISOString(),
+    },
+  };
+}
