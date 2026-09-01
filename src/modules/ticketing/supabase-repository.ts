@@ -841,11 +841,16 @@ export async function uploadAttachmentBlob(
   const storagePath = expectedStoragePathFromSegments(tenantId, input.ticketId, input.originalName);
 
   // 1) Subir el binario.
+  //    DEFECT-UAT-002: upsert=true para permitir re-upload del mismo
+  //    storage_path. La metadata también es UPSERT (ver migration
+  //    20260901000910_attachments_upsert.sql) — un re-upload del mismo
+  //    (ticket_id, storage_path) actualiza size_bytes, sha256, mime_type,
+  //    uploaded_by y created_at en lugar de fallar.
   const uploadResult = await admin.storage
     .from(ATTACHMENT_BUCKET)
     .upload(storagePath, input.body, {
       contentType: input.mimeType,
-      upsert: false,
+      upsert: true,
     });
   if (uploadResult.error) {
     return {

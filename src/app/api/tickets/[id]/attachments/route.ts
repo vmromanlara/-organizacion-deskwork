@@ -21,9 +21,10 @@
  * GET /api/tickets/[id]/attachments
  *   Lista metadata de adjuntos visibles (mismo que TKT-014 v1).
  *
- * El endpoint original (TKT-014 v1) que recibía JSON con storagePath
- * pre-subido por el cliente se mantiene detrás de `?v=metadata` como
- * legacy path para no romper integraciones existentes.
+ * IMPORTANTE: TKT-014 v1 (metadata-only JSON con storagePath pre-subido)
+ * está DEPRECATED y NO se mantiene como legacy path. Este endpoint solo
+ * acepta multipart/form-data (TKT-014 v2). Requests que no sean
+ * multipart reciben 415 expected_multipart.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
