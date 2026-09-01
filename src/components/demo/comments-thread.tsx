@@ -4,13 +4,14 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createComment, listComments } from "@/modules/ticketing/client-api";
 import type { ClientApiError } from "@/modules/ticketing/client-api";
 import type { TicketComment } from "@/modules/ticketing/repository";
+import {
+  formatDateTime,
+  getErrorMessage,
+  useI18n,
+} from "@/i18n";
 
 const BODY_MAX = 10000;
 const BODY_MIN = 1;
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Santiago" }).format(new Date(value));
-}
 
 type CommentsPhase =
   | { kind: "loading" }
@@ -24,6 +25,7 @@ interface CommentsThreadProps {
 }
 
 export function CommentsThread({ ticketId, allowInternal = false }: CommentsThreadProps) {
+  const { t, locale, messages } = useI18n();
   const [phase, setPhase] = useState<CommentsPhase>({ kind: "loading" });
   const [draft, setDraft] = useState("");
   const [isInternal, setIsInternal] = useState(false);
@@ -36,7 +38,11 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
       const result = await listComments(ticketId);
       if (cancelled) return;
       if (!result.ok) {
-        setPhase({ kind: "error", reason: result.error.reason ?? "Error", kind_: result.error.kind });
+        setPhase({
+          kind: "error",
+          reason: getErrorMessage(result.error, messages),
+          kind_: result.error.kind,
+        });
         return;
       }
       setPhase({ kind: "ready", comments: result.data.comments });
@@ -44,14 +50,18 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
     return () => {
       cancelled = true;
     };
-  }, [ticketId]);
+  }, [ticketId, messages]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
     const body = draft.trim();
     if (body.length < BODY_MIN || body.length > BODY_MAX) {
-      setSubmitError(`El comentario debe tener entre ${BODY_MIN} y ${BODY_MAX} caracteres.`);
+      setSubmitError(
+        t("comments.errorBody")
+          .replace("{min}", String(BODY_MIN))
+          .replace("{max}", String(BODY_MAX)),
+      );
       return;
     }
     setSubmitting(true);
@@ -62,7 +72,7 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
     });
     setSubmitting(false);
     if (!result.ok) {
-      setSubmitError(result.error.reason ?? "Error al enviar el comentario.");
+      setSubmitError(getErrorMessage(result.error, messages));
       return;
     }
     setDraft("");
@@ -74,9 +84,9 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
 
   if (phase.kind === "loading") {
     return (
-      <section className="demo-ticket-history-card" aria-label="Comentarios">
-        <p className="demo-section-label">Comentarios</p>
-        <p>Cargando…</p>
+      <section className="demo-ticket-history-card" aria-label={t("comments.title")}>
+        <p className="demo-section-label">{t("comments.title")}</p>
+        <p>{t("common.loading")}</p>
       </section>
     );
   }
@@ -84,16 +94,20 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
   if (phase.kind === "error") {
     if (phase.kind_ === "forbidden") {
       return (
-        <section className="demo-ticket-history-card" aria-label="Comentarios">
-          <p className="demo-section-label">Comentarios</p>
-          <p className="demo-form-error" role="alert">No autorizado: {phase.reason}</p>
+        <section className="demo-ticket-history-card" aria-label={t("comments.title")}>
+          <p className="demo-section-label">{t("comments.title")}</p>
+          <p className="demo-form-error" role="alert">
+            {t("comments.errorForbidden")}: {phase.reason}
+          </p>
         </section>
       );
     }
     return (
-      <section className="demo-ticket-history-card" aria-label="Comentarios">
-        <p className="demo-section-label">Comentarios</p>
-        <p className="demo-form-error" role="alert">No pudimos cargar los comentarios: {phase.reason}</p>
+      <section className="demo-ticket-history-card" aria-label={t("comments.title")}>
+        <p className="demo-section-label">{t("comments.title")}</p>
+        <p className="demo-form-error" role="alert">
+          {t("comments.errorPrefix")} {phase.reason}
+        </p>
       </section>
     );
   }
@@ -103,10 +117,10 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
     <section className="demo-ticket-history-card" aria-labelledby="ticket-comments-title">
       <div className="demo-ticket-history-heading">
         <div>
-          <p className="demo-section-label">Comentarios</p>
-          <h2 id="ticket-comments-title">Conversación</h2>
+          <p className="demo-section-label">{t("comments.title")}</p>
+          <h2 id="ticket-comments-title">{t("comments.threadTitle")}</h2>
         </div>
-        <span>{comments.length} mensajes</span>
+        <span>{t("comments.count").replace("{count}", String(comments.length))}</span>
       </div>
 
       {comments.length ? (
@@ -117,23 +131,23 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
               <div>
                 <p>{comment.body}</p>
                 <time dateTime={comment.createdAt}>
-                  {formatDate(comment.createdAt)} · {comment.authorId.slice(0, 8)}…
-                  {comment.isInternal ? " · nota interna" : ""}
+                  {formatDateTime(comment.createdAt, locale)} · {comment.authorId.slice(0, 8)}…
+                  {comment.isInternal ? ` · ${t("comments.internalTag")}` : ""}
                 </time>
               </div>
             </li>
           ))}
         </ol>
       ) : (
-        <div className="demo-ticket-history-empty">Aún no hay comentarios en este ticket.</div>
+        <div className="demo-ticket-history-empty">{t("comments.empty")}</div>
       )}
 
-      <form className="demo-comment-form" onSubmit={handleSubmit} aria-label="Agregar comentario">
-        <label htmlFor="comment-body">Agregar comentario</label>
+      <form className="demo-comment-form" onSubmit={handleSubmit} aria-label={t("comments.addLabel")}>
+        <label htmlFor="comment-body">{t("comments.addLabel")}</label>
         <textarea
           id="comment-body"
           maxLength={BODY_MAX}
-          placeholder="Escribe aquí tu comentario o solicitud de cambio de estado."
+          placeholder={t("comments.placeholder")}
           value={draft}
           onChange={(event) => {
             setDraft(event.target.value);
@@ -141,7 +155,11 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
           }}
           disabled={submitting}
         />
-        <p className="demo-comment-counter">{draft.length}/{BODY_MAX} caracteres</p>
+        <p className="demo-comment-counter">
+          {t("comments.charCounter")
+            .replace("{n}", String(draft.length))
+            .replace("{max}", String(BODY_MAX))}
+        </p>
         {allowInternal ? (
           <label className="demo-comment-internal-toggle">
             <input
@@ -150,7 +168,7 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
               onChange={(event) => setIsInternal(event.target.checked)}
               disabled={submitting}
             />
-            <span>Nota interna (sólo equipo técnico)</span>
+            <span>{t("comments.internalToggle")}</span>
           </label>
         ) : null}
         {submitError ? <p className="demo-form-error" role="alert">{submitError}</p> : null}
@@ -160,7 +178,7 @@ export function CommentsThread({ ticketId, allowInternal = false }: CommentsThre
             className="demo-primary-button"
             disabled={submitting || draft.trim().length === 0}
           >
-            {submitting ? "Enviando…" : "Enviar comentario"}
+            {submitting ? t("comments.submitting") : t("comments.submit")}
           </button>
         </div>
       </form>

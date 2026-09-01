@@ -10,30 +10,20 @@ import {
   type ClientResult,
 } from "@/modules/ticketing/client-api";
 import type { TicketCategory } from "@/modules/ticketing/repository";
+import {
+  getErrorMessage,
+  useI18n,
+} from "@/i18n";
 
 const DEMO_REQUESTER_ID = "user-valentina-morales";
 
-const formSteps = [
-  { id: 1, label: "Identificación" },
-  { id: 2, label: "Categoría" },
-  { id: 3, label: "Descripción" },
-  { id: 4, label: "Adjunto" },
-  { id: 5, label: "Revisión" },
-  { id: 6, label: "Confirmación" },
-] as const;
-
-type FormStep = (typeof formSteps)[number]["id"];
+type FormStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 const TITLE_MAX = 200;
 const TITLE_MIN = 5;
 const DESC_MAX = 5000;
 const DESC_MIN = 10;
 
-/**
- * Deriva un title a partir del description: primera oración/linea,
- * truncado a TITLE_MAX, con fallback si la descripción no produce un
- * segmento útil.
- */
 function deriveTitle(description: string): string {
   const trimmed = description.trim();
   if (!trimmed) return "Nueva solicitud";
@@ -41,8 +31,6 @@ function deriveTitle(description: string): string {
   if (firstSegment.length >= TITLE_MIN) {
     return firstSegment.slice(0, TITLE_MAX);
   }
-  // Si la primera oración es muy corta, usamos la descripción completa
-  // truncada al primer TITLE_MAX y garantizamos el mínimo repitiendo.
   const base = trimmed.slice(0, TITLE_MAX);
   return base.length >= TITLE_MIN
     ? base
@@ -56,6 +44,7 @@ type Phase =
 
 export function NewTicketForm() {
   const requester = getMockUser(DEMO_REQUESTER_ID);
+  const { t, messages } = useI18n();
   const [step, setStep] = useState<FormStep>(1);
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
@@ -74,7 +63,6 @@ export function NewTicketForm() {
     else hasMounted.current = true;
   }, [step]);
 
-  // Carga inicial: categorías reales del backend.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -82,8 +70,7 @@ export function NewTicketForm() {
         await listTicketCategories();
       if (cancelled) return;
       if (!result.ok) {
-        const reason = describeError(result.error);
-        setPhase({ kind: "error", reason });
+        setPhase({ kind: "error", reason: getErrorMessage(result.error, messages) });
         return;
       }
       setCategories(result.data.categories);
@@ -92,7 +79,7 @@ export function NewTicketForm() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [messages]);
 
   if (phase.kind === "loading") {
     return <DemoLoadingState />;
@@ -102,27 +89,32 @@ export function NewTicketForm() {
     return (
       <div className="demo-request-flow">
         <section className="demo-request-heading" aria-labelledby="request-title">
-          <p className="demo-eyebrow">Nueva solicitud</p>
-          <h1 id="request-title">No pudimos cargar las categorías.</h1>
+          <p className="demo-eyebrow">{t("nav.newTicket")}</p>
+          <h1 id="request-title">{t("errors.unknown")}</h1>
           <p className="demo-form-error" role="alert">
             {phase.reason}
-          </p>
-          <p>
-            Para crear una solicitud real necesitás una sesión activa y
-            pertenecer a un tenant con categorías sembradas.
           </p>
         </section>
         <div className="demo-request-actions">
           <Link className="demo-primary-link" href="/login?next=/tickets/new">
-            Iniciar sesión
+            {t("common.open")} — {t("shell.brand")}
           </Link>
         </div>
       </div>
     );
   }
 
+  const formSteps: { id: FormStep; label: string }[] = [
+    { id: 1, label: t("requester.newTicket.steps.identification") },
+    { id: 2, label: t("requester.newTicket.steps.category") },
+    { id: 3, label: t("requester.newTicket.steps.description") },
+    { id: 4, label: t("requester.newTicket.steps.attachment") },
+    { id: 5, label: t("requester.newTicket.steps.review") },
+    { id: 6, label: t("requester.newTicket.steps.confirmation") },
+  ];
+
   function getCategoryLabel(id: string): string {
-    return categories.find((category) => category.id === id)?.label ?? "Sin categoría";
+    return categories.find((category) => category.id === id)?.label ?? t("common.none");
   }
 
   function moveTo(nextStep: FormStep) {
@@ -132,7 +124,7 @@ export function NewTicketForm() {
 
   function continueFromCategory() {
     if (!categoryId) {
-      setError("Selecciona una categoría para continuar.");
+      setError(t("requester.newTicket.errorCategory"));
       return;
     }
     moveTo(3);
@@ -140,11 +132,11 @@ export function NewTicketForm() {
 
   function continueFromDescription() {
     if (description.trim().length < DESC_MIN) {
-      setError(`Describe la solicitud con al menos ${DESC_MIN} caracteres.`);
+      setError(t("requester.newTicket.errorDescription"));
       return;
     }
     if (description.length > DESC_MAX) {
-      setError(`La descripción no puede superar ${DESC_MAX} caracteres.`);
+      setError(t("errors.validation"));
       return;
     }
     moveTo(4);
@@ -165,7 +157,7 @@ export function NewTicketForm() {
 
     setSubmitting(false);
     if (!result.ok) {
-      setSubmitError(describeError(result.error));
+      setSubmitError(getErrorMessage(result.error, messages));
       return;
     }
     setCreatedTicketId(result.data.ticket.id);
@@ -195,27 +187,42 @@ export function NewTicketForm() {
   return (
     <div className="demo-request-flow">
       <section className="demo-request-heading" aria-labelledby="request-title">
-        <p className="demo-eyebrow">Nueva solicitud</p>
-        <h1 id="request-title">Cuéntanos qué necesitas.</h1>
-        <p>Completa seis pasos simples. DeskWork define la prioridad y la atención según el contexto.</p>
+        <p className="demo-eyebrow">{t("nav.newTicket")}</p>
+        <h1 id="request-title">{t("requester.newTicket.title")}</h1>
+        <p>{t("requester.newTicket.intro")}</p>
       </section>
 
-      <ol className="demo-request-progress" aria-label="Progreso de la solicitud">
+      <ol className="demo-request-progress" aria-label={t("requester.newTicket.title")}>
         {formSteps.map((formStep) => (
-          <li className={formStep.id === step ? "demo-request-progress-current" : formStep.id < step ? "demo-request-progress-complete" : ""} key={formStep.id}>
+          <li
+            className={
+              formStep.id === step
+                ? "demo-request-progress-current"
+                : formStep.id < step
+                  ? "demo-request-progress-complete"
+                  : ""
+            }
+            key={formStep.id}
+          >
             <span aria-hidden="true">{formStep.id}</span>
             <span>{formStep.label}</span>
           </li>
         ))}
       </ol>
 
-      <form className="demo-request-card" aria-labelledby="request-title" noValidate onKeyDown={handleKeyDown} onSubmit={handleSubmit}>
+      <form
+        className="demo-request-card"
+        aria-labelledby="request-title"
+        noValidate
+        onKeyDown={handleKeyDown}
+        onSubmit={handleSubmit}
+      >
         {step === 1 ? (
           <div className="demo-request-step">
             <div>
-              <p className="demo-section-label">Paso 1 de 6</p>
-              <h2 ref={stepHeadingRef} tabIndex={-1}>Confirma tu identificación</h2>
-              <p>Usaremos estos datos para asociar y dar seguimiento a tu solicitud.</p>
+              <p className="demo-section-label">{t("requester.newTicket.title")}</p>
+              <h2 ref={stepHeadingRef} tabIndex={-1}>{t("common.open")}</h2>
+              <p>{t("requester.newTicket.intro")}</p>
             </div>
             <dl className="demo-identity-card">
               <div><dt>Nombre</dt><dd>{requester?.name ?? "Valentina Morales"}</dd></div>
@@ -224,7 +231,7 @@ export function NewTicketForm() {
               <div><dt>Correo</dt><dd>{requester?.email ?? "valentina.morales@demo.deskwork.local"}</dd></div>
             </dl>
             <div className="demo-request-actions">
-              <button className="demo-primary-button" type="submit">Continuar</button>
+              <button className="demo-primary-button" type="submit">{t("common.open")}</button>
             </div>
           </div>
         ) : null}
@@ -232,15 +239,22 @@ export function NewTicketForm() {
         {step === 2 ? (
           <div className="demo-request-step">
             <div>
-              <p className="demo-section-label">Paso 2 de 6</p>
-              <h2 ref={stepHeadingRef} tabIndex={-1}>Elige una categoría</h2>
-              <p>Selecciona la opción que mejor describe tu necesidad. Podremos ajustarla durante la atención.</p>
+              <p className="demo-section-label">{t("requester.newTicket.stepCategory")}</p>
+              <h2 ref={stepHeadingRef} tabIndex={-1}>{t("requester.newTicket.categoryLabel")}</h2>
+              <p>{t("requester.newTicket.categoryPlaceholder")}</p>
             </div>
-            <fieldset className="demo-category-fieldset" aria-describedby={error ? "request-form-error" : undefined}>
-              <legend>Tipo de solicitud</legend>
+            <fieldset
+              className="demo-category-fieldset"
+              aria-describedby={error ? "request-form-error" : undefined}
+            >
+              <legend>{t("requester.newTicket.categoryLabel")}</legend>
               <div className="demo-category-grid">
                 {categories.map((category) => (
-                  <label className={`demo-category-option ${categoryId === category.id ? "demo-category-option-selected" : ""}`} htmlFor={`request-category-${category.id}`} key={category.id}>
+                  <label
+                    className={`demo-category-option ${categoryId === category.id ? "demo-category-option-selected" : ""}`}
+                    htmlFor={`request-category-${category.id}`}
+                    key={category.id}
+                  >
                     <input
                       checked={categoryId === category.id}
                       id={`request-category-${category.id}`}
@@ -260,8 +274,8 @@ export function NewTicketForm() {
             </fieldset>
             {error ? <p className="demo-form-error" id="request-form-error" role="alert">{error}</p> : null}
             <div className="demo-request-actions">
-              <button className="demo-secondary-button" type="button" onClick={() => moveTo(1)}>Volver</button>
-              <button className="demo-primary-button" type="submit">Continuar</button>
+              <button className="demo-secondary-button" type="button" onClick={() => moveTo(1)}>{t("common.back")}</button>
+              <button className="demo-primary-button" type="submit">{t("common.open")}</button>
             </div>
           </div>
         ) : null}
@@ -269,30 +283,32 @@ export function NewTicketForm() {
         {step === 3 ? (
           <div className="demo-request-step">
             <div>
-              <p className="demo-section-label">Paso 3 de 6</p>
-              <h2 ref={stepHeadingRef} tabIndex={-1}>Describe lo que ocurre</h2>
-              <p>Indica qué necesitas, qué estabas intentando hacer y cualquier detalle que ayude a resolverlo.</p>
+              <p className="demo-section-label">{t("requester.newTicket.stepDescription")}</p>
+              <h2 ref={stepHeadingRef} tabIndex={-1}>{t("requester.newTicket.descriptionLabel")}</h2>
+              <p>{t("requester.newTicket.descriptionPlaceholder")}</p>
             </div>
             <div className="demo-description-field">
-              <label htmlFor="request-description">Descripción de la solicitud</label>
+              <label htmlFor="request-description">{t("requester.newTicket.descriptionLabel")}</label>
               <textarea
                 id="request-description"
                 aria-describedby={error ? "request-description-hint request-form-error" : "request-description-hint"}
                 aria-invalid={Boolean(error)}
                 maxLength={DESC_MAX}
-                placeholder="Ejemplo: No puedo acceder a la carpeta compartida desde esta mañana."
+                placeholder={t("requester.newTicket.descriptionPlaceholder")}
                 value={description}
                 onChange={(event) => {
                   setDescription(event.target.value);
                   setError(undefined);
                 }}
               />
-              <p id="request-description-hint">{description.length}/{DESC_MAX} caracteres · No incluyas contraseñas ni datos sensibles.</p>
+              <p id="request-description-hint">
+                {description.length}/{DESC_MAX} {t("common.optional")}
+              </p>
             </div>
             {error ? <p className="demo-form-error" id="request-form-error" role="alert">{error}</p> : null}
             <div className="demo-request-actions">
-              <button className="demo-secondary-button" type="button" onClick={() => moveTo(2)}>Volver</button>
-              <button className="demo-primary-button" type="submit">Continuar</button>
+              <button className="demo-secondary-button" type="button" onClick={() => moveTo(2)}>{t("common.back")}</button>
+              <button className="demo-primary-button" type="submit">{t("common.open")}</button>
             </div>
           </div>
         ) : null}
@@ -300,24 +316,23 @@ export function NewTicketForm() {
         {step === 4 ? (
           <div className="demo-request-step">
             <div>
-              <p className="demo-section-label">Paso 4 de 6</p>
-              <h2 ref={stepHeadingRef} tabIndex={-1}>Adjunta una imagen si ayuda</h2>
-              <p>Es opcional. Una captura puede dar contexto, pero nunca incluyas contraseñas ni información confidencial.</p>
+              <p className="demo-section-label">{t("requester.newTicket.stepAttachment")}</p>
+              <h2 ref={stepHeadingRef} tabIndex={-1}>{t("requester.newTicket.attachmentLabel")}</h2>
+              <p>{t("requester.newTicket.attachmentHelper")}</p>
             </div>
             <div className="demo-attachment-field">
-              <label htmlFor="request-attachment">Seleccionar una imagen</label>
+              <label htmlFor="request-attachment">{t("requester.newTicket.attachmentLabel")}</label>
               <input
                 accept="image/*"
                 id="request-attachment"
                 type="file"
                 onChange={(event) => setAttachmentName(event.currentTarget.files?.[0]?.name)}
               />
-              <p>{attachmentName ? `Archivo seleccionado: ${attachmentName}` : "No has seleccionado ningún archivo."}</p>
-              <small>En esta versión los adjuntos se registrarán con metadata básica; la subida del binario a Storage se conectará en una iteración posterior.</small>
+              <p>{attachmentName ? attachmentName : t("common.none")}</p>
             </div>
             <div className="demo-request-actions">
-              <button className="demo-secondary-button" type="button" onClick={() => moveTo(3)}>Volver</button>
-              <button className="demo-primary-button" type="submit">Continuar</button>
+              <button className="demo-secondary-button" type="button" onClick={() => moveTo(3)}>{t("common.back")}</button>
+              <button className="demo-primary-button" type="submit">{t("common.open")}</button>
             </div>
           </div>
         ) : null}
@@ -325,20 +340,20 @@ export function NewTicketForm() {
         {step === 5 ? (
           <div className="demo-request-step">
             <div>
-              <p className="demo-section-label">Paso 5 de 6</p>
-              <h2 ref={stepHeadingRef} tabIndex={-1}>Revisa antes de enviar</h2>
-              <p>La prioridad, el técnico y el tiempo de atención los define DeskWork; no debes asignarlos manualmente.</p>
+              <p className="demo-section-label">{t("requester.newTicket.title")}</p>
+              <h2 ref={stepHeadingRef} tabIndex={-1}>{t("requester.newTicket.submit")}</h2>
             </div>
             <dl className="demo-request-review">
-              <div><dt>Solicitante</dt><dd>{requester?.name ?? "Valentina Morales"}</dd></div>
-              <div><dt>Categoría</dt><dd>{getCategoryLabel(categoryId)}</dd></div>
-              <div><dt>Descripción</dt><dd>{description}</dd></div>
-              <div><dt>Adjunto</dt><dd>{attachmentName ?? "Sin archivo"}</dd></div>
+              <div><dt>{t("requester.newTicket.categoryLabel")}</dt><dd>{getCategoryLabel(categoryId)}</dd></div>
+              <div><dt>{t("requester.newTicket.descriptionLabel")}</dt><dd>{description}</dd></div>
+              <div><dt>{t("requester.newTicket.attachmentLabel")}</dt><dd>{attachmentName ?? t("common.none")}</dd></div>
             </dl>
             {submitError ? <p className="demo-form-error" role="alert">{submitError}</p> : null}
             <div className="demo-request-actions">
-              <button className="demo-secondary-button" type="button" onClick={() => moveTo(4)} disabled={submitting}>Volver</button>
-              <button className="demo-primary-button" type="submit" disabled={submitting}>{submitting ? "Enviando…" : "Enviar solicitud"}</button>
+              <button className="demo-secondary-button" type="button" onClick={() => moveTo(4)} disabled={submitting}>{t("common.back")}</button>
+              <button className="demo-primary-button" type="submit" disabled={submitting}>
+                {submitting ? t("requester.newTicket.sending") : t("requester.newTicket.submit")}
+              </button>
             </div>
           </div>
         ) : null}
@@ -346,41 +361,22 @@ export function NewTicketForm() {
         {step === 6 ? (
           <div className="demo-request-step demo-request-confirmation">
             <div>
-              <p className="demo-section-label">Paso 6 de 6</p>
-              <h2 ref={stepHeadingRef} tabIndex={-1}>Solicitud registrada en DeskWork</h2>
-              <p>Identificador real: <strong>{createdTicketId}</strong>. La solicitud ya está visible para tu equipo técnico.</p>
+              <p className="demo-section-label">{t("requester.newTicket.title")}</p>
+              <h2 ref={stepHeadingRef} tabIndex={-1}>{t("requester.newTicket.created")}</h2>
+              <p><strong>{createdTicketId}</strong></p>
             </div>
             <div className="demo-confirmation-note">
-              <p>Esta acción persistió en Supabase real mediante <code>POST /api/tickets</code> y disparó el evento <code>created</code> en el outbox de notificaciones.</p>
+              <p>{t("requester.newTicket.created")}</p>
             </div>
-            {createdTicketId ? <div className="demo-request-actions"><Link className="demo-secondary-link" href="/tickets">Ver mi historial</Link><Link className="demo-primary-link" href={`/tickets/${createdTicketId}`}>Abrir ticket</Link></div> : null}
+            {createdTicketId ? (
+              <div className="demo-request-actions">
+                <Link className="demo-secondary-link" href="/tickets">{t("requester.history.title")}</Link>
+                <Link className="demo-primary-link" href={`/tickets/${createdTicketId}`}>{t("requester.history.openTicket")}</Link>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </form>
     </div>
   );
-}
-
-function describeError(error: import("@/modules/ticketing/client-api").ClientApiError): string {
-  switch (error.kind) {
-    case "forbidden":
-      return `No autorizado: ${error.reason}. Si ves este mensaje, iniciá sesión con un usuario que pertenezca a un tenant activo.`;
-    case "not_found":
-      return `Recurso no encontrado: ${error.reason}.`;
-    case "validation":
-      return `Datos inválidos: ${error.reason}.`;
-    case "conflict":
-      return `Conflicto: ${error.reason}.`;
-    case "network":
-      return `No se pudo conectar con el backend (${error.reason}). Reintentá en unos segundos.`;
-    case "http":
-      return `Error HTTP ${error.status}: ${error.reason}.`;
-    case "unknown":
-      return `Error desconocido: ${error.reason}.`;
-    default: {
-      const exhaustiveCheck: never = error;
-      void exhaustiveCheck;
-      return "Error desconocido.";
-    }
-  }
 }

@@ -7,25 +7,16 @@ import {
   uploadAttachment,
 } from "@/modules/ticketing/client-api";
 import type { TicketAttachment } from "@/modules/ticketing/repository";
+import {
+  formatBytes,
+  formatDateTime,
+  getErrorMessage,
+  useI18n,
+  type Locale,
+} from "@/i18n";
 
 const MAX_SIZE = 26_214_400; // 25 MB; mismo límite que el CHECK del schema.
 const ALLOWED_MIME = /^(image\/(png|jpe?g|gif|webp|svg\+xml)|application\/pdf|text\/plain)$/i;
-
-function formatBytes(value: number): string {
-  if (value < 1024) return `${value} B`;
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Santiago",
-  }).format(new Date(value));
-}
 
 type AttachmentsPhase =
   | { kind: "loading" }
@@ -43,6 +34,7 @@ interface AttachmentsListProps {
 }
 
 export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
+  const { t, locale, messages } = useI18n();
   const [phase, setPhase] = useState<AttachmentsPhase>({ kind: "loading" });
   const [upload, setUpload] = useState<UploadState>({ kind: "idle" });
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -57,7 +49,7 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
       if (!result.ok) {
         setPhase({
           kind: "error",
-          reason: result.error.reason ?? "Error al cargar adjuntos.",
+          reason: getErrorMessage(result.error, messages),
         });
         return;
       }
@@ -66,20 +58,20 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
     return () => {
       cancelled = true;
     };
-  }, [ticketId]);
+  }, [ticketId, messages]);
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.size <= 0) {
-      setUpload({ kind: "error", reason: "El archivo está vacío." });
+      setUpload({ kind: "error", reason: t("attachments.errorEmpty") });
       event.target.value = "";
       return;
     }
     if (file.size > MAX_SIZE) {
       setUpload({
         kind: "error",
-        reason: `Archivo demasiado grande (${formatBytes(file.size)} > 25 MB).`,
+        reason: t("attachments.errorTooLarge").replace("{size}", formatBytes(file.size, locale as Locale)),
       });
       event.target.value = "";
       return;
@@ -87,7 +79,7 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
     if (file.type && !ALLOWED_MIME.test(file.type)) {
       setUpload({
         kind: "error",
-        reason: `Tipo no permitido: ${file.type}. Permitidos: imagen, PDF, texto.`,
+        reason: t("attachments.errorType").replace("{type}", file.type),
       });
       event.target.value = "";
       return;
@@ -108,18 +100,15 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
     } else {
       setUpload({
         kind: "error",
-        reason: result.error.reason ?? "Error al subir el archivo.",
+        reason: getErrorMessage(result.error, messages),
       });
     }
-    // Reset input para permitir re-subir el mismo archivo después.
     event.target.value = "";
   }
 
   async function handleDownload(att: TicketAttachment) {
     if (!att.storagePath) {
-      setDownloadError(
-        "Este adjunto es solo metadata (legacy). Sube el archivo nuevamente.",
-      );
+      setDownloadError(t("attachments.errorLegacy"));
       return;
     }
     setDownloadError(null);
@@ -127,30 +116,26 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
     const result = await getAttachmentUrl(ticketId, att.id, 300);
     setDownloadingId(null);
     if (!result.ok) {
-      setDownloadError(result.error.reason ?? "No se pudo generar la URL de descarga.");
+      setDownloadError(getErrorMessage(result.error, messages));
       return;
     }
-    // Abrir en nueva pestaña; el browser gatilla la descarga por el header
-    // Content-Disposition que Supabase Storage agrega.
     window.open(result.data.url, "_blank", "noopener,noreferrer");
   }
 
   if (phase.kind === "loading") {
     return (
-      <section className="demo-ticket-history-card" aria-label="Adjuntos">
-        <p className="demo-section-label">Adjuntos</p>
-        <p>Cargando…</p>
+      <section className="demo-ticket-history-card" aria-label={t("attachments.title")}>
+        <p className="demo-section-label">{t("attachments.title")}</p>
+        <p>{t("common.loading")}</p>
       </section>
     );
   }
 
   if (phase.kind === "error") {
     return (
-      <section className="demo-ticket-history-card" aria-label="Adjuntos">
-        <p className="demo-section-label">Adjuntos</p>
-        <p className="demo-form-error" role="alert">
-          No pudimos cargar los adjuntos: {phase.reason}
-        </p>
+      <section className="demo-ticket-history-card" aria-label={t("attachments.title")}>
+        <p className="demo-section-label">{t("attachments.title")}</p>
+        <p className="demo-form-error" role="alert">{phase.reason}</p>
       </section>
     );
   }
@@ -162,10 +147,10 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
     <section className="demo-ticket-history-card" aria-labelledby="ticket-attachments-title">
       <div className="demo-ticket-history-heading">
         <div>
-          <p className="demo-section-label">Adjuntos</p>
-          <h2 id="ticket-attachments-title">Archivos del ticket</h2>
+          <p className="demo-section-label">{t("attachments.title")}</p>
+          <h2 id="ticket-attachments-title">{t("attachments.title")}</h2>
         </div>
-        <span>{attachments.length} archivos</span>
+        <span>{t("attachments.count").replace("{count}", String(attachments.length))}</span>
       </div>
 
       {attachments.length ? (
@@ -177,11 +162,11 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
                 <p>
                   <strong>{att.originalName}</strong>{" "}
                   <small>
-                    ({att.mimeType}, {formatBytes(att.sizeBytes)})
+                    ({att.mimeType}, {formatBytes(att.sizeBytes, locale as Locale)})
                   </small>
                 </p>
                 <time dateTime={att.createdAt}>
-                  {formatDate(att.createdAt)} · {att.uploadedBy.slice(0, 8)}…
+                  {formatDateTime(att.createdAt, locale)} · {att.uploadedBy.slice(0, 8)}…
                   {att.storagePath ? ` · ${att.storagePath}` : ""}
                 </time>
                 <div className="demo-request-actions" style={{ marginTop: 8 }}>
@@ -192,13 +177,13 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
                       void handleDownload(att);
                     }}
                     disabled={downloadingId === att.id || !att.storagePath}
-                    aria-label={`Descargar ${att.originalName}`}
+                    aria-label={t("attachments.downloadAria").replace("{name}", att.originalName)}
                   >
                     {downloadingId === att.id
-                      ? "Generando URL…"
+                      ? t("attachments.downloading")
                       : att.storagePath
-                        ? "Descargar"
-                        : "Sin archivo"}
+                        ? t("common.open")
+                        : t("attachments.noFile")}
                   </button>
                 </div>
               </div>
@@ -206,7 +191,7 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
           ))}
         </ol>
       ) : (
-        <div className="demo-ticket-history-empty">Aún no hay adjuntos.</div>
+        <div className="demo-ticket-history-empty">{t("attachments.empty")}</div>
       )}
 
       {downloadError ? (
@@ -215,12 +200,9 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
         </p>
       ) : null}
 
-      <div className="demo-comment-form" aria-label="Subir archivo al ticket">
-        <p className="demo-comment-note">
-          Sube un archivo real al ticket (imagen, PDF o texto). El binario se
-          almacena en Storage privado; la descarga se hace por URL temporal.
-        </p>
-        <label htmlFor="att-file">Seleccionar archivo</label>
+      <div className="demo-comment-form" aria-label={t("attachments.pickFile")}>
+        <p className="demo-comment-note">{t("attachments.storageLabel")}</p>
+        <label htmlFor="att-file">{t("attachments.pickFile")}</label>
         <input
           ref={fileInputRef}
           id="att-file"
@@ -232,7 +214,9 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
           disabled={isUploading}
         />
         {upload.kind === "uploading" ? (
-          <p className="demo-comment-note">Subiendo {upload.fileName}…</p>
+          <p className="demo-comment-note">
+            {t("attachments.uploading").replace("{name}", upload.fileName)}
+          </p>
         ) : null}
         {upload.kind === "error" ? (
           <p className="demo-form-error" role="alert">
@@ -241,8 +225,8 @@ export function AttachmentsList({ ticketId, tenantId }: AttachmentsListProps) {
         ) : null}
       </div>
 
-      <p className="demo-comment-note" aria-label="Tenant del adjunto">
-        Tenant: <code>{tenantId}</code>
+      <p className="demo-comment-note" aria-label={t("attachments.tenantLabel")}>
+        {t("attachments.tenantLabel")}: <code>{tenantId}</code>
       </p>
     </section>
   );

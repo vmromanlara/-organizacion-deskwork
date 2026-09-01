@@ -3,49 +3,50 @@
 import { useEffect, useState } from "react";
 import { getTicketKpis } from "@/modules/ticketing/client-api";
 import type { KpisResponse } from "@/modules/ticketing/client-api";
+import {
+  formatMinutes,
+  formatPercent,
+  formatTime,
+  getErrorMessage,
+  getStateLabel,
+  getPriorityLabel,
+  useI18n,
+  type Locale,
+} from "@/i18n";
 
 type VisualTone = "info" | "warning" | "danger" | "success" | "neutral";
 
-const STATE_META: Record<
-  string,
-  { label: string; visualTone: VisualTone; order: number }
-> = {
-  ABIERTO: { label: "Abierto", visualTone: "info", order: 1 },
-  EN_PROCESO: { label: "En proceso", visualTone: "warning", order: 2 },
-  ESPERANDO_USUARIO: {
-    label: "Esperando usuario",
-    visualTone: "warning",
-    order: 3,
-  },
-  ESCALADO: { label: "Escalado", visualTone: "danger", order: 4 },
-  RESUELTO: { label: "Resuelto", visualTone: "success", order: 5 },
-  CERRADO: { label: "Cerrado", visualTone: "neutral", order: 6 },
+const STATE_TONES: Record<string, VisualTone> = {
+  ABIERTO: "info",
+  EN_PROCESO: "warning",
+  ESPERANDO_USUARIO: "warning",
+  ESCALADO: "danger",
+  RESUELTO: "success",
+  CERRADO: "neutral",
 };
 
-const PRIORITY_META: Record<
-  string,
-  { label: string; visualTone: VisualTone; order: number }
-> = {
-  P1: { label: "Crítica", visualTone: "danger", order: 1 },
-  P2: { label: "Alta", visualTone: "warning", order: 2 },
-  P3: { label: "Normal", visualTone: "info", order: 3 },
-  P4: { label: "Baja", visualTone: "success", order: 4 },
+const STATE_ORDER: Record<string, number> = {
+  ABIERTO: 1,
+  EN_PROCESO: 2,
+  ESPERANDO_USUARIO: 3,
+  ESCALADO: 4,
+  RESUELTO: 5,
+  CERRADO: 6,
 };
 
-function formatPercent(value: number): string {
-  if (!Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("es-CL", {
-    style: "percent",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+const PRIORITY_TONES: Record<string, VisualTone> = {
+  P1: "danger",
+  P2: "warning",
+  P3: "info",
+  P4: "success",
+};
 
-function formatMinutes(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "—";
-  const minutes = Math.round(value);
-  if (minutes < 60) return `${minutes} min`;
-  return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
-}
+const PRIORITY_ORDER: Record<string, number> = {
+  P1: 1,
+  P2: 2,
+  P3: 3,
+  P4: 4,
+};
 
 function formatShortDate(iso: string): string {
   // Espera "YYYY-MM-DD".
@@ -62,11 +63,11 @@ type KpiPhase =
 const DEFAULT_PERIOD_DAYS = 30;
 
 export function SupervisorDashboard() {
+  const { t, locale, messages } = useI18n();
   const [phase, setPhase] = useState<KpiPhase>({ kind: "loading" });
   const [periodDays] = useState<number>(DEFAULT_PERIOD_DAYS);
   const [refreshTick, setRefreshTick] = useState(0);
 
-  // Carga inicial: NO preservamos estado previo (mostrar loading).
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -75,7 +76,7 @@ export function SupervisorDashboard() {
       if (!result.ok) {
         setPhase({
           kind: "error",
-          reason: result.error.reason ?? "Error al cargar KPIs.",
+          reason: getErrorMessage(result.error, messages),
         });
         return;
       }
@@ -91,7 +92,6 @@ export function SupervisorDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Refresh manual: preservamos los datos visibles.
   useEffect(() => {
     if (refreshTick === 0) return;
     let cancelled = false;
@@ -101,7 +101,7 @@ export function SupervisorDashboard() {
       if (!result.ok) {
         setPhase({
           kind: "error",
-          reason: result.error.reason ?? "Error al actualizar KPIs.",
+          reason: getErrorMessage(result.error, messages),
         });
         return;
       }
@@ -114,20 +114,20 @@ export function SupervisorDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [refreshTick, periodDays]);
+  }, [refreshTick, periodDays, messages]);
 
   if (phase.kind === "loading") {
     return (
       <div className="demo-supervisor-page">
         <section className="demo-dashboard-hero">
           <div>
-            <p className="demo-eyebrow">Supervisión</p>
-            <h1>Servicio en perspectiva</h1>
-            <p>Resumen de operación del área a partir de tickets reales.</p>
+            <p className="demo-eyebrow">{t("nav.supervisor")}</p>
+            <h1>{t("supervisor.title")}</h1>
+            <p>{t("supervisor.intro")}</p>
           </div>
-          <span className="demo-local-badge">Cargando KPIs reales…</span>
+          <span className="demo-local-badge">{t("supervisor.badgeLoading")}</span>
         </section>
-        <p className="demo-comment-note">Calculando indicadores desde la base de datos…</p>
+        <p className="demo-comment-note">{t("supervisor.badgeLoading")}</p>
       </div>
     );
   }
@@ -137,17 +137,17 @@ export function SupervisorDashboard() {
       <div className="demo-supervisor-page">
         <section className="demo-dashboard-hero">
           <div>
-            <p className="demo-eyebrow">Supervisión</p>
-            <h1>Servicio en perspectiva</h1>
+            <p className="demo-eyebrow">{t("nav.supervisor")}</p>
+            <h1>{t("supervisor.title")}</h1>
           </div>
-          <span className="demo-local-badge">Error</span>
+          <span className="demo-local-badge">{t("supervisor.badgeError")}</span>
         </section>
         <div
           className="demo-form-error"
           role="alert"
           style={{ maxWidth: 480, margin: "1rem auto" }}
         >
-          No pudimos cargar los KPIs: {phase.reason}
+          {phase.reason}
         </div>
         <div
           className="demo-request-actions"
@@ -160,7 +160,7 @@ export function SupervisorDashboard() {
               setRefreshTick((tick) => tick + 1);
             }}
           >
-            Reintentar
+            {t("supervisor.errorRetry")}
           </button>
         </div>
       </div>
@@ -171,103 +171,111 @@ export function SupervisorDashboard() {
   const stateList = data.totals.byState
     .map((entry) => ({
       code: entry.state,
-      label: STATE_META[entry.state]?.label ?? entry.state,
-      visualTone: (STATE_META[entry.state]?.visualTone ?? "neutral") as VisualTone,
+      label: getStateLabel(entry.state, locale as Locale),
+      visualTone: (STATE_TONES[entry.state] ?? "neutral") as VisualTone,
       count: entry.count,
-      order: STATE_META[entry.state]?.order ?? 99,
+      order: STATE_ORDER[entry.state] ?? 99,
     }))
     .sort((a, b) => a.order - b.order);
 
   const priorityList = data.totals.byPriority
     .map((entry) => ({
       code: entry.priority,
-      label: PRIORITY_META[entry.priority]?.label ?? entry.priority,
-      visualTone: (PRIORITY_META[entry.priority]?.visualTone ??
-        "neutral") as VisualTone,
+      label: getPriorityLabel(entry.priority, locale as Locale),
+      visualTone: (PRIORITY_TONES[entry.priority] ?? "neutral") as VisualTone,
       count: entry.count,
-      order: PRIORITY_META[entry.priority]?.order ?? 99,
+      order: PRIORITY_ORDER[entry.priority] ?? 99,
     }))
     .sort((a, b) => a.order - b.order);
 
-  // Total (incluye CERRADO y RESUELTO) para los porcentajes de la UI.
   const totalTickets = Math.max(data.totals.total, 1);
-  // Para los graficos de distribucion mostramos solo tickets "abiertos" (no terminales).
   const activeTotal = Math.max(data.totals.active, 1);
   const maxDaily = Math.max(
     1,
     ...data.dailyTrend.map((entry) => entry.created),
   );
 
-  // SLA: derivado operacional, NO contractual (TKT-008 bloqueado).
-  // Calculo simple: % de tickets activos que estan asignados.
   const assignedShare = data.totals.unassigned > 0
     ? (data.totals.active - data.totals.unassigned) / data.totals.active
     : 1;
 
-  const periodStart = data.period.start
-    ? formatShortDate(data.period.start)
-    : "—";
+  const periodStart = data.period.start ? formatShortDate(data.period.start) : "—";
   const periodEnd = data.period.end ? formatShortDate(data.period.end) : "—";
 
-  const refreshedAt = new Intl.DateTimeFormat("es-CL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Santiago",
-  }).format(new Date(phase.refreshedAt));
+  const refreshedAt = formatTime(phase.refreshedAt, locale as Locale);
+  const dailyTotal = data.dailyTrend.reduce((sum, p) => sum + p.created, 0);
 
   return (
     <div className="demo-supervisor-page">
       <section className="demo-dashboard-hero" aria-labelledby="supervisor-title">
         <div>
-          <p className="demo-eyebrow">Supervisión</p>
-          <h1 id="supervisor-title">Servicio en perspectiva</h1>
-          <p>Resumen de operación del área a partir de tickets reales.</p>
+          <p className="demo-eyebrow">{t("nav.supervisor")}</p>
+          <h1 id="supervisor-title">{t("supervisor.title")}</h1>
+          <p>{t("supervisor.intro")}</p>
         </div>
         <span
           className="demo-local-badge"
-          title={`Actualizado a las ${refreshedAt} (America/Santiago)`}
+          title={refreshedAt}
         >
-          Datos reales · {periodStart} — {periodEnd} · {refreshedAt}
+          {t("supervisor.periodBadge")
+            .replace("{start}", periodStart)
+            .replace("{end}", periodEnd)
+            .replace("{time}", refreshedAt)}
         </span>
       </section>
 
-      <section className="demo-summary-grid" aria-label="Indicadores clave">
+      <section className="demo-summary-grid" aria-label={t("supervisor.title")}>
         <article className="demo-summary-card">
-          <p>Tickets en el período</p>
+          <p>{t("supervisor.kpis.totalTitle")}</p>
           <strong>{data.totals.total}</strong>
           <span>
-            Creados en los últimos {data.period.days} días
-            {" "}
-            ({(data.dailyTrend.reduce((sum, p) => sum + p.created, 0))} según tendencia diaria)
+            {t("supervisor.kpis.totalSpan")
+              .replace("{days}", String(data.period.days))
+              .replace("{trend}", String(dailyTotal))}
           </span>
         </article>
         <article className="demo-summary-card demo-summary-card-emphasis">
-          <p>Asignación activa</p>
-          <strong>{formatPercent(assignedShare)}</strong>
+          <p>{t("supervisor.kpis.assignmentTitle")}</p>
+          <strong>{formatPercent(assignedShare, locale as Locale)}</strong>
           <span>
-            {data.totals.active - data.totals.unassigned}/{data.totals.active}{" "}
-            tickets activos asignados ·{" "}
-            <em>operacional, no SLA contractual</em>
+            {t("supervisor.kpis.assignmentSpan")
+              .replace("{assigned}", String(data.totals.active - data.totals.unassigned))
+              .replace("{active}", String(data.totals.active))
+              .replace(
+                "{operational}",
+                t("supervisor.kpis.assignmentOperational"),
+              )}
           </span>
         </article>
         <article className="demo-summary-card">
-          <p>Primera respuesta (prom.)</p>
+          <p>{t("supervisor.kpis.firstResponseTitle")}</p>
           <strong>
-            {formatMinutes(data.operationalAverages.firstResponseMinutes)}
+            {formatMinutes(
+              data.operationalAverages.firstResponseMinutes,
+              locale as Locale,
+              messages.time,
+            )}
           </strong>
           <span>
-            {data.operationalAverages.firstResponseCount} tickets con respuesta
-            registrada
+            {t("supervisor.kpis.firstResponseSpan").replace(
+              "{count}",
+              String(data.operationalAverages.firstResponseCount),
+            )}
           </span>
         </article>
         <article className="demo-summary-card">
-          <p>Resolución (prom.)</p>
+          <p>{t("supervisor.kpis.resolutionTitle")}</p>
           <strong>
-            {formatMinutes(data.operationalAverages.resolutionMinutes)}
+            {formatMinutes(
+              data.operationalAverages.resolutionMinutes,
+              locale as Locale,
+              messages.time,
+            )}
           </strong>
           <span>
-            {data.operationalAverages.resolvedCount} tickets resueltos ·{" "}
-            <em>operacional, no SLA contractual</em>
+            {t("supervisor.kpis.resolutionSpan")
+              .replace("{count}", String(data.operationalAverages.resolvedCount))
+              .replace("{operational}", t("supervisor.kpis.assignmentOperational"))}
           </span>
         </article>
       </section>
@@ -276,16 +284,19 @@ export function SupervisorDashboard() {
         <article className="demo-supervisor-card">
           <div className="demo-card-heading">
             <div>
-              <p className="demo-section-label">Flujo</p>
-              <h2>Solicitudes por estado</h2>
+              <p className="demo-section-label">{t("nav.sectionOperations")}</p>
+              <h2>{t("supervisor.byState.title")}</h2>
             </div>
-            <span>{data.totals.total} totales</span>
+            <span>
+              {t("supervisor.byState.total").replace(
+                "{count}",
+                String(data.totals.total),
+              )}
+            </span>
           </div>
           <div className="demo-distribution-list">
             {stateList.length === 0 ? (
-              <p className="demo-comment-note">
-                Sin tickets registrados todavía.
-              </p>
+              <p className="demo-comment-note">{t("supervisor.empty")}</p>
             ) : (
               stateList.map((state) => (
                 <div key={state.code}>
@@ -314,22 +325,19 @@ export function SupervisorDashboard() {
         <article className="demo-supervisor-card">
           <div className="demo-card-heading">
             <div>
-              <p className="demo-section-label">Prioridad</p>
-              <h2>Distribución actual</h2>
+              <p className="demo-section-label">{t("requester.detail.priorityLabel")}</p>
+              <h2>{t("supervisor.byPriority.title")}</h2>
             </div>
             <span>
-              {
-                priorityList.find((priority) => priority.code === "P1")
-                  ?.count ?? 0
-              }{" "}
-              críticas
+              {t("supervisor.byPriority.critical").replace(
+                "{count}",
+                String(priorityList.find((p) => p.code === "P1")?.count ?? 0),
+              )}
             </span>
           </div>
           <div className="demo-distribution-list">
             {priorityList.length === 0 ? (
-              <p className="demo-comment-note">
-                Sin tickets registrados todavía.
-              </p>
+              <p className="demo-comment-note">{t("supervisor.empty")}</p>
             ) : (
               priorityList.map((priority) => (
                 <div key={priority.code}>
@@ -358,8 +366,8 @@ export function SupervisorDashboard() {
       <section className="demo-supervisor-card demo-trend-card">
         <div className="demo-card-heading">
           <div>
-            <p className="demo-section-label">Tendencia</p>
-            <h2>Solicitudes creadas</h2>
+            <p className="demo-section-label">{t("supervisor.trend.title")}</p>
+            <h2>{t("supervisor.trend.title")}</h2>
           </div>
           <span>
             {periodStart} — {periodEnd}
@@ -367,15 +375,20 @@ export function SupervisorDashboard() {
         </div>
         <div
           className="demo-trend-bars"
-          aria-label={`Serie diaria de tickets creados (últimos ${data.period.days} días)`}
+          aria-label={t("supervisor.trend.ariaLabel").replace(
+            "{days}",
+            String(data.period.days),
+          )}
         >
           {data.dailyTrend.length === 0 ? (
-            <p className="demo-comment-note">Sin actividad en el período.</p>
+            <p className="demo-comment-note">{t("supervisor.trend.noActivity")}</p>
           ) : (
             data.dailyTrend.map((entry) => (
               <span
                 key={entry.date}
-                title={`${entry.date}: ${entry.created} ticket(s) creado(s)`}
+                title={t("supervisor.trend.tooltip")
+                  .replace("{date}", entry.date)
+                  .replace("{count}", String(entry.created))}
                 style={{
                   height: `${(entry.created / maxDaily) * 100}%`,
                 }}
@@ -398,13 +411,13 @@ export function SupervisorDashboard() {
               setRefreshTick((tick) => tick + 1);
             }}
           >
-            Actualizar
+            {t("common.refresh")}
           </button>
         </div>
         <p className="demo-comment-note">
-          Promedios derivados de <code>first_response_at</code> y{" "}
-          <code>resolved_at</code> — no contractual. TKT-008 (SLA) pendiente
-          de decisión PO.
+          {t("supervisor.disclaimer")
+            .replace("{firstResponseField}", "first_response_at")
+            .replace("{resolvedField}", "resolved_at")}
         </p>
       </section>
     </div>

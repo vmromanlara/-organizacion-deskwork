@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { LocaleSwitcher, useI18n } from "@/i18n";
 
 type DemoShellProps = {
   children: ReactNode;
@@ -10,17 +11,23 @@ type DemoShellProps = {
 
 type NavigationItem = {
   href: string;
-  label: string;
-  section?: "Solicitudes" | "Operación";
+  labelKey:
+    | "nav.dashboard"
+    | "nav.newTicket"
+    | "nav.history"
+    | "nav.techDashboard"
+    | "nav.techQueue"
+    | "nav.supervisor";
+  sectionKey?: "nav.sectionRequests" | "nav.sectionOperations";
 };
 
 const navigationItems: readonly NavigationItem[] = [
-  { href: "/dashboard", label: "Mi panel", section: "Solicitudes" },
-  { href: "/tickets/new", label: "Crear solicitud" },
-  { href: "/tickets", label: "Mi historial" },
-  { href: "/tech", label: "Panel técnico", section: "Operación" },
-  { href: "/tech/tickets", label: "Cola de trabajo" },
-  { href: "/supervisor", label: "Vista supervisión" },
+  { href: "/dashboard", labelKey: "nav.dashboard", sectionKey: "nav.sectionRequests" },
+  { href: "/tickets/new", labelKey: "nav.newTicket" },
+  { href: "/tickets", labelKey: "nav.history" },
+  { href: "/tech", labelKey: "nav.techDashboard", sectionKey: "nav.sectionOperations" },
+  { href: "/tech/tickets", labelKey: "nav.techQueue" },
+  { href: "/supervisor", labelKey: "nav.supervisor" },
 ];
 
 function DeskWorkMark() {
@@ -60,6 +67,7 @@ function MenuGlyph({ open }: { open: boolean }) {
 export function DemoShell({ children }: DemoShellProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const { t, locale } = useI18n();
 
   return (
     <div className="demo-app-shell">
@@ -68,7 +76,7 @@ export function DemoShell({ children }: DemoShellProps) {
           <button
             className="demo-menu-button"
             type="button"
-            aria-label={isSidebarOpen ? "Cerrar navegación" : "Abrir navegación"}
+            aria-label={isSidebarOpen ? t("shell.menuClose") : t("shell.menuOpen")}
             aria-expanded={isSidebarOpen}
             aria-controls="demo-sidebar"
             onClick={() => setSidebarOpen((open) => !open)}
@@ -77,14 +85,15 @@ export function DemoShell({ children }: DemoShellProps) {
           </button>
           <Link className="demo-brand" href="/dashboard" onClick={() => setSidebarOpen(false)}>
             <DeskWorkMark />
-            <span>DeskWork</span>
+            <span>{t("shell.brand")}</span>
           </Link>
           <span className="demo-header-divider" aria-hidden="true" />
-          <span className="demo-header-context">Maqueta operativa</span>
+          <span className="demo-header-context">{t("shell.contextBadge")}</span>
         </div>
         <div className="demo-header-trailing">
-          <span className="demo-local-badge">Local</span>
-          <span className="demo-user-avatar" aria-label="Usuario de demostración">D</span>
+          <LocaleSwitcher />
+          <span className="demo-local-badge" aria-hidden="true">{locale.toUpperCase()}</span>
+          <span className="demo-user-avatar" aria-label={t("shell.environmentLabel")}>D</span>
         </div>
       </header>
 
@@ -93,15 +102,19 @@ export function DemoShell({ children }: DemoShellProps) {
           className={`demo-sidebar ${isSidebarOpen ? "demo-sidebar-open" : ""}`}
           id="demo-sidebar"
         >
-          <nav className="demo-navigation" aria-label="Navegación de la maqueta">
+          <nav className="demo-navigation" aria-label={t("shell.sidebarAria")}>
             {navigationItems.map((item, index) => {
               const isActive = pathname === item.href;
               const previousItem = navigationItems[index - 1];
-              const showSection = item.section && (!previousItem || previousItem.section !== item.section);
+              const showSection =
+                item.sectionKey &&
+                (!previousItem || previousItem.sectionKey !== item.sectionKey);
 
               return (
                 <div className="demo-navigation-entry" key={item.href}>
-                  {showSection ? <p className="demo-navigation-section">{item.section}</p> : null}
+                  {showSection ? (
+                    <p className="demo-navigation-section">{t(item.sectionKey!)}</p>
+                  ) : null}
                   <Link
                     className={`demo-navigation-link ${isActive ? "demo-navigation-link-active" : ""}`}
                     href={item.href}
@@ -109,7 +122,7 @@ export function DemoShell({ children }: DemoShellProps) {
                     onClick={() => setSidebarOpen(false)}
                   >
                     <span className="demo-navigation-dot" aria-hidden="true" />
-                    {item.label}
+                    {t(item.labelKey)}
                   </Link>
                 </div>
               );
@@ -117,8 +130,8 @@ export function DemoShell({ children }: DemoShellProps) {
           </nav>
 
           <div className="demo-sidebar-note">
-            <span className="demo-sidebar-note-label">Entorno de demo</span>
-            <p>Interacción local. No usa datos ni servicios de Foundation.</p>
+            <span className="demo-sidebar-note-label">{t("shell.environmentLabel")}</span>
+            <p>{t("shell.environmentBody")}</p>
           </div>
         </aside>
 
@@ -126,7 +139,7 @@ export function DemoShell({ children }: DemoShellProps) {
           <button
             className="demo-sidebar-scrim"
             type="button"
-            aria-label="Cerrar menú lateral"
+            aria-label={t("shell.sidebarScrimClose")}
             onClick={() => setSidebarOpen(false)}
           />
         ) : null}
@@ -134,8 +147,8 @@ export function DemoShell({ children }: DemoShellProps) {
         <main className="demo-main" id="contenido-principal">
           {children}
           <footer className="demo-footer">
-            <span>DeskWork · maqueta operativa</span>
-            <span>UI local · sin conexión a Foundation</span>
+            <span>{t("shell.footerLeft")}</span>
+            <span>{t("shell.footerRight")}</span>
           </footer>
         </main>
       </div>

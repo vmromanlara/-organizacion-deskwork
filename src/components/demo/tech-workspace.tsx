@@ -18,16 +18,21 @@ import {
 import type { ClientApiError } from "@/modules/ticketing/client-api";
 import type { Ticket, TicketCategory } from "@/modules/ticketing/repository";
 import type { TicketState, TicketPriority } from "@/modules/ticketing/types";
+import {
+  formatDateShort,
+  formatMinutes,
+  getErrorMessage,
+  getStateLabel,
+  useI18n,
+} from "@/i18n";
 
-function durationFromMs(ms: number): string {
+function durationFromMs(ms: number, locale: "es" | "en", messages: { empty: string; hoursMinutes: string; minutesShort: string }): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  return hours ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
-
-function getStateLabel(state: TicketState): string {
-  return mockTicketStates.find((s) => s.code === state)?.label ?? state;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  if (totalMinutes < 1) {
+    return messages.minutesShort.replace("{n}", "0");
+  }
+  return formatMinutes(totalMinutes, locale, messages);
 }
 
 function getStateTone(state: TicketState): string {
@@ -39,6 +44,7 @@ function getPriorityTone(priority: TicketPriority): string {
 }
 
 export function LiveTimer({ ticket, compact = false }: { ticket: Ticket; compact?: boolean }) {
+  const { locale, messages } = useI18n();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
@@ -51,8 +57,8 @@ export function LiveTimer({ ticket, compact = false }: { ticket: Ticket; compact
         <circle cx="12" cy="12" r="8.5" />
         <path d="M12 7.5v5l3.25 2" />
       </svg>
-      {durationFromMs(now - created)}
-      {!compact ? <small> total · tenant {ticket.tenantId.slice(0, 8)}…</small> : null}
+      {durationFromMs(now - created, locale, messages.time)}
+      {!compact ? <small> · tenant {ticket.tenantId.slice(0, 8)}…</small> : null}
     </span>
   );
 }
@@ -62,6 +68,7 @@ export function LiveTimer({ ticket, compact = false }: { ticket: Ticket; compact
 // =====================================================================
 
 export function TechDashboard() {
+  const { t, messages } = useI18n();
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [error, setError] = useState<string>();
 
@@ -71,7 +78,7 @@ export function TechDashboard() {
       const result = await listTickets("assigned");
       if (cancelled) return;
       if (!result.ok) {
-        setError(result.error.reason ?? "Error");
+        setError(getErrorMessage(result.error, messages));
         return;
       }
       setTickets(result.data.tickets);
@@ -79,14 +86,14 @@ export function TechDashboard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [messages]);
 
   if (error) {
     return (
       <div className="demo-tech-page">
         <section className="demo-page-heading" aria-labelledby="tech-title">
-          <p className="demo-eyebrow">Operación</p>
-          <h1 id="tech-title">No pudimos cargar tu cola.</h1>
+          <p className="demo-eyebrow">{t("nav.sectionOperations")}</p>
+          <h1 id="tech-title">{t("tech.queue.empty")}</h1>
           <p>{error}</p>
         </section>
       </div>
@@ -102,41 +109,41 @@ export function TechDashboard() {
     <div className="demo-tech-page">
       <section className="demo-dashboard-hero" aria-labelledby="tech-title">
         <div>
-          <p className="demo-eyebrow">Operación</p>
-          <h1 id="tech-title">Panel técnico</h1>
-          <p>Cola personal · tickets asignados a tu cuenta</p>
+          <p className="demo-eyebrow">{t("nav.sectionOperations")}</p>
+          <h1 id="tech-title">{t("tech.dashboard.title")}</h1>
+          <p>{t("tech.dashboard.subtitle")}</p>
         </div>
-        <Link className="demo-primary-action" href="/tech/tickets">Ver cola de trabajo</Link>
+        <Link className="demo-primary-action" href="/tech/tickets">{t("tech.queue.title")}</Link>
       </section>
-      <section className="demo-summary-grid" aria-label="Resumen técnico">
+      <section className="demo-summary-grid" aria-label={t("tech.dashboard.title")}>
         <article className="demo-summary-card demo-summary-card-emphasis">
-          <p>Activas</p>
+          <p>{t("tech.dashboard.inProgress")}</p>
           <strong>{active.length}</strong>
-          <span>En tu cola</span>
+          <span>{t("tech.dashboard.assignedToMe")}</span>
         </article>
         <article className="demo-summary-card">
-          <p>En proceso</p>
+          <p>{t("tech.dashboard.inProgress")}</p>
           <strong>{active.filter((t) => t.state === "EN_PROCESO").length}</strong>
-          <span>Atención en curso</span>
+          <span>{t("tech.dashboard.inProgress")}</span>
         </article>
         <article className="demo-summary-card">
-          <p>En riesgo</p>
+          <p>{t("tech.dashboard.escalated")}</p>
           <strong>{atRisk.length}</strong>
-          <span>Requieren foco</span>
+          <span>{t("tech.dashboard.awaitingUser")}</span>
         </article>
         <article className="demo-summary-card">
-          <p>Resueltas</p>
+          <p>{t("tech.dashboard.resolved")}</p>
           <strong>{assigned.filter((t) => t.state === "RESUELTO" || t.state === "CERRADO").length}</strong>
-          <span>En tu historial</span>
+          <span>{t("tech.dashboard.closed")}</span>
         </article>
       </section>
       <section className="demo-tech-focus-card">
         <div>
-          <p className="demo-section-label">Siguiente prioridad</p>
-          <h2>{active[0]?.title ?? "No hay solicitudes activas"}</h2>
-          <p>{active[0] ? `${active[0].id.slice(0, 8)}… · ${active[0].priority}` : "La cola está al día."}</p>
+          <p className="demo-section-label">{t("tech.dashboard.inProgress")}</p>
+          <h2>{active[0]?.title ?? t("tech.dashboard.noAssigned")}</h2>
+          <p>{active[0] ? `${active[0].id.slice(0, 8)}… · ${active[0].priority}` : t("tech.dashboard.noAssigned")}</p>
         </div>
-        {active[0] ? <Link className="demo-primary-link" href={`/tech/tickets/${active[0].id}`}>Abrir solicitud</Link> : null}
+        {active[0] ? <Link className="demo-primary-link" href={`/tech/tickets/${active[0].id}`}>{t("requester.history.openTicket")}</Link> : null}
       </section>
     </div>
   );
@@ -152,6 +159,7 @@ type QueuePhase =
   | { kind: "ready"; tickets: Ticket[]; categories: TicketCategory[] };
 
 export function TechQueue() {
+  const { t, locale, messages } = useI18n();
   const [phase, setPhase] = useState<QueuePhase>({ kind: "loading" });
   const [stateFilter, setStateFilter] = useState<TicketState | "ALL">("ALL");
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "ALL">("ALL");
@@ -171,11 +179,11 @@ export function TechQueue() {
       ]);
       if (cancelled) return;
       if (!categoriesResult.ok) {
-        setPhase({ kind: "error", reason: categoriesResult.error.reason ?? "Error", kind_: categoriesResult.error.kind });
+        setPhase({ kind: "error", reason: getErrorMessage(categoriesResult.error, messages), kind_: categoriesResult.error.kind });
         return;
       }
       if (!ticketsResult.ok) {
-        setPhase({ kind: "error", reason: ticketsResult.error.reason ?? "Error", kind_: ticketsResult.error.kind });
+        setPhase({ kind: "error", reason: getErrorMessage(ticketsResult.error, messages), kind_: ticketsResult.error.kind });
         return;
       }
       setPhase({
@@ -187,7 +195,7 @@ export function TechQueue() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [messages]);
 
   const queue = useMemo(() => {
     if (phase.kind !== "ready") return [];
@@ -217,12 +225,14 @@ export function TechQueue() {
       return (
         <div className="demo-tech-page">
           <section className="demo-page-heading" aria-labelledby="queue-title">
-            <p className="demo-eyebrow">Operación</p>
-            <h1 id="queue-title">Necesitás iniciar sesión con un rol técnico.</h1>
+            <p className="demo-eyebrow">{t("nav.sectionOperations")}</p>
+            <h1 id="queue-title">{t("errors.authentication_required")}</h1>
             <p className="demo-page-description">{phase.reason}</p>
           </section>
           <div className="demo-history-card-heading" style={{ padding: "1rem" }}>
-            <Link className="demo-primary-link" href="/login?next=/tech/tickets">Iniciar sesión</Link>
+            <Link className="demo-primary-link" href="/login?next=/tech/tickets">
+              {t("common.open")} — {t("shell.brand")}
+            </Link>
           </div>
         </div>
       );
@@ -230,8 +240,8 @@ export function TechQueue() {
     return (
       <div className="demo-tech-page">
         <section className="demo-page-heading" aria-labelledby="queue-title">
-          <p className="demo-eyebrow">Operación</p>
-          <h1 id="queue-title">No pudimos cargar la cola.</h1>
+          <p className="demo-eyebrow">{t("nav.sectionOperations")}</p>
+          <h1 id="queue-title">{t("tech.queue.empty")}</h1>
           <p className="demo-page-description">{phase.reason}</p>
         </section>
       </div>
@@ -243,36 +253,40 @@ export function TechQueue() {
   return (
     <div className="demo-tech-page">
       <section className="demo-page-heading" aria-labelledby="queue-title">
-        <p className="demo-eyebrow">Operación</p>
-        <h1 id="queue-title">Cola de trabajo</h1>
-        <p className="demo-page-description">Tickets visibles en tu tenant · datos desde Supabase real.</p>
+        <p className="demo-eyebrow">{t("nav.sectionOperations")}</p>
+        <h1 id="queue-title">{t("tech.queue.title")}</h1>
+        <p className="demo-page-description">{t("tech.queue.subtitle")}</p>
       </section>
       <section className="demo-queue-card">
         <div className="demo-queue-heading">
           <div>
-            <p className="demo-section-label">Solicitudes</p>
-            <h2>{queue.length} en la vista</h2>
+            <p className="demo-section-label">{t("tech.queue.title")}</p>
+            <h2>{queue.length} {t("tech.queue.title").toLowerCase()}</h2>
           </div>
           <div className="demo-queue-filters">
-            <label>Estado
+            <label>{t("requester.detail.statusLabel")}
               <select value={stateFilter} onChange={(event) => { setPage(1); setStateFilter(event.target.value as TicketState | "ALL"); }}>
-                <option value="ALL">Todos</option>
-                {mockTicketStates.map((state) => <option value={state.code} key={state.code}>{state.label}</option>)}
+                <option value="ALL">{t("common.all")}</option>
+                {mockTicketStates.map((state) => (
+                  <option value={state.code} key={state.code}>
+                    {getStateLabel(state.code, locale)}
+                  </option>
+                ))}
               </select>
             </label>
-            <label>Prioridad
+            <label>{t("requester.detail.priorityLabel")}
               <select value={priorityFilter} onChange={(event) => { setPage(1); setPriorityFilter(event.target.value as TicketPriority | "ALL"); }}>
-                <option value="ALL">Todas</option>
+                <option value="ALL">{t("common.all")}</option>
                 {mockPriorities.map((priority) => <option value={priority.code} key={priority.code}>{priority.code}</option>)}
               </select>
             </label>
-            <label>Categoría
+            <label>{t("requester.detail.categoryLabel")}
               <select value={categoryFilter} onChange={(event) => { setPage(1); setCategoryFilter(event.target.value); }}>
-                <option value="ALL">Todas</option>
+                <option value="ALL">{t("common.all")}</option>
                 {phase.categories.map((category) => <option value={category.id} key={category.id}>{category.label}</option>)}
               </select>
             </label>
-            <label>Sin asignar
+            <label>{t("tech.queue.filterUnassigned")}
               <input
                 type="checkbox"
                 checked={unassignedOnly}
@@ -287,11 +301,29 @@ export function TechQueue() {
               <table className="demo-queue-table">
                 <thead>
                   <tr>
-                    <th><button className="demo-table-sort" type="button" onClick={() => updateSort("priority")} aria-label={`Ordenar por prioridad ${sortKey === "priority" && sortDirection === "asc" ? "descendente" : "ascendente"}`}>Prioridad <span aria-hidden="true">{sortKey === "priority" ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}</span></button></th>
-                    <th>Solicitud</th>
-                    <th>Estado</th>
-                    <th>Asignado</th>
-                    <th><button className="demo-table-sort" type="button" onClick={() => updateSort("updatedAt")} aria-label={`Ordenar por actualización ${sortKey === "updatedAt" && sortDirection === "asc" ? "descendente" : "ascendente"}`}>Actualizada <span aria-hidden="true">{sortKey === "updatedAt" ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}</span></button></th>
+                    <th>
+                      <button
+                        className="demo-table-sort"
+                        type="button"
+                        onClick={() => updateSort("priority")}
+                        aria-label={t("requester.detail.priorityLabel")}
+                      >
+                        {t("requester.detail.priorityLabel")} <span aria-hidden="true">{sortKey === "priority" ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}</span>
+                      </button>
+                    </th>
+                    <th>{t("requester.detail.title")}</th>
+                    <th>{t("requester.detail.statusLabel")}</th>
+                    <th>{t("requester.detail.assignedToLabel")}</th>
+                    <th>
+                      <button
+                        className="demo-table-sort"
+                        type="button"
+                        onClick={() => updateSort("updatedAt")}
+                        aria-label={t("requester.detail.createdAtLabel")}
+                      >
+                        {t("requester.detail.createdAtLabel")} <span aria-hidden="true">{sortKey === "updatedAt" ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}</span>
+                      </button>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -300,12 +332,12 @@ export function TechQueue() {
                     return (
                       <tr key={ticket.id}>
                         <td><span className={`demo-priority-marker demo-priority-marker-${getPriorityTone(ticket.priority)}`}>{ticket.priority}</span></td>
-                        <td><Link href={`/tech/tickets/${ticket.id}`}><strong>{ticket.title}</strong><span>{ticket.id.slice(0, 8)}… · {category?.label ?? "(sin categoría)"}</span></Link></td>
-                        <td><span className={`demo-state-pill demo-state-pill-${getStateTone(ticket.state)}`}><span />{getStateLabel(ticket.state)}</span></td>
-                        <td>{ticket.assignedTo ? ticket.assignedTo.slice(0, 8) + "…" : "Sin asignar"}</td>
+                        <td><Link href={`/tech/tickets/${ticket.id}`}><strong>{ticket.title}</strong><span>{ticket.id.slice(0, 8)}… · {category?.label ?? t("common.none")}</span></Link></td>
+                        <td><span className={`demo-state-pill demo-state-pill-${getStateTone(ticket.state)}`}><span />{getStateLabel(ticket.state, locale)}</span></td>
+                        <td>{ticket.assignedTo ? ticket.assignedTo.slice(0, 8) + "…" : t("requester.detail.noAssignee")}</td>
                         <td>
                           <time dateTime={ticket.updatedAt}>
-                            {new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short" }).format(new Date(ticket.updatedAt))}
+                            {formatDateShort(ticket.updatedAt, locale)}
                             <br />
                             <LiveTimer ticket={ticket} compact />
                           </time>
@@ -316,19 +348,19 @@ export function TechQueue() {
                 </tbody>
               </table>
             </div>
-            <nav className="demo-pagination" aria-label="Paginación de solicitudes">
-              <span>Mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, queue.length)} de {queue.length}</span>
+            <nav className="demo-pagination" aria-label={t("tech.queue.title")}>
+              <span>{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, queue.length)} / {queue.length}</span>
               <div>
-                <button className="demo-secondary-button" type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>Anterior</button>
-                <span aria-live="polite">Página {page} de {pageCount}</span>
-                <button className="demo-secondary-button" type="button" disabled={page >= pageCount} onClick={() => setPage((current) => current + 1)}>Siguiente</button>
+                <button className="demo-secondary-button" type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>←</button>
+                <span aria-live="polite">{page} / {pageCount}</span>
+                <button className="demo-secondary-button" type="button" disabled={page >= pageCount} onClick={() => setPage((current) => current + 1)}>→</button>
               </div>
             </nav>
           </>
         ) : (
           <DemoEmptyState
-            title="No hay tickets que coincidan con los filtros."
-            description="Ajustá los filtros o esperá nuevas solicitudes."
+            title={t("tech.queue.empty")}
+            description={t("tech.queue.empty")}
           />
         )}
       </section>
@@ -340,20 +372,13 @@ export function TechQueue() {
 // TechTicketDetail
 // =====================================================================
 
-const operations: readonly { state: TicketState; label: string }[] = [
-  { state: "EN_PROCESO", label: "Iniciar atención" },
-  { state: "ESPERANDO_USUARIO", label: "Esperando usuario" },
-  { state: "ESCALADO", label: "Escalar" },
-  { state: "RESUELTO", label: "Resolver" },
-  { state: "CERRADO", label: "Cerrar" },
-];
-
 type TechDetailPhase =
   | { kind: "loading" }
   | { kind: "error"; reason: string; kind_: ClientApiError["kind"]; status?: number }
   | { kind: "ready"; ticket: Ticket; categoryLabel: string; members: TenantMember[] };
 
 export function TechTicketDetail({ ticketId }: { ticketId: string }) {
+  const { t, locale, messages } = useI18n();
   const [phase, setPhase] = useState<TechDetailPhase>({ kind: "loading" });
   const [pending, setPending] = useState<TicketState | null>(null);
   const [transitionError, setTransitionError] = useState<string>();
@@ -373,15 +398,15 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
       if (!ticketResult.ok) {
         setPhase({
           kind: "error",
-          reason: ticketResult.error.reason ?? "Error",
+          reason: getErrorMessage(ticketResult.error, messages),
           kind_: ticketResult.error.kind,
           status: ticketResult.error.kind === "http" ? ticketResult.error.status : undefined,
         });
         return;
       }
       const categoryLabel = categoriesResult.ok
-        ? categoriesResult.data.categories.find((c) => c.id === ticketResult.data.ticket.categoryId)?.label ?? "(sin categoría)"
-        : "(sin categoría)";
+        ? categoriesResult.data.categories.find((c) => c.id === ticketResult.data.ticket.categoryId)?.label ?? t("common.none")
+        : t("common.none");
       const members = membersResult.ok ? membersResult.data.members : [];
       setPhase({ kind: "ready", ticket: ticketResult.data.ticket, categoryLabel, members });
       setAssigneeId(ticketResult.data.ticket.assignedTo ?? "");
@@ -389,7 +414,16 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId]);
+
+  const operations: ReadonlyArray<{ state: TicketState; label: string }> = [
+    { state: "EN_PROCESO", label: t("states.EN_PROCESO") },
+    { state: "ESPERANDO_USUARIO", label: t("states.ESPERANDO_USUARIO") },
+    { state: "ESCALADO", label: t("states.ESCALADO") },
+    { state: "RESUELTO", label: t("states.RESUELTO") },
+    { state: "CERRADO", label: t("states.CERRADO") },
+  ];
 
   async function applyAssign(target: string) {
     if (assigning) return;
@@ -398,7 +432,7 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
     const result = await assignTicket(ticketId, target);
     setAssigning(false);
     if (!result.ok) {
-      setAssignError(result.error.reason ?? "Error al asignar");
+      setAssignError(getErrorMessage(result.error, messages));
       return;
     }
     setPhase((current) => (current.kind === "ready"
@@ -413,7 +447,7 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
     const result = await transitionTicket(ticketId, target);
     setPending(null);
     if (!result.ok) {
-      setTransitionError(result.error.reason ?? "Error");
+      setTransitionError(getErrorMessage(result.error, messages));
       return;
     }
     setPhase((current) => (current.kind === "ready"
@@ -427,26 +461,26 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
     if (phase.kind_ === "not_found" || phase.status === 404) {
       return (
         <div className="demo-page">
-          <h1>Solicitud no disponible</h1>
-          <p>El identificador no corresponde a un ticket visible para tu cuenta.</p>
-          <Link className="demo-primary-link" href="/tech/tickets">Volver a la cola</Link>
+          <h1>{t("errors.ticket_not_found")}</h1>
+          <p>{phase.reason}</p>
+          <Link className="demo-primary-link" href="/tech/tickets">{t("tech.detail.back")}</Link>
         </div>
       );
     }
     if (phase.kind_ === "forbidden") {
       return (
         <div className="demo-page">
-          <h1>No autorizado</h1>
+          <h1>{t("errors.authentication_required")}</h1>
           <p>{phase.reason}</p>
-          <Link className="demo-primary-link" href="/login?next=/tech/tickets">Iniciar sesión</Link>
+          <Link className="demo-primary-link" href="/login?next=/tech/tickets">{t("common.open")} — {t("shell.brand")}</Link>
         </div>
       );
     }
     return (
       <div className="demo-page">
-        <h1>Error cargando la solicitud</h1>
+        <h1>{t("tech.detail.errorPrefix")}</h1>
         <p>{phase.reason}</p>
-        <Link className="demo-primary-link" href="/tech/tickets">Volver a la cola</Link>
+        <Link className="demo-primary-link" href="/tech/tickets">{t("tech.detail.back")}</Link>
       </div>
     );
   }
@@ -454,30 +488,30 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
   const ticket = phase.ticket;
   return (
     <div className="demo-tech-page">
-      <Link className="demo-back-link" href="/tech/tickets">← Volver a la cola</Link>
+      <Link className="demo-back-link" href="/tech/tickets">← {t("tech.detail.back")}</Link>
       <section className="demo-ticket-detail-heading" aria-labelledby="tech-ticket-title">
         <div>
-          <p className="demo-eyebrow">{ticket.id.slice(0, 8)}… · Operación técnica</p>
+          <p className="demo-eyebrow">{ticket.id.slice(0, 8)}… · {t("nav.sectionOperations")}</p>
           <h1 id="tech-ticket-title">{ticket.title}</h1>
           <p>{ticket.description}</p>
         </div>
         <div className="demo-ticket-detail-badges">
           <span className={`demo-priority-marker demo-priority-marker-${getPriorityTone(ticket.priority)}`}>{ticket.priority}</span>
-          <span className={`demo-state-pill demo-state-pill-${getStateTone(ticket.state)}`}><span />{getStateLabel(ticket.state)}</span>
+          <span className={`demo-state-pill demo-state-pill-${getStateTone(ticket.state)}`}><span />{getStateLabel(ticket.state, locale)}</span>
         </div>
       </section>
       <section className="demo-tech-detail-grid">
         <article className="demo-ticket-detail-card">
-          <p className="demo-section-label">Atención</p>
+          <p className="demo-section-label">{t("requester.detail.assignedToLabel")}</p>
           <LiveTimer ticket={ticket} />
           <dl className="demo-ticket-facts">
-            <div><dt>Categoría</dt><dd>{phase.categoryLabel}</dd></div>
+            <div><dt>{t("requester.detail.categoryLabel")}</dt><dd>{phase.categoryLabel}</dd></div>
             <div><dt>Tenant</dt><dd>{ticket.tenantId.slice(0, 8)}…</dd></div>
-            <div><dt>Asignado</dt><dd>{ticket.assignedTo ? ticket.assignedTo.slice(0, 8) + "…" : "Sin asignar"}</dd></div>
+            <div><dt>{t("requester.detail.assignedToLabel")}</dt><dd>{ticket.assignedTo ? ticket.assignedTo.slice(0, 8) + "…" : t("requester.detail.noAssignee")}</dd></div>
             <div><dt>SLA</dt><dd>{ticket.slaStatus}</dd></div>
           </dl>
           <div className="demo-assign-block">
-            <label htmlFor="assign-select">Reasignar a</label>
+            <label htmlFor="assign-select">{t("tech.detail.reassign")}</label>
             <div className="demo-assign-controls">
               <select
                 id="assign-select"
@@ -485,7 +519,7 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
                 onChange={(event) => setAssigneeId(event.target.value)}
                 disabled={assigning}
               >
-                <option value="">Sin asignar</option>
+                <option value="">{t("requester.detail.noAssignee")}</option>
                 {phase.members.map((member) => (
                   <option key={member.user_id} value={member.user_id}>
                     {member.user_id.slice(0, 8)}… · {member.functional_role}
@@ -498,16 +532,16 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
                 disabled={assigning || !assigneeId || assigneeId === ticket.assignedTo}
                 onClick={() => void applyAssign(assigneeId)}
               >
-                {assigning ? "Asignando…" : "Aplicar"}
+                {assigning ? t("tech.detail.assigning") : t("tech.detail.assignAction")}
               </button>
             </div>
             {assignError ? <p className="demo-form-error" role="alert">{assignError}</p> : null}
           </div>
         </article>
         <article className="demo-ticket-detail-card">
-          <p className="demo-section-label">Acciones</p>
-          <h2>Cambiar estado</h2>
-          <p className="demo-action-copy">Cada acción invoca <code>POST /api/tickets/{ticket.id.slice(0, 8)}…/transitions</code> y persiste en Supabase real.</p>
+          <p className="demo-section-label">{t("tech.detail.transitionSection")}</p>
+          <h2>{t("tech.detail.transitionSection")}</h2>
+          <p className="demo-action-copy">POST /api/tickets/{ticket.id.slice(0, 8)}…/transitions</p>
           {transitionError ? <p className="demo-form-error" role="alert">{transitionError}</p> : null}
           <div className="demo-status-actions">
             {operations.map((operation) => (
@@ -518,7 +552,7 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
                 type="button"
                 onClick={() => void applyTransition(operation.state)}
               >
-                {pending === operation.state ? "Aplicando…" : operation.label}
+                {pending === operation.state ? t("tech.detail.transitioning") : operation.label}
               </button>
             ))}
           </div>

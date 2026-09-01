@@ -1,0 +1,31 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem;
+  border: 1px solid var(--demo-border, rgba(15, 23, 42, 0.12));
+  border-radius: 999px;
+  background: var(--demo-surface, rgba(255, 255, 255, 0.7));
+}
+
+.button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: inherit;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  cursor: pointer;
+  min-width: 2.25rem;
+}
+
+.button:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.button[data-active="true"] {
+  background: rgba(15, 23, 42, 0.12);
+}

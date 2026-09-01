@@ -8,14 +8,12 @@ import { listTicketCategories, listTickets } from "@/modules/ticketing/client-ap
 import type { ClientApiError } from "@/modules/ticketing/client-api";
 import type { Ticket, TicketCategory } from "@/modules/ticketing/repository";
 import type { TicketState, TicketPriority } from "@/modules/ticketing/types";
-
-function date(value: string) {
-  return new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short", year: "numeric", timeZone: "America/Santiago" }).format(new Date(value));
-}
-
-function getStateLabel(state: TicketState): string {
-  return mockTicketStates.find((s) => s.code === state)?.label ?? state;
-}
+import {
+  formatDateLong,
+  getErrorMessage,
+  getStateLabel,
+  useI18n,
+} from "@/i18n";
 
 function getStateTone(state: TicketState): string {
   return mockTicketStates.find((s) => s.code === state)?.visualTone ?? "info";
@@ -32,6 +30,7 @@ type Phase =
 
 export function RequestHistory() {
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
+  const { t, locale, messages } = useI18n();
 
   useEffect(() => {
     let cancelled = false;
@@ -42,11 +41,19 @@ export function RequestHistory() {
       ]);
       if (cancelled) return;
       if (!categoriesResult.ok) {
-        setPhase({ kind: "error", reason: categoriesResult.error.reason ?? "Error cargando categorías", kind_: categoriesResult.error.kind });
+        setPhase({
+          kind: "error",
+          reason: getErrorMessage(categoriesResult.error, messages),
+          kind_: categoriesResult.error.kind,
+        });
         return;
       }
       if (!ticketsResult.ok) {
-        setPhase({ kind: "error", reason: ticketsResult.error.reason ?? "Error cargando tickets", kind_: ticketsResult.error.kind });
+        setPhase({
+          kind: "error",
+          reason: getErrorMessage(ticketsResult.error, messages),
+          kind_: ticketsResult.error.kind,
+        });
         return;
       }
       setPhase({
@@ -58,7 +65,7 @@ export function RequestHistory() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [messages]);
 
   if (phase.kind === "loading") {
     return <DemoLoadingState />;
@@ -69,12 +76,14 @@ export function RequestHistory() {
       return (
         <div className="demo-history-page">
           <section className="demo-page-heading" aria-labelledby="history-title">
-            <p className="demo-eyebrow">Solicitudes</p>
-            <h1 id="history-title">Necesitás iniciar sesión.</h1>
+            <p className="demo-eyebrow">{t("nav.sectionRequests")}</p>
+            <h1 id="history-title">{t("errors.authentication_required")}</h1>
             <p className="demo-page-description">{phase.reason}</p>
           </section>
           <div className="demo-history-card-heading" style={{ padding: "1rem" }}>
-            <Link className="demo-primary-link" href="/login?next=/tickets">Iniciar sesión</Link>
+            <Link className="demo-primary-link" href="/login?next=/tickets">
+              {t("common.open")} — {t("shell.brand")}
+            </Link>
           </div>
         </div>
       );
@@ -82,8 +91,8 @@ export function RequestHistory() {
     return (
       <div className="demo-history-page">
         <section className="demo-page-heading" aria-labelledby="history-title">
-          <p className="demo-eyebrow">Solicitudes</p>
-          <h1 id="history-title">No pudimos cargar tu historial.</h1>
+          <p className="demo-eyebrow">{t("nav.sectionRequests")}</p>
+          <h1 id="history-title">{t("requester.history.errorPrefix")}</h1>
           <p className="demo-page-description">{phase.reason}</p>
         </section>
       </div>
@@ -96,17 +105,18 @@ export function RequestHistory() {
   return (
     <div className="demo-history-page">
       <section className="demo-page-heading" aria-labelledby="history-title">
-        <p className="demo-eyebrow">Solicitudes</p>
-        <h1 id="history-title">Mi historial</h1>
-        <p className="demo-page-description">Solicitudes registradas en DeskWork para tu cuenta.</p>
+        <p className="demo-eyebrow">{t("nav.sectionRequests")}</p>
+        <h1 id="history-title">{t("requester.history.title")}</h1>
       </section>
-      <section className="demo-history-card" aria-label="Historial de solicitudes">
+      <section className="demo-history-card" aria-label={t("requester.history.title")}>
         <div className="demo-history-card-heading">
           <div>
-            <p className="demo-section-label">Historial</p>
-            <h2>{tickets.length} solicitudes registradas</h2>
+            <p className="demo-section-label">{t("requester.history.title")}</p>
+            <h2>{tickets.length} {t("requester.history.title").toLowerCase()}</h2>
           </div>
-          <Link className="demo-primary-link" href="/tickets/new">Crear solicitud</Link>
+          <Link className="demo-primary-link" href="/tickets/new">
+            {t("requester.history.newTicketCta")}
+          </Link>
         </div>
         {tickets.length ? (
           <div className="demo-history-table-wrap">
@@ -114,9 +124,9 @@ export function RequestHistory() {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Solicitud</th>
-                  <th>Estado</th>
-                  <th>Actualizada</th>
+                  <th>{t("requester.detail.title")}</th>
+                  <th>{t("requester.detail.statusLabel")}</th>
+                  <th>{t("requester.detail.createdAtLabel")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,16 +142,18 @@ export function RequestHistory() {
                       <td>
                         <Link href={`/tickets/${ticket.id}`}>
                           <strong>{ticket.title}</strong>
-                          <span>{ticket.id.slice(0, 8)}… · {category?.label ?? "(sin categoría)"}</span>
+                          <span>
+                            {ticket.id.slice(0, 8)}… · {category?.label ?? t("common.none")}
+                          </span>
                         </Link>
                       </td>
                       <td>
                         <span className={`demo-state-pill demo-state-pill-${getStateTone(ticket.state)}`}>
-                          <span />{getStateLabel(ticket.state)}
+                          <span />{getStateLabel(ticket.state, locale)}
                         </span>
                       </td>
                       <td>
-                        <time dateTime={ticket.updatedAt}>{date(ticket.updatedAt)}</time>
+                        <time dateTime={ticket.updatedAt}>{formatDateLong(ticket.updatedAt, locale)}</time>
                       </td>
                     </tr>
                   );
@@ -151,10 +163,10 @@ export function RequestHistory() {
           </div>
         ) : (
           <DemoEmptyState
-            title="Aún no tienes solicitudes."
-            description="Cuando registres una solicitud, podrás revisar aquí su estado y seguimiento."
+            title={t("requester.history.empty")}
+            description={t("requester.history.empty")}
             actionHref="/tickets/new"
-            actionLabel="Crear solicitud"
+            actionLabel={t("requester.history.newTicketCta")}
           />
         )}
       </section>
