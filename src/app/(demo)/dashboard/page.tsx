@@ -1,14 +1,32 @@
-import Link from "next/link";
-import {
-  getMockUser,
-  mockCategories,
-  mockPriorities,
-  mockTickets,
-  mockTicketStates,
-  type MockTicket,
-} from "@/mock/deskwork-data";
+/**
+ * DeskWork Ticketing Core / TKT-UI Block 1.
+ * (demo) /dashboard — server component con datos reales del requester.
+ *
+ * Reemplaza la versión MOCK previa (que hardcodeaba
+ * `DEMO_REQUESTER_ID = "user-valentina-morales"`) por una lectura directa
+ * del requester autenticado vía Supabase Auth + repository.
+ *
+ * El layout/maqueta (clases CSS, copy, cards, lista) se conserva idéntico
+ * para no introducir cambios visuales. Solo cambia el origen de los datos.
+ *
+ * Datos que pasan a ser reales:
+ *   - Identidad del requester (auth.uid + profiles.display_name)
+ *   - Listado de tickets del requester (repo.listTicketsByRequester)
+ *   - Conteos: total / activas / en proceso / resueltas
+ *
+ * Datos que se mantienen como MOCK transitorio (Bloque 2 los limpiará):
+ *   - mockPriorities / mockTicketStates: solo se usan como tone map
+ *     (`visualTone`) para las pills y markers. No aparecen datos MOCK
+ *     de tickets, usuarios o categorías.
+ */
 
-const DEMO_REQUESTER_ID = "user-valentina-morales";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { mockPriorities, mockTicketStates } from "@/mock/deskwork-data";
+import { createSupabaseServerClient } from "@/shared/supabase/server";
+import { createSupabaseTicketRepository } from "@/modules/ticketing/supabase-repository";
+import type { Ticket } from "@/modules/ticketing/repository";
+import type { TicketPriority, TicketState } from "@/modules/ticketing/types";
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-CL", {
@@ -20,32 +38,68 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-function getCategoryLabel(categoryId: string): string {
-  return mockCategories.find((category) => category.id === categoryId)?.label ?? "Sin categoría";
+function getPriorityTone(priority: TicketPriority): string {
+  return mockPriorities.find((p) => p.code === priority)?.visualTone ?? "info";
 }
 
-function getPriority(ticket: MockTicket) {
-  return mockPriorities.find((priority) => priority.code === ticket.priority);
+function getStateTone(state: TicketState): string {
+  return mockTicketStates.find((s) => s.code === state)?.visualTone ?? "info";
 }
 
-function getState(ticket: MockTicket) {
-  return mockTicketStates.find((state) => state.code === ticket.state);
+function getStateLabel(state: TicketState): string {
+  return mockTicketStates.find((s) => s.code === state)?.label ?? state;
 }
 
-export default function DashboardPage() {
-  const requester = getMockUser(DEMO_REQUESTER_ID);
-  const requesterTickets = [...mockTickets]
-    .filter((ticket) => ticket.requesterId === DEMO_REQUESTER_ID)
-    .sort((first, second) => new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime());
-  const activeTickets = requesterTickets.filter((ticket) => ticket.state !== "RESUELTO" && ticket.state !== "CERRADO");
-  const resolvedTickets = requesterTickets.filter((ticket) => ticket.state === "RESUELTO" || ticket.state === "CERRADO");
+function firstName(displayName: string | null, email: string | null): string {
+  const source = displayName?.trim() || email?.split("@")[0] || "allí";
+  return source.split(/[\s.]/)[0] || source;
+}
+
+export default async function DashboardPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Sin sesión → login con retorno seguro. El shell de (demo) no protege
+  // la ruta (lo hace el middleware en /app/*), pero el dashboard sólo tiene
+  // sentido con identidad real.
+  if (!user) {
+    redirect("/login?next=/dashboard");
+  }
+
+  // Perfil: el display_name del requester. Es opcional (algunas
+  // migraciones antiguas pueden no tener profile); caemos al email.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  // Tickets del requester. RLS filtra a sus tickets visibles
+  // (can_read_ticket). Sin filtros para obtener el set completo.
+  const repo = createSupabaseTicketRepository(supabase);
+  const tickets: Ticket[] = await repo.listTicketsByRequester(user.id, {});
+
+  const requesterName = firstName(profile?.display_name ?? null, user.email ?? null);
+  const totalTickets = tickets.length;
+  const activeTickets = tickets.filter(
+    (t) => t.state !== "RESUELTO" && t.state !== "CERRADO",
+  );
+  const resolvedTickets = tickets.filter(
+    (t) => t.state === "RESUELTO" || t.state === "CERRADO",
+  );
+  const inProgressTickets = tickets.filter((t) => t.state === "EN_PROCESO");
+
+  const recent = [...tickets]
+    .sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
 
   return (
     <div className="demo-dashboard">
       <section className="demo-dashboard-hero" aria-labelledby="dashboard-title">
         <div>
           <p className="demo-eyebrow">Solicitudes</p>
-          <h1 id="dashboard-title">Hola, {requester?.name.split(" ")[0] ?? "Valentina"}.</h1>
+          <h1 id="dashboard-title">Hola, {requesterName}.</h1>
           <p>Revisa tus solicitudes o registra una nueva necesidad de soporte.</p>
         </div>
         <Link className="demo-primary-action" href="/tickets/new">
@@ -57,7 +111,7 @@ export default function DashboardPage() {
       <section className="demo-summary-grid" aria-label="Resumen de solicitudes">
         <article className="demo-summary-card">
           <p>Solicitudes totales</p>
-          <strong>{requesterTickets.length}</strong>
+          <strong>{totalTickets}</strong>
           <span>Historial disponible</span>
         </article>
         <article className="demo-summary-card demo-summary-card-emphasis">
@@ -67,7 +121,7 @@ export default function DashboardPage() {
         </article>
         <article className="demo-summary-card">
           <p>En proceso</p>
-          <strong>{requesterTickets.filter((ticket) => ticket.state === "EN_PROCESO").length}</strong>
+          <strong>{inProgressTickets.length}</strong>
           <span>Atendidas por soporte</span>
         </article>
         <article className="demo-summary-card">
@@ -83,36 +137,54 @@ export default function DashboardPage() {
             <p className="demo-section-label">Seguimiento</p>
             <h2 id="recent-tickets-title">Tus últimas solicitudes</h2>
           </div>
-          <span>{requesterTickets.length} registradas</span>
+          <span>{totalTickets} registradas</span>
         </div>
 
-        <div className="demo-ticket-list" role="list">
-          {requesterTickets.map((ticket) => {
-            const priority = getPriority(ticket);
-            const state = getState(ticket);
-
-            return (
-              <Link className="demo-ticket-row" href={`/tickets/${ticket.id}`} key={ticket.id} role="listitem">
+        {recent.length === 0 ? (
+          <div className="demo-ticket-list" role="list">
+            <p className="demo-empty-message">
+              Aún no tienes solicitudes registradas. Crea la primera con el botón
+              <strong> Crear solicitud</strong>.
+            </p>
+          </div>
+        ) : (
+          <div className="demo-ticket-list" role="list">
+            {recent.map((ticket) => (
+              <Link
+                className="demo-ticket-row"
+                href={`/tickets/${ticket.id}`}
+                key={ticket.id}
+                role="listitem"
+              >
                 <div className="demo-ticket-identification">
-                  <span className={`demo-priority-marker demo-priority-marker-${priority?.visualTone ?? "info"}`} aria-label={`Prioridad ${ticket.priority}`}>
+                  <span
+                    className={`demo-priority-marker demo-priority-marker-${getPriorityTone(ticket.priority)}`}
+                    aria-label={`Prioridad ${ticket.priority}`}
+                  >
                     {ticket.priority}
                   </span>
                   <div>
                     <h3>{ticket.title}</h3>
-                    <p>{ticket.id} · {getCategoryLabel(ticket.categoryId)}</p>
+                    <p>
+                      {ticket.id.slice(0, 8)}… · {ticket.state}
+                    </p>
                   </div>
                 </div>
                 <div className="demo-ticket-row-meta">
-                  <span className={`demo-state-pill demo-state-pill-${state?.visualTone ?? "info"}`}>
+                  <span
+                    className={`demo-state-pill demo-state-pill-${getStateTone(ticket.state)}`}
+                  >
                     <span aria-hidden="true" />
-                    {state?.label ?? ticket.state}
+                    {getStateLabel(ticket.state)}
                   </span>
-                  <time dateTime={ticket.updatedAt}>Actualizado {formatDate(ticket.updatedAt)}</time>
+                  <time dateTime={ticket.updatedAt}>
+                    Actualizado {formatDate(ticket.updatedAt)}
+                  </time>
                 </div>
               </Link>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
