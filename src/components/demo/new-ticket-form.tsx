@@ -2,20 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { getMockUser } from "@/mock/deskwork-data";
 import { DemoLoadingState } from "./demo-feedback-state";
 import {
   createTicket,
   listTicketCategories,
-  type ClientResult,
 } from "@/modules/ticketing/client-api";
 import type { TicketCategory } from "@/modules/ticketing/repository";
 import {
   getErrorMessage,
   useI18n,
 } from "@/i18n";
-
-const DEMO_REQUESTER_ID = "user-valentina-morales";
 
 type FormStep = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -37,13 +33,45 @@ function deriveTitle(description: string): string {
     : base.padEnd(TITLE_MIN, ".").slice(0, TITLE_MAX);
 }
 
+/**
+ * Deriva un nombre legible a partir del local-part del email.
+ * `requester-a@deskwork-uat.test` → "Requester A".
+ * Si el local-part está vacío, devuelve el email completo.
+ */
+function deriveNameFromEmail(email: string): string {
+  const local = email.split("@")[0]?.trim() ?? "";
+  if (!local) return email;
+  return local
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 type Phase =
   | { kind: "loading" }
   | { kind: "ready" }
   | { kind: "error"; reason: string };
 
+/**
+ * Devuelve el email del usuario autenticado o `null` si la sesión no
+ * es válida. Endpoint ya implementado en `src/app/api/auth/me/route.ts`.
+ */
+async function fetchCurrentUserEmail(): Promise<string | null> {
+  try {
+    const response = await fetch("/api/auth/me", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { email?: unknown };
+    return typeof body.email === "string" ? body.email : null;
+  } catch {
+    return null;
+  }
+}
+
 export function NewTicketForm() {
-  const requester = getMockUser(DEMO_REQUESTER_ID);
   const { t, messages } = useI18n();
   const [step, setStep] = useState<FormStep>(1);
   const [categoryId, setCategoryId] = useState("");
@@ -53,6 +81,7 @@ export function NewTicketForm() {
   const [createdTicketId, setCreatedTicketId] = useState<string>();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [categories, setCategories] = useState<TicketCategory[]>([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string>();
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -66,20 +95,38 @@ export function NewTicketForm() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const result: ClientResult<{ categories: TicketCategory[] }> =
-        await listTicketCategories();
+      // Auth + categorías en paralelo. Si la sesión no es válida,
+      // no tiene sentido cargar categorías: el endpoint devolvería
+      // 403 al crear igualmente.
+      const [email, categoriesResult] = await Promise.all([
+        fetchCurrentUserEmail(),
+        listTicketCategories(),
+      ]);
       if (cancelled) return;
-      if (!result.ok) {
-        setPhase({ kind: "error", reason: getErrorMessage(result.error, messages) });
+
+      if (!email) {
+        setPhase({
+          kind: "error",
+          reason: t("errors.authentication_required"),
+        });
         return;
       }
-      setCategories(result.data.categories);
+      setCurrentUserEmail(email);
+
+      if (!categoriesResult.ok) {
+        setPhase({
+          kind: "error",
+          reason: getErrorMessage(categoriesResult.error, messages),
+        });
+        return;
+      }
+      setCategories(categoriesResult.data.categories);
       setPhase({ kind: "ready" });
     })();
     return () => {
       cancelled = true;
     };
-  }, [messages]);
+  }, [messages, t]);
 
   if (phase.kind === "loading") {
     return <DemoLoadingState />;
@@ -90,7 +137,7 @@ export function NewTicketForm() {
       <div className="demo-request-flow">
         <section className="demo-request-heading" aria-labelledby="request-title">
           <p className="demo-eyebrow">{t("nav.newTicket")}</p>
-          <h1 id="request-title">{t("errors.unknown")}</h1>
+          <h1 id="request-title">{t("errors.authentication_required")}</h1>
           <p className="demo-form-error" role="alert">
             {phase.reason}
           </p>
@@ -149,6 +196,8 @@ export function NewTicketForm() {
     setError(undefined);
 
     const title = deriveTitle(description);
+    // requesterId NO se envía: la SECURITY DEFINER create_ticket lo
+    // deriva de auth.uid() en el backend. Blindaje contra impersonation.
     const result = await createTicket({
       categoryId,
       title,
@@ -183,6 +232,15 @@ export function NewTicketForm() {
     event.preventDefault();
     event.currentTarget.requestSubmit();
   }
+
+  // El email del usuario real sustituye a la identidad MOCK previa.
+  // Nombre se deriva del local-part del email; Cargo y Área no están
+  // disponibles client-side (no hay endpoint de perfil expuesto) y se
+  // muestran como "—" para preservar la maqueta sin inventar datos.
+  const displayName = currentUserEmail
+    ? deriveNameFromEmail(currentUserEmail)
+    : "—";
+  const displayEmail = currentUserEmail ?? "—";
 
   return (
     <div className="demo-request-flow">
@@ -225,10 +283,10 @@ export function NewTicketForm() {
               <p>{t("requester.newTicket.intro")}</p>
             </div>
             <dl className="demo-identity-card">
-              <div><dt>Nombre</dt><dd>{requester?.name ?? "Valentina Morales"}</dd></div>
-              <div><dt>Cargo</dt><dd>{requester?.title ?? "Analista de remuneraciones"}</dd></div>
-              <div><dt>Área</dt><dd>{requester?.department ?? "Finanzas"}</dd></div>
-              <div><dt>Correo</dt><dd>{requester?.email ?? "valentina.morales@demo.deskwork.local"}</dd></div>
+              <div><dt>Nombre</dt><dd>{displayName}</dd></div>
+              <div><dt>Cargo</dt><dd>—</dd></div>
+              <div><dt>Área</dt><dd>—</dd></div>
+              <div><dt>Correo</dt><dd>{displayEmail}</dd></div>
             </dl>
             <div className="demo-request-actions">
               <button className="demo-primary-button" type="submit">{t("common.open")}</button>
