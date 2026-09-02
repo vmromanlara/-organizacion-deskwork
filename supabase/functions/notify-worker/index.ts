@@ -1,5 +1,5 @@
 /**
- * TKT-026 — Phase 2C.2 — Supabase Edge Function: notify-worker.
+ * TKT-026 — Phase 2D — Supabase Edge Function: notify-worker.
  *
  * Esta función es el entrypoint ejecutable server-side que orquesta
  * Phase 2B. La función NO duplica la lógica de claim/dispatch/complete
@@ -10,38 +10,49 @@
  *   1. Recibir un HTTP request (POST para trigger manual; cron-invoked
  *      en producción vía pg_cron en Phase 2D).
  *   2. Validar método HTTP.
- *   3. Obtener secrets del runtime (Deno.env.get).
- *   4. Crear un SupabaseClient con service_role.
- *   5. Crear el ResendProvider con la API key de runtime.
- *   6. Ejecutar runWorkerOnce.
- *   7. Devolver el resultado estructurado (NO secrets).
- *   8. Capturar errores y devolverlos sin filtrar.
+ *   3. **Validar `Authorization: Bearer <CRON_SECRET>`** (Phase 2D,
+ *      requerido porque `verify_jwt = false` en config.toml).
+ *   4. Obtener secrets del runtime (Deno.env.get).
+ *   5. Crear un SupabaseClient con service_role.
+ *   6. Crear el ResendProvider con la API key de runtime.
+ *   7. Ejecutar runWorkerOnce.
+ *   8. Devolver el resultado estructurado (NO secrets).
+ *   9. Capturar errores y devolverlos sin filtrar.
  *
  * Arquitectura (de la capa externa a la interna):
  *
  *   HTTP request
  *     -> Deno.serve handler (este archivo)
+ *       -> CRON_SECRET validation (Phase 2D)    [constant-time, logs NOTHING]
  *       -> runWorkerOnce (Phase 2B)            [src/modules/notifications/worker.ts]
  *         -> dispatchBatch (TKT-019)            [src/modules/notifications/dispatcher.ts]
  *           -> claim_pending_notifications RPC   [DB]
  *           -> ResendProvider.send               [src/modules/notifications/providers/resend-provider.ts]
  *           -> complete_notification RPC        [DB]
  *
- * NO-VALIDADO todavía en este commit (Phase 2C.2 task = validación):
- *   - supabase functions serve notify-worker (instrucción del PO).
- *   - curl POST al endpoint local.
- *   - service_role RPC contra la DB local.
- *
  * Secrets (obtenidos vía Deno.env.get, NUNCA hardcoded):
  *   - SUPABASE_URL
  *   - SUPABASE_SERVICE_ROLE_KEY
  *   - RESEND_API_KEY
  *   - RESEND_FROM_EMAIL
+ *   - CRON_SECRET (Phase 2D — used for Authorization Bearer check)
  *
  * Permisos Deno necesarios para la función:
  *   --allow-net=<api-url>,<resend-api>   (Supabase API + Resend API)
  *   --allow-env                          (Deno.env.get)
  *   --allow-read=<project-source>        (imports de src/ relativos)
+ *
+ * Phase 2D auth model:
+ *   - `verify_jwt = false` en supabase/config.toml: pg_cron no puede
+ *     mintear JWTs, así que la verificación del gateway está deshabilitada.
+ *   - Esta función valida explícitamente `Authorization: Bearer <CRON_SECRET>`
+ *     con comparación de tiempo constante. Devuelve 401 en todos los
+ *     casos de fallo (header ausente, esquema incorrecto, secreto ausente,
+ *     secreto incorrecto). Nunca registra el secreto recibido ni el
+ *     secreto esperado.
+ *   - El secreto vive en el GUC Postgres `app.outbox_cron_secret` y en
+ *     `Deno.env.get("CRON_SECRET")` del runtime del Edge Function. La
+ *     source-of-truth de rotación es el GUC.
  */
 
 // ESM imports — Deno nativo TypeScript.
@@ -70,6 +81,12 @@ interface RequestBody {
  * Lee secrets del runtime. La función NO tiene defaults hardcoded para
  * secrets reales. Si falta alguno, devuelve 500 con detalle del secret
  * faltante (sin filtrar valores).
+ *
+ * Phase 2D: CRON_SECRET NO se valida aquí — se valida explícitamente
+ * en `validateCronAuth` (antes de esta función, en `handleNotify`).
+ * Si la validación del CRON_SECRET falla, no se llega a invocar
+ * `loadRuntimeConfig`, así que la auth y el resto de secrets quedan
+ * desacoplados.
  */
 function loadRuntimeConfig() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -111,9 +128,13 @@ function loadRuntimeConfig() {
 
 function log(level: "info" | "warn" | "error", event: string, fields: Record<string, unknown> = {}) {
   // Redacción defensiva de campos sensibles conocidos.
+  // Phase 2D: incluye `cron_secret` para que cualquier log que inadvertidamente
+  // contenga el secreto sea redactado. Defense in depth — la función
+  // `validateCronAuth` jamás loggea el secreto, pero la regex cubre el
+  // caso de un futuro caller que pase un campo así.
   const safe: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
-    if (/^api[_-]?key$|^authorization$|^auth[_-]?token$/i.test(k)) {
+    if (/^api[_-]?key$|^authorization$|^auth[_-]?token$|^cron[_-]?secret$/i.test(k)) {
       safe[k] = "***REDACTED***";
     } else {
       safe[k] = v;
@@ -123,6 +144,95 @@ function log(level: "info" | "warn" | "error", event: string, fields: Record<str
   if (level === "error") console.error(line);
   else if (level === "warn") console.warn(line);
   else console.log(line);
+}
+
+// =====================================================================
+// Phase 2D — CRON_SECRET validation (Authorization: Bearer)
+// =====================================================================
+
+/**
+ * Comparación de tiempo constante entre dos strings. Devuelve `true` sólo
+ * si ambos tienen la misma longitud y todos los caracteres son iguales.
+ *
+ * Implementación clásica: XOR acumulado sobre `charCodeAt`. El resultado
+ * se acumula antes de comparar contra cero, así el tiempo de ejecución
+ * no depende de cuántos bytes difieran.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/**
+ * Valida que el header `Authorization: Bearer <CRON_SECRET>` de la request
+ * coincida con el secreto configurado en `Deno.env.get("CRON_SECRET")`.
+ *
+ * Comportamiento (Phase 2D, decision D5):
+ *   - secret ausente en runtime          → 401 (config error, no work)
+ *   - header ausente                     → 401
+ *   - esquema distinto de `Bearer`       → 401
+ *   - secreto ausente en el header       → 401
+ *   - secreto no coincide                → 401
+ *   - secreto coincide                   → null (continuar)
+ *
+ * Esta función NO registra el secreto recibido, NI el esperado, NI la
+ * razón específica del 401. Los mensajes de log son uniformes para
+ * evitar oracle attacks.
+ */
+function validateCronAuth(req: Request): Response | null {
+  const expected = Deno.env.get("CRON_SECRET");
+  if (!expected) {
+    log("error", "function.cron_secret_missing");
+    return jsonResponse(401, {
+      ok: false,
+      error: {
+        kind: "auth",
+        message: "CRON_SECRET is not configured on the function runtime.",
+      },
+    });
+  }
+
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) {
+    log("warn", "function.auth_failed", { reason: "missing_header" });
+    return jsonResponse(401, {
+      ok: false,
+      error: { kind: "auth", message: "Invalid CRON_SECRET" },
+    });
+  }
+
+  // Esquema estricto: "Bearer <token>" (case-insensitive para el esquema).
+  const match = /^Bearer\s+(.+)$/i.exec(authHeader);
+  if (!match) {
+    log("warn", "function.auth_failed", { reason: "bad_scheme" });
+    return jsonResponse(401, {
+      ok: false,
+      error: { kind: "auth", message: "Invalid CRON_SECRET" },
+    });
+  }
+
+  const received = match[1].trim();
+  if (received.length === 0) {
+    log("warn", "function.auth_failed", { reason: "empty_secret" });
+    return jsonResponse(401, {
+      ok: false,
+      error: { kind: "auth", message: "Invalid CRON_SECRET" },
+    });
+  }
+
+  if (!timingSafeEqual(received, expected)) {
+    log("warn", "function.auth_failed", { reason: "mismatch" });
+    return jsonResponse(401, {
+      ok: false,
+      error: { kind: "auth", message: "Invalid CRON_SECRET" },
+    });
+  }
+
+  return null; // auth OK — continuar.
 }
 
 // =====================================================================
@@ -151,7 +261,14 @@ async function handleNotify(req: Request): Promise<Response> {
     });
   }
 
-  // 2) Body parsing (best-effort; required for POST).
+  // 2) Phase 2D — CRON_SECRET auth check (Authorization: Bearer).
+  // MUST run BEFORE body parse and config load so unauth requests do
+  // not consume cycles, and so the work is gated before any DB /
+  // provider / external call.
+  const authResp = validateCronAuth(req);
+  if (authResp !== null) return authResp;
+
+  // 3) Body parsing (best-effort; required for POST).
   let body: RequestBody = {};
   try {
     const text = await req.text();
@@ -171,7 +288,7 @@ async function handleNotify(req: Request): Promise<Response> {
     });
   }
 
-  // 3) Secrets.
+  // 4) Secrets.
   const cfg = loadRuntimeConfig();
   if (!cfg.ok) {
     log("error", "function.config_missing", { missing: cfg.error.missing });
@@ -181,7 +298,7 @@ async function handleNotify(req: Request): Promise<Response> {
     });
   }
 
-  // 4) Supabase client (service_role).
+  // 5) Supabase client (service_role).
   let supabase: SupabaseClient;
   try {
     supabase = createClient(cfg.config.supabaseUrl, cfg.config.serviceRoleKey, {
@@ -197,13 +314,13 @@ async function handleNotify(req: Request): Promise<Response> {
     });
   }
 
-  // 5) ResendProvider.
+  // 6) ResendProvider.
   const provider = new ResendProvider({
     apiKey: cfg.config.resendApiKey,
     from: cfg.config.resendFrom,
   });
 
-  // 6) Run worker.
+  // 7) Run worker.
   log("info", "function.run_start", {
     batchSize: body.batchSize,
     leaseSeconds: body.leaseSeconds,
@@ -232,7 +349,7 @@ async function handleNotify(req: Request): Promise<Response> {
   }
   const durationMs = Date.now() - t0;
 
-  // 7) Return structured result.
+  // 8) Return structured result.
   log("info", "function.run_end", {
     claimed: result.claimed,
     sent: result.sent,

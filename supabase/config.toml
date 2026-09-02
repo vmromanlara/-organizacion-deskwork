@@ -21,3 +21,11 @@ pop3_port = 5505
 [analytics]
 port = 5506
 vector_port = 5507
+
+# TKT-026 — Phase 2D
+# `notify-worker` is invoked by pg_cron (not by an authenticated user),
+# so the Supabase gateway's JWT verification must be disabled. Auth is
+# enforced inside the handler via the `CRON_SECRET` bearer token
+# (Authorization: Bearer <CRON_SECRET>).
+[functions.notify-worker]
+verify_jwt = false
