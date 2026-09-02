@@ -271,10 +271,16 @@ select is(
 -- ============================================================
 -- TKT-019-OK-06: claim_pending_notifications marca processing y asigna claim_id
 -- ============================================================
--- Set authenticated role para que las funciones SECURITY DEFINER ejecuten
--- dentro del contexto esperado (con auth.uid()).
-set local role authenticated;
-select set_config('request.jwt.claim.role', 'authenticated', true);
+-- TKT-026 Phase 2A (F-1): claim_pending_notifications y complete_notification
+-- requieren EXECUTE de service_role (NO de authenticated). El worker real
+-- (service_role) NO necesita SELECT directo sobre la tabla — los
+-- SECURITY DEFINER functions devuelven los datos. Para el test, usamos
+-- `postgres` (owner) que tiene acceso total y permite verificar el estado
+-- post-llamada con SELECT. Los checks de ACL específicos del nuevo modelo
+-- (service_role=EXECUTE, authenticated=NO EXECUTE) viven en
+-- notification_outbox_dead.sql.
+set local role postgres;
+select set_config('request.jwt.claim.role', 'postgres', true);
 select set_config('request.jwt.claim.sub', 'aa000000-0000-0000-0000-00000000a003', true);
 
 -- Tomar el id de la primera fila pending.
@@ -415,7 +421,10 @@ select is(
 -- ============================================================
 -- TKT-019-OK-11: tenant isolation — un actor de OTRO tenant no ve la fila
 -- ============================================================
--- Volvemos a authenticated, ahora con el usuario de tenant B.
+-- Cambiamos a authenticated para evaluar RLS. El usuario pertenece a
+-- tenant B; debe ver 0 filas de tenant A.
+set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', 'aa000000-0000-0000-0000-00000000a004', true);
 
 select is(
