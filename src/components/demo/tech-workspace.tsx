@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { mockPriorities, mockTicketStates } from "@/mock/deskwork-data";
 import { DemoEmptyState, DemoLoadingState } from "./demo-feedback-state";
 import { CommentsThread } from "./comments-thread";
 import { AttachmentsList } from "./attachments-list";
@@ -17,7 +16,12 @@ import {
 } from "@/modules/ticketing/client-api";
 import type { ClientApiError } from "@/modules/ticketing/client-api";
 import type { Ticket, TicketCategory } from "@/modules/ticketing/repository";
-import type { TicketState, TicketPriority } from "@/modules/ticketing/types";
+import {
+  TICKET_STATES,
+  TICKET_PRIORITIES,
+  type TicketState,
+  type TicketPriority,
+} from "@/modules/ticketing/types";
 import {
   formatDateShort,
   formatMinutes,
@@ -25,6 +29,30 @@ import {
   getStateLabel,
   useI18n,
 } from "@/i18n";
+
+/**
+ * Tone maps (CSS class suffix) por estado y prioridad.
+ *
+ * Inlined aquí en lugar de importarse de `@/mock/deskwork-data` para
+ * que el módulo técnico no dependa de fixtures MOCK. Los valores son
+ * los mismos que el módulo mock tenía; si se renombran las clases CSS,
+ * actualizar aquí.
+ */
+const TONE_BY_STATE: Record<TicketState, string> = {
+  ABIERTO: "info",
+  EN_PROCESO: "warning",
+  ESPERANDO_USUARIO: "warning",
+  ESCALADO: "danger",
+  RESUELTO: "success",
+  CERRADO: "success",
+};
+
+const TONE_BY_PRIORITY: Record<TicketPriority, string> = {
+  P1: "danger",
+  P2: "warning",
+  P3: "info",
+  P4: "success",
+};
 
 function durationFromMs(ms: number, locale: "es" | "en", messages: { empty: string; hoursMinutes: string; minutesShort: string }): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -36,11 +64,11 @@ function durationFromMs(ms: number, locale: "es" | "en", messages: { empty: stri
 }
 
 function getStateTone(state: TicketState): string {
-  return mockTicketStates.find((s) => s.code === state)?.visualTone ?? "info";
+  return TONE_BY_STATE[state] ?? "info";
 }
 
 function getPriorityTone(priority: TicketPriority): string {
-  return mockPriorities.find((p) => p.code === priority)?.visualTone ?? "info";
+  return TONE_BY_PRIORITY[priority] ?? "info";
 }
 
 export function LiveTimer({ ticket, compact = false }: { ticket: Ticket; compact?: boolean }) {
@@ -267,9 +295,9 @@ export function TechQueue() {
             <label>{t("requester.detail.statusLabel")}
               <select value={stateFilter} onChange={(event) => { setPage(1); setStateFilter(event.target.value as TicketState | "ALL"); }}>
                 <option value="ALL">{t("common.all")}</option>
-                {mockTicketStates.map((state) => (
-                  <option value={state.code} key={state.code}>
-                    {getStateLabel(state.code, locale)}
+                {TICKET_STATES.map((state) => (
+                  <option value={state} key={state}>
+                    {getStateLabel(state, locale)}
                   </option>
                 ))}
               </select>
@@ -277,7 +305,7 @@ export function TechQueue() {
             <label>{t("requester.detail.priorityLabel")}
               <select value={priorityFilter} onChange={(event) => { setPage(1); setPriorityFilter(event.target.value as TicketPriority | "ALL"); }}>
                 <option value="ALL">{t("common.all")}</option>
-                {mockPriorities.map((priority) => <option value={priority.code} key={priority.code}>{priority.code}</option>)}
+                {TICKET_PRIORITIES.map((priority) => <option value={priority} key={priority}>{priority}</option>)}
               </select>
             </label>
             <label>{t("requester.detail.categoryLabel")}
