@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { mockPriorities, mockTicketStates } from "@/mock/deskwork-data";
 import { DemoLoadingState } from "./demo-feedback-state";
 import { getTicket, listTicketCategories } from "@/modules/ticketing/client-api";
 import type { Ticket, TicketCategory } from "@/modules/ticketing/repository";
@@ -16,12 +15,36 @@ import {
   useI18n,
 } from "@/i18n";
 
+/**
+ * Tone maps (CSS class suffix) por estado y prioridad.
+ *
+ * Inlined aquí en lugar de importarse de `@/mock/deskwork-data` para que
+ * la página de detalle no dependa de fixtures MOCK. Los valores son los
+ * mismos que el módulo mock tenía; si se renombran las clases CSS,
+ * actualizar aquí.
+ */
+const TONE_BY_STATE: Record<TicketState, string> = {
+  ABIERTO: "info",
+  EN_PROCESO: "warning",
+  ESPERANDO_USUARIO: "warning",
+  ESCALADO: "danger",
+  RESUELTO: "success",
+  CERRADO: "success",
+};
+
+const TONE_BY_PRIORITY: Record<TicketPriority, string> = {
+  P1: "danger",
+  P2: "warning",
+  P3: "info",
+  P4: "success",
+};
+
 function getStateTone(state: TicketState): string {
-  return mockTicketStates.find((s) => s.code === state)?.visualTone ?? "info";
+  return TONE_BY_STATE[state] ?? "info";
 }
 
 function getPriorityTone(priority: TicketPriority): string {
-  return mockPriorities.find((p) => p.code === priority)?.visualTone ?? "info";
+  return TONE_BY_PRIORITY[priority] ?? "info";
 }
 
 type Phase =
@@ -156,6 +179,12 @@ export function RequesterTicketDetail({ ticketId }: { ticketId: string }) {
               <dd>{ticket.id}</dd>
             </div>
             <div>
+              <dt>Solicitante</dt>
+              <dd>
+                <code>{ticket.requesterId.slice(0, 8)}…</code>
+              </dd>
+            </div>
+            <div>
               <dt>{t("requester.detail.statusLabel")}</dt>
               <dd>{stateLabel}</dd>
             </div>
@@ -168,7 +197,7 @@ export function RequesterTicketDetail({ ticketId }: { ticketId: string }) {
               </dd>
             </div>
             <div>
-              <dt>{t("requester.detail.createdAtLabel")}</dt>
+              <dt>Actualizado</dt>
               <dd>
                 <time dateTime={ticket.updatedAt}>
                   {formatDateTime(ticket.updatedAt, locale)}
