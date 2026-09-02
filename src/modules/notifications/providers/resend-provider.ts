@@ -37,7 +37,7 @@
  */
 
 import { Resend } from "resend";
-import type { EmailMessage, EmailProvider, EmailResult } from "../provider";
+import type { EmailMessage, EmailProvider, EmailResult } from "../provider.ts";
 
 export interface ResendProviderOptions {
   /** Resend API key (`re_…`). Requerida. NUNCA debe leerse desde el cliente. */

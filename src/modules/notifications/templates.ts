@@ -11,7 +11,7 @@
  * produce strings a partir del payload.
  */
 
-import type { NotificationRow } from "./types";
+import type { NotificationRow } from "./types.ts";
 
 export interface RenderedEmail {
   subject: string;

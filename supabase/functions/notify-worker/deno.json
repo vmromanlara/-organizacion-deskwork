@@ -1,0 +1,12 @@
+{
+  "nodeModulesDir": "auto",
+  "imports": {
+    "npm:@supabase/supabase-js": "npm:@supabase/supabase-js@^2.112.0",
+    "npm:resend": "npm:resend@^6.25.0",
+    "resend": "npm:resend@^6.25.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.112.0"
+  },
+  "tasks": {
+    "check": "deno check index.ts"
+  }
+}

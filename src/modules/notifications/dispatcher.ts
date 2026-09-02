@@ -22,10 +22,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   claimPendingNotifications,
   completeNotification,
-} from "./repository";
-import { renderTemplate } from "./templates";
-import type { EmailMessage, EmailProvider } from "./provider";
-import type { NotificationRow } from "./types";
+} from "./repository.ts";
+import { renderTemplate } from "./templates.ts";
+import type { EmailMessage, EmailProvider } from "./provider.ts";
+import type { NotificationRow } from "./types.ts";
 
 export interface DispatcherOptions {
   supabase: SupabaseClient;

@@ -7,7 +7,7 @@
  * transitorios y validar el manejo del dispatcher.
  */
 
-import type { EmailMessage, EmailProvider, EmailResult } from "../provider";
+import type { EmailMessage, EmailProvider, EmailResult } from "../provider.ts";
 
 export interface InMemoryProviderOptions {
   /** Mensajes a fallar (1-indexed). El N-ésimo send() devuelve { ok: false }. */

@@ -130,9 +130,9 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dispatchBatch, type DispatcherResult } from "./dispatcher";
-import type { EmailProvider } from "./provider";
-import type { NotificationRow } from "./types";
+import { dispatchBatch, type DispatcherResult } from "./dispatcher.ts";
+import type { EmailProvider } from "./provider.ts";
+import type { NotificationRow } from "./types.ts";
 
 // =====================================================================
 // Logger

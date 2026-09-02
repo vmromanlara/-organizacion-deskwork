@@ -15,7 +15,7 @@ import type {
   NotificationRow,
   NotificationStatus,
   NotificationType,
-} from "./types";
+} from "./types.ts";
 
 interface OutboxRow {
   id: string;

@@ -12,7 +12,7 @@
  * hace fuera de la transacción principal.
  */
 
-import type { NotificationRow } from "./types";
+import type { NotificationRow } from "./types.ts";
 
 export interface EmailMessage {
   to: string;
