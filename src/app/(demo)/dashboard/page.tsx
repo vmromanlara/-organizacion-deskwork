@@ -9,24 +9,43 @@
  * El layout/maqueta (clases CSS, copy, cards, lista) se conserva idéntico
  * para no introducir cambios visuales. Solo cambia el origen de los datos.
  *
- * Datos que pasan a ser reales:
+ * Datos reales:
  *   - Identidad del requester (auth.uid + profiles.display_name)
  *   - Listado de tickets del requester (repo.listTicketsByRequester)
  *   - Conteos: total / activas / en proceso / resueltas
  *
- * Datos que se mantienen como MOCK transitorio (Bloque 2 los limpiará):
- *   - mockPriorities / mockTicketStates: solo se usan como tone map
- *     (`visualTone`) para las pills y markers. No aparecen datos MOCK
- *     de tickets, usuarios o categorías.
+ * Tone maps y labels:
+ *   - TONE_BY_STATE / TONE_BY_PRIORITY: declarados inline, derivan
+ *     la clase CSS visual a partir de los códigos contractuales del DB.
+ *   - getStateLabel del módulo @/i18n/labels: usa "es" como locale
+ *     por defecto (este componente server-side no tiene acceso al
+ *     contexto de i18n del cliente; el locale del usuario se aplica
+ *     en componentes client-side).
  */
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { mockPriorities, mockTicketStates } from "@/mock/deskwork-data";
+import { getStateLabel as getI18nStateLabel } from "@/i18n/labels";
 import { createSupabaseServerClient } from "@/shared/supabase/server";
 import { createSupabaseTicketRepository } from "@/modules/ticketing/supabase-repository";
 import type { Ticket } from "@/modules/ticketing/repository";
 import type { TicketPriority, TicketState } from "@/modules/ticketing/types";
+
+const TONE_BY_STATE: Record<TicketState, string> = {
+  ABIERTO: "info",
+  EN_PROCESO: "warning",
+  ESPERANDO_USUARIO: "warning",
+  ESCALADO: "danger",
+  RESUELTO: "success",
+  CERRADO: "success",
+};
+
+const TONE_BY_PRIORITY: Record<TicketPriority, string> = {
+  P1: "danger",
+  P2: "warning",
+  P3: "info",
+  P4: "success",
+};
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-CL", {
@@ -39,15 +58,15 @@ function formatDate(value: string): string {
 }
 
 function getPriorityTone(priority: TicketPriority): string {
-  return mockPriorities.find((p) => p.code === priority)?.visualTone ?? "info";
+  return TONE_BY_PRIORITY[priority] ?? "info";
 }
 
 function getStateTone(state: TicketState): string {
-  return mockTicketStates.find((s) => s.code === state)?.visualTone ?? "info";
+  return TONE_BY_STATE[state] ?? "info";
 }
 
 function getStateLabel(state: TicketState): string {
-  return mockTicketStates.find((s) => s.code === state)?.label ?? state;
+  return getI18nStateLabel(state, "es");
 }
 
 function firstName(displayName: string | null, email: string | null): string {

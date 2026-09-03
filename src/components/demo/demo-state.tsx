@@ -1,51 +1,83 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  mockTicketHistory,
-  mockTickets,
-  type MockTicket,
-  type MockTicketEvent,
-  type MockTicketState,
-} from "@/mock/deskwork-data";
+
+/**
+ * Proveedor de estado del (demo) shell.
+ *
+ * TKT-UI cleanup final: este componente ya no carga fixtures MOCK desde
+ * `@/mock/deskwork-data`. Los tipos y los datos de inicio se definen
+ * inline (vacíos) y el localStorage solo retiene estado persistido por
+ * el propio usuario en sesiones previas — sin sembrado desde MOCK.
+ *
+ * Si en el futuro alguna ruta (demo) quiere volver a tener un dataset
+ * de maqueta independiente del backend real, debe ser sembrado vía
+ * endpoint o seed explícito, no desde MOCK en runtime.
+ */
 
 const DEMO_STATE_STORAGE_KEY = "deskwork.demo-state.v1";
 const DEMO_STATE_VERSION = 1;
 
+type LocalTiming = {
+  firstResponseMinutes: number | null;
+  effectiveWorkMinutes: number;
+  awaitingUserMinutes: number;
+  resolutionMinutes: number | null;
+  totalMinutes: number;
+  slaStatus: string;
+};
+
+type LocalTicket = {
+  id: string;
+  title: string;
+  description: string;
+  requesterId: string;
+  categoryId: string;
+  priority: string;
+  state: string;
+  createdAt: string;
+  updatedAt: string;
+  timing: LocalTiming;
+};
+
+type LocalTicketEvent = {
+  id: string;
+  ticketId: string;
+  type: string;
+  actorId: string;
+  occurredAt: string;
+  summary: string;
+  fromState?: string;
+  toState?: string;
+};
+
+type LocalTicketState = string;
+
 type DemoState = {
   isHydrated: boolean;
-  tickets: readonly MockTicket[];
-  events: readonly MockTicketEvent[];
+  tickets: readonly LocalTicket[];
+  events: readonly LocalTicketEvent[];
   createTicket: (input: { categoryId: string; description: string; requesterId: string }) => string;
-  changeTicketState: (ticketId: string, nextState: MockTicketState) => void;
+  changeTicketState: (ticketId: string, nextState: LocalTicketState) => void;
 };
 
 type PersistedDemoState = {
   version: number;
-  tickets: readonly MockTicket[];
-  events: readonly MockTicketEvent[];
+  tickets: readonly LocalTicket[];
+  events: readonly LocalTicketEvent[];
 };
 
 const DemoStateContext = createContext<DemoState | undefined>(undefined);
 
-const stateLabels: Record<MockTicketState, string> = {
-  ABIERTO: "La solicitud quedó abierta.",
-  EN_PROCESO: "La atención de la solicitud comenzó.",
-  ESPERANDO_USUARIO: "La solicitud espera información de la persona solicitante.",
-  ESCALADO: "La solicitud fue escalada para continuar la atención.",
-  RESUELTO: "La solución fue aplicada y registrada.",
-  CERRADO: "La solicitud fue cerrada.",
-};
-
-function fixtureState(): PersistedDemoState {
-  return { version: DEMO_STATE_VERSION, tickets: mockTickets, events: mockTicketHistory };
+function emptyState(): PersistedDemoState {
+  return { version: DEMO_STATE_VERSION, tickets: [], events: [] };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isTicket(value: unknown): value is MockTicket {
+function isTicket(value: unknown): value is LocalTicket {
   if (!isRecord(value) || !isRecord(value.timing)) return false;
   return typeof value.id === "string"
     && typeof value.title === "string"
@@ -59,7 +91,7 @@ function isTicket(value: unknown): value is MockTicket {
     && typeof value.timing.totalMinutes === "number";
 }
 
-function isTicketEvent(value: unknown): value is MockTicketEvent {
+function isTicketEvent(value: unknown): value is LocalTicketEvent {
   return isRecord(value)
     && typeof value.id === "string"
     && typeof value.ticketId === "string"
@@ -72,17 +104,17 @@ function isTicketEvent(value: unknown): value is MockTicketEvent {
 function readPersistedState(): PersistedDemoState {
   try {
     const rawState = window.localStorage.getItem(DEMO_STATE_STORAGE_KEY);
-    if (!rawState) return fixtureState();
+    if (!rawState) return emptyState();
     const candidate: unknown = JSON.parse(rawState);
-    if (!isRecord(candidate) || candidate.version !== DEMO_STATE_VERSION || !Array.isArray(candidate.tickets) || !Array.isArray(candidate.events)) return fixtureState();
-    if (!candidate.tickets.every(isTicket) || !candidate.events.every(isTicketEvent)) return fixtureState();
+    if (!isRecord(candidate) || candidate.version !== DEMO_STATE_VERSION || !Array.isArray(candidate.tickets) || !Array.isArray(candidate.events)) return emptyState();
+    if (!candidate.tickets.every(isTicket) || !candidate.events.every(isTicketEvent)) return emptyState();
     return { version: DEMO_STATE_VERSION, tickets: candidate.tickets, events: candidate.events };
   } catch {
-    return fixtureState();
+    return emptyState();
   }
 }
 
-function persistState(tickets: readonly MockTicket[], events: readonly MockTicketEvent[]) {
+function persistState(tickets: readonly LocalTicket[], events: readonly LocalTicketEvent[]) {
   try {
     window.localStorage.setItem(DEMO_STATE_STORAGE_KEY, JSON.stringify({ version: DEMO_STATE_VERSION, tickets, events } satisfies PersistedDemoState));
   } catch {
@@ -91,8 +123,8 @@ function persistState(tickets: readonly MockTicket[], events: readonly MockTicke
 }
 
 export function DemoStateProvider({ children }: { children: ReactNode }) {
-  const [tickets, setTickets] = useState<readonly MockTicket[]>(mockTickets);
-  const [events, setEvents] = useState<readonly MockTicketEvent[]>(mockTicketHistory);
+  const [tickets, setTickets] = useState<readonly LocalTicket[]>([]);
+  const [events, setEvents] = useState<readonly LocalTicketEvent[]>([]);
   const [isHydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -117,7 +149,7 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
       const occurredAt = new Date().toISOString();
       const lastId = Math.max(...tickets.map((ticket) => Number(ticket.id.replace("DW-", ""))), 1048);
       const ticketId = `DW-${lastId + 1}`;
-      const ticket: MockTicket = {
+      const ticket: LocalTicket = {
         id: ticketId,
         title: description.trim().split(/[.!?\n]/)[0] || "Nueva solicitud",
         description: description.trim(),
@@ -129,7 +161,7 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
         updatedAt: occurredAt,
         timing: { firstResponseMinutes: null, effectiveWorkMinutes: 0, awaitingUserMinutes: 0, resolutionMinutes: null, totalMinutes: 0, slaStatus: "on_track" },
       };
-      const event: MockTicketEvent = { id: `${ticketId}-created-${occurredAt}`, ticketId, type: "created", actorId: requesterId, occurredAt, summary: "Solicitud registrada desde la maqueta." };
+      const event: LocalTicketEvent = { id: `${ticketId}-created-${occurredAt}`, ticketId, type: "created", actorId: requesterId, occurredAt, summary: "Solicitud registrada desde la maqueta." };
       const nextTickets = [ticket, ...tickets];
       const nextEvents = [...events, event];
       setTickets(nextTickets);
@@ -142,13 +174,13 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
       const ticket = tickets.find((candidate) => candidate.id === ticketId);
       if (!ticket || ticket.state === nextState) return;
       const nextTickets = tickets.map((candidate) => candidate.id === ticketId ? { ...candidate, state: nextState, updatedAt: occurredAt, timing: { ...candidate.timing } } : candidate);
-      const event: MockTicketEvent = {
+      const event: LocalTicketEvent = {
         id: `${ticketId}-${nextState}-${occurredAt}`,
         ticketId,
         type: nextState === "RESUELTO" ? "resolved" : nextState === "CERRADO" ? "closed" : "state_changed",
         actorId: "user-carmen-vidal",
         occurredAt,
-        summary: stateLabels[nextState],
+        summary: `Estado actualizado a ${nextState}.`,
         fromState: ticket.state,
         toState: nextState,
       };
