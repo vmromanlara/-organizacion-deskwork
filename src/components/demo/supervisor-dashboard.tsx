@@ -14,6 +14,31 @@ import {
   type Locale,
 } from "@/i18n";
 
+/**
+ * Bloque 6 de TKT-UI (auditoría): este componente ya estaba conectado al
+ * backend real en commits previos a la serie de bloques. No se requieren
+ * cambios funcionales para TKT-026. La única edición de este commit es
+ * este comentario para dejar registro de la auditoría y los contratos
+ * que ya cumple:
+ *
+ *   - KPIs: `getTicketKpis(periodDays)` -> GET /api/tickets/kpis -> RPC
+ *     `compute_ticket_kpis` (SECURITY DEFINER; requiere institution scope).
+ *
+ *   - Identidad: implícita por cookies SSR; el backend resuelve el
+ *     tenant/actor desde `auth.uid()` + memberships.
+ *
+ *   - RLS: el RPC valida scope institucional y cross-tenant; no se
+ *     exponen datos fuera del tenant del supervisor.
+ *
+ *   - Estados: `loading` (DemoLoadingState), `error` (con retry), y
+ *     `ready` con datos reales de `KpisResponse` (totals, byState,
+ *     byPriority, operationalAverages, dailyTrend, period, generatedAt).
+ *
+ *   - Constantes locales `STATE_TONES`/`PRIORITY_TONES`/orders: son
+ *     mapas de presentación (estado -> clase CSS / orden visual), no
+ *     datos MOCK. Usan los códigos contractuales del DB.
+ */
+
 type VisualTone = "info" | "warning" | "danger" | "success" | "neutral";
 
 const STATE_TONES: Record<string, VisualTone> = {
