@@ -24,6 +24,7 @@ import {
 } from "@/modules/ticketing/types";
 import {
   formatDateShort,
+  formatDateTime,
   formatMinutes,
   getErrorMessage,
   getStateLabel,
@@ -535,7 +536,10 @@ export function TechTicketDetail({ ticketId }: { ticketId: string }) {
           <dl className="demo-ticket-facts">
             <div><dt>{t("requester.detail.categoryLabel")}</dt><dd>{phase.categoryLabel}</dd></div>
             <div><dt>Tenant</dt><dd>{ticket.tenantId.slice(0, 8)}…</dd></div>
+            <div><dt>Solicitante</dt><dd><code>{ticket.requesterId.slice(0, 8)}…</code></dd></div>
             <div><dt>{t("requester.detail.assignedToLabel")}</dt><dd>{ticket.assignedTo ? ticket.assignedTo.slice(0, 8) + "…" : t("requester.detail.noAssignee")}</dd></div>
+            <div><dt>{t("requester.detail.createdAtLabel")}</dt><dd><time dateTime={ticket.createdAt}>{formatDateTime(ticket.createdAt, locale)}</time></dd></div>
+            <div><dt>Actualizado</dt><dd><time dateTime={ticket.updatedAt}>{formatDateTime(ticket.updatedAt, locale)}</time></dd></div>
             <div><dt>SLA</dt><dd>{ticket.slaStatus}</dd></div>
           </dl>
           <div className="demo-assign-block">
